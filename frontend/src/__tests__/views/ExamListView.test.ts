@@ -1,5 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
+import { ref } from 'vue'
 
 const {
   mockGetPublishedPapers,
@@ -29,6 +30,7 @@ const {
   mockDeletePrivateExamPaper,
   mockConfirmDialog,
   mockPush,
+  mockElMessage,
 } = vi.hoisted(() => ({
   mockGetPublishedPapers: vi.fn(),
   mockGetMyExamRecords: vi.fn(),
@@ -57,6 +59,7 @@ const {
   mockDeletePrivateExamPaper: vi.fn(),
   mockConfirmDialog: vi.fn(),
   mockPush: vi.fn(),
+  mockElMessage: vi.fn(),
 }))
 
 vi.mock('@/api/exam', () => ({
@@ -87,9 +90,17 @@ vi.mock('@/api/exam', () => ({
   deletePrivateExamPaper: (...args: unknown[]) => mockDeletePrivateExamPaper(...args),
 }))
 
+vi.mock('@/composables/useConfirmSheet', () => ({
+  useConfirmSheet: () => ({
+    open: ref(false),
+    ask: (...args: unknown[]) => mockConfirmDialog(...args),
+    answer: vi.fn(),
+  }),
+}))
+
 vi.mock('element-plus', async (importOriginal) => ({
   ...(await importOriginal<typeof import('element-plus')>()),
-  ElMessageBox: { confirm: (...args: unknown[]) => mockConfirmDialog(...args) },
+  ElMessage: mockElMessage,
 }))
 
 vi.mock('@/api/course', () => ({
@@ -108,6 +119,11 @@ import PrivateExamImportDialog from '@/components/exam/PrivateExamImportDialog.v
 import PrivateExamSourceManager from '@/components/exam/PrivateExamSourceManager.vue'
 
 const stubs = {
+  LtSheet: { template: '<div><slot /></div>' },
+  LtButton: {
+    template: '<button :disabled="$attrs.disabled" @click="$emit(\'click\')"><slot /></button>',
+    emits: ['click'],
+  },
   'el-tabs': { template: '<div><slot /></div>' },
   'el-tab-pane': { template: '<section><slot /></section>' },
   'el-card': { template: '<article><slot /></article>' },
@@ -139,6 +155,7 @@ describe('ExamListView paper provenance', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     sessionStorage.clear()
+    window.history.replaceState({}, '')
     mockStartExam.mockResolvedValue({ code: 0, data: { id: 101, examPaperId: 1, status: 0 } })
     mockGetMyExamRecords.mockResolvedValue({ code: 0, data: { records: [], total: 0 } })
     mockGetPrivateExamDrafts.mockResolvedValue({ code: 0, data: [] })
@@ -174,7 +191,7 @@ describe('ExamListView paper provenance', () => {
       data: new Blob(['docx']),
       headers: { 'content-type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' },
     })
-    mockConfirmDialog.mockResolvedValue(undefined)
+    mockConfirmDialog.mockResolvedValue(true)
     mockDeletePrivateExamDraft.mockResolvedValue({ code: 0, data: null })
     mockDeletePrivateExamPaper.mockResolvedValue({ code: 0, data: null })
     mockGetPublishedPapers.mockResolvedValue({
@@ -206,6 +223,26 @@ describe('ExamListView paper provenance', () => {
         ],
       },
     })
+  })
+
+  afterEach(() => window.history.replaceState({}, ''))
+
+  it('将答题页留下的时间到提示置于顶部并只消费一次 history state，不调用 ElMessage', async () => {
+    const message = '考试时间已到，系统已自动提交。'
+    window.history.replaceState({ examNotice: message }, '')
+
+    const first = mount(ExamListView, { global: { stubs, directives: { loading: () => undefined } } })
+    await flushPromises()
+
+    expect(first.get('[role="status"]').text()).toBe(message)
+    expect(window.history.state.examNotice).toBeNull()
+    expect(mockElMessage).not.toHaveBeenCalled()
+
+    first.unmount()
+    const second = mount(ExamListView, { global: { stubs, directives: { loading: () => undefined } } })
+    await flushPromises()
+    expect(second.find('.notice[role="status"]').exists()).toBe(false)
+    second.unmount()
   })
 
   it('打开导入对话框时展示所有者原文件累计用量', async () => {
@@ -589,7 +626,7 @@ describe('ExamListView paper provenance', () => {
     await draftReviewVm.downloadDraftSource()
 
     expect(mockDownloadPrivateExamSourceFile).toHaveBeenCalledWith(51, { errorDisplay: 'inline' })
-    expect(mockDownloadPrivateExamDraftSourceFile).toHaveBeenCalledWith(31)
+    expect(mockDownloadPrivateExamDraftSourceFile).toHaveBeenCalledWith(31, { errorDisplay: 'inline' })
     expect(createObjectURL).toHaveBeenCalledTimes(2)
     expect(revokeObjectURL).toHaveBeenCalledTimes(2)
   })
@@ -705,10 +742,10 @@ describe('ExamListView paper provenance', () => {
     await flushPromises()
     expect(mockDeletePrivateExamPaper).toHaveBeenCalledTimes(2)
 
-    let resolveConfirmation: (() => void) | undefined
+    let resolveConfirmation: ((confirmed: boolean) => void) | undefined
     mockConfirmDialog.mockImplementationOnce(
       () =>
-        new Promise<void>((resolve) => {
+        new Promise<boolean>((resolve) => {
           resolveConfirmation = resolve
         }),
     )
@@ -718,7 +755,7 @@ describe('ExamListView paper provenance', () => {
     const pendingDelete = staleVm.deletePaper(privatePaper)
     await flushPromises()
     staleWrapper.unmount()
-    resolveConfirmation?.()
+    resolveConfirmation?.(true)
     await pendingDelete
     expect(mockDeletePrivateExamPaper).toHaveBeenCalledTimes(2)
   })

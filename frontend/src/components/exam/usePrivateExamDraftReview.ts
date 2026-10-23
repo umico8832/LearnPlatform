@@ -1,5 +1,4 @@
 import { onBeforeUnmount, ref, watch } from 'vue'
-import { ElMessage } from 'element-plus'
 import { generatePrivateExamDraftAnswer, reviewPrivateExamDraftQuestion } from '@/api/exam'
 import type { PrivateExamDraft } from '@/api/exam'
 import { errorMessage } from '@/utils/errors'
@@ -16,6 +15,7 @@ type QuestionState = {
 export function usePrivateExamDraftReview(
   getDraft: () => PrivateExamDraft,
   onUpdated: (draft: PrivateExamDraft) => void,
+  notify: (message: string) => void = () => undefined,
 ) {
   const draftAnswers = ref<Record<number, string[]>>({})
   const draftAnalyses = ref<Record<number, string>>({})
@@ -127,7 +127,7 @@ export function usePrivateExamDraftReview(
         }
         mergeDraft(response.data)
         onUpdated(response.data)
-        ElMessage.success(operation === 'generate' ? 'AI 建议已生成，请人工核对' : '本题已人工复核')
+        notify(operation === 'generate' ? 'AI 建议已生成，请人工核对' : '本题已人工复核')
       } catch (error) {
         if (isCurrent()) {
           state.error = `${operation === 'generate' ? 'AI 生成失败' : '复核失败'}：${errorMessage(error, '请稍后重试')}`

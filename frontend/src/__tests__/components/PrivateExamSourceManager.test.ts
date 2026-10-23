@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
+import { ref } from 'vue'
 
 const {
   mockGetPrivateExamSource,
@@ -32,9 +33,8 @@ vi.mock('@/api/exam', () => ({
   deletePrivateExamDraft: (...args: unknown[]) => mockDeletePrivateExamDraft(...args),
 }))
 
-vi.mock('element-plus', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('element-plus')>()),
-  ElMessageBox: { confirm: (...args: unknown[]) => mockConfirm(...args) },
+vi.mock('@/composables/useConfirmSheet', () => ({
+  useConfirmSheet: () => ({ open: ref(false), ask: (...args: unknown[]) => mockConfirm(...args), answer: vi.fn() }),
 }))
 
 vi.mock('@/utils/auth', () => ({
@@ -48,6 +48,11 @@ vi.mock('@/utils/auth', () => ({
 import PrivateExamSourceManager from '@/components/exam/PrivateExamSourceManager.vue'
 
 const stubs = {
+  LtSheet: { template: '<section><slot /></section>' },
+  LtButton: {
+    template: '<button :disabled="$attrs.disabled" @click="$emit(\'click\')"><slot /></button>',
+    emits: ['click'],
+  },
   'el-dialog': { template: '<section><slot /></section>' },
   'el-tag': { template: '<span><slot /></span>' },
   'el-button': {
@@ -63,7 +68,7 @@ describe('PrivateExamSourceManager', () => {
     vi.clearAllMocks()
     authListeners.clear()
     authState.version = 0
-    mockConfirm.mockResolvedValue(undefined)
+    mockConfirm.mockResolvedValue(true)
     mockDeletePrivateExamDraft.mockResolvedValue({ code: 0, data: null })
     mockGetPrivateExamStorageFiles.mockResolvedValue({
       code: 0,
@@ -355,9 +360,9 @@ describe('PrivateExamSourceManager', () => {
   })
 
   it('does not delete after its confirmation resolves after unmount', async () => {
-    let resolveConfirm: () => void = () => undefined
+    let resolveConfirm: (confirmed: boolean) => void = () => undefined
     mockConfirm.mockReturnValueOnce(
-      new Promise<void>((resolve) => {
+      new Promise<boolean>((resolve) => {
         resolveConfirm = resolve
       }),
     )
@@ -378,7 +383,7 @@ describe('PrivateExamSourceManager', () => {
       associationTitle: '待复核试卷',
     })
     wrapper.unmount()
-    resolveConfirm()
+    resolveConfirm(true)
     await deleting
     expect(mockDeletePrivateExamDraft).not.toHaveBeenCalled()
   })

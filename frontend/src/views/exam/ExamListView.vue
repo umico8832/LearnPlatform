@@ -1,169 +1,151 @@
 <template>
-  <div class="exam-list-page page-container">
-    <LpPageHeader title="考试与试卷">
-      <template #actions>
-        <el-button type="primary" :icon="Upload" @click="openImportDialog">导入私有试卷</el-button>
-      </template>
-    </LpPageHeader>
-
+  <div class="lt exam-library" data-appearance="dark">
+    <header class="page-heading">
+      <div>
+        <h1>考试与试卷</h1>
+        <p>选一份试卷，开始学习或限时考试。</p>
+      </div>
+      <LtButton variant="primary" @click="openImportDialog">导入私有试卷</LtButton>
+    </header>
+    <p v-if="examNotice" class="notice" role="status">{{ examNotice }}</p>
+    <p v-if="importNotice" class="muted" role="status">{{ importNotice }}</p>
     <div v-if="papersState === 'ready' || recordsTotal !== null" class="exam-stat-row">
-      <LpStat v-if="papersState === 'ready'" label="可用试卷" :value="total" :note="papersCountNote" tone="emphasis" />
-      <LpStat v-if="recordsTotal !== null" label="考试记录" :value="recordsTotal" note="含进行中、已完成与待批阅" />
+      <div v-if="papersState === 'ready'">
+        <strong>{{ total }}</strong
+        >可用试卷 · {{ papersCountNote }}
+      </div>
+      <div v-if="recordsTotal !== null">
+        <strong>{{ recordsTotal }}</strong
+        >考试记录 · 含进行中、已完成与待批阅
+      </div>
     </div>
-
-    <section class="exam-panel">
-      <el-tabs v-model="activeTab" class="exam-tabs" @tab-change="handleTabChange">
-        <el-tab-pane label="可用试卷" name="papers">
-          <div class="paper-filters" aria-label="筛选试卷">
-            <el-select v-model="paperType" aria-label="试卷类型" @change="applyFilters">
-              <el-option label="全部类型" value="ALL" />
-              <el-option label="官方原题" value="OFFICIAL_EXAM" />
-              <el-option label="普通练习" value="PRACTICE" />
-              <el-option label="我的私有试卷" value="USER_PRIVATE" />
-            </el-select>
-            <el-input
-              v-model="keyword"
-              clearable
-              maxlength="100"
-              show-word-limit
-              placeholder="按试卷名称查找"
-              aria-label="按试卷名称查找"
-              @clear="applyFilters"
-              @keyup.enter="applyFilters"
-            />
-            <el-button type="primary" :loading="loading" @click="applyFilters">查找试卷</el-button>
-            <el-button plain :disabled="!hasFilters || loading" @click="clearFilters">清除筛选</el-button>
+    <nav class="exam-tabs" aria-label="考试内容">
+      <LtButton
+        :variant="activeTab === 'papers' ? 'primary' : 'plain'"
+        :aria-pressed="activeTab === 'papers'"
+        @click="activeTab = 'papers'"
+        >可用试卷</LtButton
+      ><LtButton
+        :variant="activeTab === 'records' ? 'primary' : 'plain'"
+        :aria-pressed="activeTab === 'records'"
+        @click="showRecords"
+        >考试记录</LtButton
+      >
+    </nav>
+    <section v-show="activeTab === 'papers'">
+      <form class="paper-filters" aria-label="筛选试卷" @submit.prevent="applyFilters">
+        <select v-model="paperType" aria-label="试卷类型" @change="applyFilters">
+          <option value="ALL">全部类型</option>
+          <option value="OFFICIAL_EXAM">官方原题</option>
+          <option value="PRACTICE">普通练习</option>
+          <option value="USER_PRIVATE">我的私有试卷</option></select
+        ><input
+          v-model="keyword"
+          type="text"
+          maxlength="100"
+          placeholder="按试卷名称查找"
+          aria-label="按试卷名称查找"
+        /><LtButton v-if="keyword" :disabled="loading" @click="clearKeyword">清空关键词</LtButton
+        ><LtButton type="submit" :disabled="loading">查找试卷</LtButton
+        ><LtButton :disabled="!hasFilters || loading" @click="clearFilters">清除筛选</LtButton>
+      </form>
+      <div v-if="papersState === 'loading'" class="state" role="status" aria-busy="true">正在读取可用试卷</div>
+      <div v-else-if="papersState !== 'ready'" class="state" :role="papersState === 'error' ? 'alert' : 'status'">
+        <h2>{{ papersStateTitle }}</h2>
+        <p>{{ papersStateDescription }}</p>
+        <LtButton v-if="papersState === 'error'" @click="loadPapers">重新读取</LtButton
+        ><LtButton v-if="hasFilters" @click="clearFilters">清除筛选</LtButton>
+      </div>
+      <div v-else class="paper-list">
+        <article v-for="paper in papers" :key="paper.id" class="exam-card">
+          <div class="exam-card-top">
+            <div class="exam-card-heading">
+              <h2 class="exam-title">{{ paper.title }}</h2>
+              <span class="tag" :data-tone="paperTypeTag(paper)">{{ paperTypeLabel(paper) }}</span>
+            </div>
+            <span class="tag">可参加</span>
           </div>
-
-          <LpStatePanel
-            :state="papersState"
-            :title="papersStateTitle"
-            :description="papersStateDescription"
-            loading-label="正在读取可用试卷"
-            retry-label="重新读取"
-            :retrying="loading"
-            @retry="loadPapers"
-          >
-            <template #default>
-              <div class="paper-list">
-                <article v-for="paper in papers" :key="paper.id" class="exam-card">
-                  <div class="exam-card-top">
-                    <div class="exam-card-heading">
-                      <h3 class="exam-title">{{ paper.title }}</h3>
-                      <el-tag :type="paperTypeTag(paper)" size="small">{{ paperTypeLabel(paper) }}</el-tag>
-                    </div>
-                    <el-tag type="success" size="small" class="exam-avail-tag">可参加</el-tag>
-                  </div>
-
-                  <p v-if="paper.description" class="exam-desc">{{ paper.description }}</p>
-
-                  <div v-if="isVerifiedOfficial(paper)" class="official-source">
-                    <strong>{{ paper.examYear }} · {{ paper.examName }}</strong>
-                    <span>来源：{{ paper.sourceReference }}</span>
-                  </div>
-                  <div v-else-if="paper.visibility === 'PRIVATE'" class="private-source">
-                    <strong>仅你可见 · 已确认导入</strong>
-                    <el-button link type="primary" @click="showOriginalSource(paper.id)">查看原始资料</el-button>
-                  </div>
-
-                  <div class="exam-metrics">
-                    <span v-if="paper.courseName"
-                      ><el-icon><Reading /></el-icon>{{ paper.courseName }}</span
-                    >
-                    <span
-                      ><el-icon><Document /></el-icon>{{ paper.questionCount }} 题</span
-                    >
-                    <span
-                      ><el-icon><Timer /></el-icon>{{ paper.duration }} 分钟</span
-                    >
-                    <span
-                      ><el-icon><Medal /></el-icon>{{ paper.totalScore }} 分</span
-                    >
-                  </div>
-
-                  <p v-if="actionError?.paperId === paper.id" class="exam-action-error" role="alert">
-                    {{ actionError.message }}
-                    <button type="button" @click="retryAction(paper.id, actionError.action)">重试</button>
-                  </p>
-                  <div class="exam-actions">
-                    <el-button
-                      v-if="paper.visibility === 'PRIVATE'"
-                      type="danger"
-                      plain
-                      :loading="deletingPaperId === paper.id"
-                      :disabled="isPaperBusy(paper.id)"
-                      @click="deletePaper(paper)"
-                      >删除试卷</el-button
-                    >
-                    <el-button
-                      v-if="paper.courseId"
-                      :icon="Reading"
-                      :loading="learningId === paper.id"
-                      :disabled="isPaperBusy(paper.id) && learningId !== paper.id"
-                      @click="handleStartLearning(paper.id)"
-                      >学习模式</el-button
-                    >
-                    <el-button
-                      type="primary"
-                      :icon="EditPen"
-                      :loading="startingId === paper.id"
-                      :disabled="isPaperBusy(paper.id) && startingId !== paper.id"
-                      @click="handleStartExam(paper.id)"
-                      >考试模式</el-button
-                    >
-                  </div>
-                </article>
-              </div>
-            </template>
-            <template #actions>
-              <el-button v-if="hasFilters" plain @click="clearFilters">清除筛选</el-button>
-            </template>
-          </LpStatePanel>
-
-          <div v-if="papersState === 'ready' && total > 0" class="pagination-wrapper">
-            <el-pagination
-              v-model:current-page="pageNum"
-              :total="total"
-              :page-size="10"
-              layout="total, prev, pager, next"
-              @current-change="loadPapers"
-            />
+          <p v-if="paper.description" class="exam-desc">{{ paper.description }}</p>
+          <div v-if="isVerifiedOfficial(paper)" class="official-source">
+            <strong>{{ paper.examYear }} · {{ paper.examName }}</strong
+            ><span>来源：{{ paper.sourceReference }}</span>
           </div>
-        </el-tab-pane>
-
-        <el-tab-pane label="考试记录" name="records">
-          <ExamRecordList ref="examRecordListRef" @total-change="recordsTotal = $event" />
-        </el-tab-pane>
-      </el-tabs>
+          <div v-else-if="paper.visibility === 'PRIVATE'" class="private-source">
+            <strong>仅你可见 · 已确认导入</strong
+            ><LtButton @click="showOriginalSource(paper.id)">查看原始资料</LtButton>
+          </div>
+          <div class="exam-metrics">
+            <span v-if="paper.courseName"><BookOpen aria-hidden="true" />{{ paper.courseName }}</span
+            ><span><FileText aria-hidden="true" />{{ paper.questionCount }} 题</span
+            ><span><Clock aria-hidden="true" />{{ paper.duration }} 分钟</span><span>{{ paper.totalScore }} 分</span>
+          </div>
+          <p v-if="actionError?.paperId === paper.id" class="exam-action-error" role="alert">
+            {{ actionError.message }} <LtButton @click="retryAction(paper.id, actionError.action)">重试</LtButton>
+          </p>
+          <div class="exam-actions">
+            <LtButton
+              v-if="paper.visibility === 'PRIVATE'"
+              class="danger"
+              :disabled="isPaperBusy(paper.id)"
+              @click="deletePaper(paper)"
+              >删除试卷</LtButton
+            ><LtButton v-if="paper.courseId" :disabled="isPaperBusy(paper.id)" @click="handleStartLearning(paper.id)">{{
+              learningId === paper.id ? '正在开始…' : '学习模式'
+            }}</LtButton
+            ><LtButton variant="primary" :disabled="isPaperBusy(paper.id)" @click="handleStartExam(paper.id)">{{
+              startingId === paper.id ? '正在开始…' : '考试模式'
+            }}</LtButton>
+          </div>
+        </article>
+      </div>
+      <nav v-if="papersState === 'ready' && total > 0" class="pagination-wrapper" aria-label="试卷分页">
+        <span>共 {{ total }} 份 · 第 {{ pageNum }} / {{ Math.ceil(total / 10) }} 页</span
+        ><LtButton :disabled="pageNum <= 1" @click="changePage(-1)">上一页</LtButton
+        ><LtButton :disabled="pageNum * 10 >= total" @click="changePage(1)">下一页</LtButton>
+      </nav>
     </section>
-
+    <section v-show="activeTab === 'records'">
+      <ExamRecordList ref="examRecordListRef" @total-change="recordsTotal = $event" />
+    </section>
     <PrivateExamImportDialog
       ref="importDialogRef"
       v-model="importDialogVisible"
       :default-course-id="Number.isFinite(courseId) && courseId > 0 ? courseId : 0"
       @imported="onImported"
       @open-storage="openStorageDialog"
+      @notice="importNotice = $event"
     />
     <PrivateExamSourceManager ref="sourceManagerRef" @content-deleted="onPrivateContentDeleted" />
+    <LtSheet v-model:open="deleteOpen" title="删除私有试卷"
+      ><p>{{ deletePrompt }}</p>
+      <div class="sheet-actions">
+        <LtButton @click="deleteSheet.answer(false)">取消</LtButton
+        ><LtButton class="danger" @click="deleteSheet.answer(true)">确认删除</LtButton>
+      </div></LtSheet
+    >
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { Document, EditPen, Medal, Reading, Timer, Upload } from '@element-plus/icons-vue'
+import { LtButton, LtSheet } from '@/components/living'
+import { useConfirmSheet } from '@/composables/useConfirmSheet'
+import '@/components/exam/examLibrary.css'
+import { BookOpen, FileText, Clock } from '@lucide/vue'
 import { deletePrivateExamPaper, getPublishedPapers, startExam, startExamLearningSession } from '@/api/exam'
 import { getAuthSessionVersion, isAuthenticated, onAuthSessionChange } from '@/utils/auth'
 import type { ExamPaperVO, PaperType } from '@/api/exam'
-import LpPageHeader from '@/components/ui/LpPageHeader.vue'
-import LpStat from '@/components/ui/LpStat.vue'
-import LpStatePanel from '@/components/ui/LpStatePanel.vue'
 import ExamRecordList from '@/components/exam/ExamRecordList.vue'
 import { takeExamNotice } from './examNotice'
 import PrivateExamImportDialog from '@/components/exam/PrivateExamImportDialog.vue'
 import PrivateExamSourceManager from '@/components/exam/PrivateExamSourceManager.vue'
 
+const examNotice = ref('')
+const importNotice = ref('')
+const deleteSheet = useConfirmSheet()
+const deleteOpen = deleteSheet.open
+const deletePrompt = ref('')
 const router = useRouter()
 const route = useRoute()
 const activeTab = ref(route.query.tab === 'records' ? 'records' : 'papers')
@@ -220,11 +202,12 @@ function isPaperBusy(paperId: number) {
 
 onMounted(() => {
   const notice = takeExamNotice()
-  if (notice) ElMessage.warning(notice)
+  if (notice) examNotice.value = notice
   void loadPapers()
 })
 
 const unsubscribeAuth = onAuthSessionChange(() => {
+  deleteSheet.answer(false)
   requestGeneration++
   papers.value = []
   total.value = 0
@@ -238,6 +221,7 @@ const unsubscribeAuth = onAuthSessionChange(() => {
 })
 
 onUnmounted(() => {
+  deleteSheet.answer(false)
   alive = false
   requestGeneration++
   unsubscribeAuth()
@@ -268,13 +252,8 @@ const deletePaper = async (paper: ExamPaperVO) => {
   actionError.value = null
   deletingPaperId.value = paper.id
   try {
-    const confirmed = await ElMessageBox.confirm(
-      `仅未产生考试、学习记录或衍生内容的私有试卷可删除。确认删除“${paper.title}”？`,
-      '删除私有试卷',
-      { type: 'warning', confirmButtonText: '确认删除', cancelButtonText: '取消' },
-    )
-      .then(() => true)
-      .catch(() => false)
+    deletePrompt.value = `仅未产生考试、学习记录或衍生内容的私有试卷可删除。确认删除“${paper.title}”？`
+    const confirmed = await deleteSheet.ask()
     if (!confirmed || !current(generation, session) || deletingPaperId.value !== paper.id) return
 
     const res = await deletePrivateExamPaper(paper.id, { errorDisplay: 'inline' })
@@ -328,6 +307,10 @@ async function loadPapers() {
   }
 }
 
+function clearKeyword() {
+  keyword.value = ''
+  applyFilters()
+}
 function applyFilters() {
   pageNum.value = 1
   void loadPapers()
@@ -341,6 +324,10 @@ function clearFilters() {
   void loadPapers()
 }
 
+function showRecords() {
+  activeTab.value = 'records'
+  handleTabChange('records')
+}
 const handleTabChange = (tab: string | number) => {
   if (tab === 'records') void examRecordListRef.value?.reload()
 }
@@ -408,225 +395,13 @@ const paperTypeLabel = (paper: ExamPaperVO) => {
 }
 
 const paperTypeTag = (paper: ExamPaperVO) => {
-  if (paper.visibility === 'PRIVATE') return 'warning'
+  if (paper.visibility === 'PRIVATE') return 'info'
   if (isVerifiedOfficial(paper)) return 'success'
   if (paper.paperType === 'OFFICIAL_EXAM') return 'warning'
   return 'info'
 }
+function changePage(delta: number) {
+  pageNum.value += delta
+  void loadPapers()
+}
 </script>
-
-<style scoped>
-.exam-list-page {
-  display: flex;
-  flex-direction: column;
-  gap: var(--lp-space-5);
-}
-
-.exam-stat-row {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--lp-space-4);
-}
-
-.exam-panel {
-  padding: var(--lp-space-2) var(--lp-space-5) var(--lp-space-5);
-  background: var(--lp-surface);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-lg);
-  box-shadow: var(--lp-shadow-xs);
-}
-
-.exam-tabs :deep(.el-tabs__header) {
-  margin-bottom: var(--lp-space-4);
-}
-
-.paper-filters {
-  display: grid;
-  grid-template-columns: minmax(150px, 0.36fr) minmax(220px, 1fr) auto auto;
-  gap: var(--lp-space-3);
-  align-items: center;
-  margin-bottom: var(--lp-space-4);
-}
-
-.paper-list {
-  min-height: 180px;
-}
-
-.exam-card {
-  padding: var(--lp-space-5);
-  margin-bottom: var(--lp-space-3);
-  background: var(--lp-surface-subtle);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-lg);
-  transition:
-    border-color var(--lp-duration-fast) var(--lp-ease-out),
-    box-shadow var(--lp-duration-fast) var(--lp-ease-out);
-}
-
-.exam-card:hover {
-  border-color: var(--lp-border-strong);
-  box-shadow: var(--lp-shadow-sm);
-}
-
-.exam-card-top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--lp-space-3);
-  margin-bottom: var(--lp-space-3);
-}
-
-.exam-card-heading {
-  display: flex;
-  align-items: center;
-  gap: var(--lp-space-3);
-  flex-wrap: wrap;
-  min-width: 0;
-}
-
-.exam-title {
-  margin: 0;
-  color: var(--lp-text);
-  font-size: var(--lp-text-xl);
-  line-height: var(--lp-leading-snug);
-}
-
-.exam-avail-tag {
-  flex-shrink: 0;
-}
-
-.official-source,
-.private-source {
-  display: flex;
-  flex-direction: column;
-  gap: var(--lp-space-1);
-  margin-bottom: var(--lp-space-4);
-  padding: var(--lp-space-3) var(--lp-space-4);
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
-  border-radius: var(--lp-radius-md);
-}
-
-.official-source {
-  background: var(--lp-success-soft);
-  border: 1px solid color-mix(in srgb, var(--lp-success) 24%, transparent);
-}
-
-.private-source {
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--lp-space-3);
-  background: var(--lp-warning-soft);
-  border: 1px solid color-mix(in srgb, var(--lp-warning) 24%, transparent);
-}
-
-.official-source strong,
-.private-source strong {
-  color: var(--lp-text);
-  font-weight: var(--lp-weight-semibold);
-}
-
-.exam-desc {
-  margin: 0 0 var(--lp-space-3);
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-base);
-  line-height: var(--lp-leading-body);
-}
-
-.exam-metrics {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--lp-space-2);
-  margin-bottom: var(--lp-space-4);
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
-}
-
-.exam-metrics span {
-  display: flex;
-  align-items: center;
-  gap: var(--lp-space-2);
-  min-height: 36px;
-  padding: var(--lp-space-2) var(--lp-space-3);
-  background: var(--lp-surface-soft);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-sm);
-}
-
-.exam-metrics .el-icon {
-  color: var(--lp-primary);
-  flex-shrink: 0;
-}
-
-.exam-action-error {
-  display: flex;
-  align-items: baseline;
-  gap: var(--lp-space-2);
-  margin: 0 0 var(--lp-space-3);
-  color: var(--lp-danger);
-  font-size: var(--lp-text-sm);
-}
-
-.exam-action-error button {
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--lp-primary);
-  font: inherit;
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-.exam-action-error button:focus-visible {
-  outline: var(--lp-focus-width) solid var(--lp-focus-ring);
-  outline-offset: var(--lp-focus-offset);
-  border-radius: var(--lp-radius-sm);
-}
-
-.exam-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--lp-space-2);
-}
-
-.pagination-wrapper {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: var(--lp-space-4);
-}
-
-@media (max-width: 860px) {
-  .paper-filters {
-    grid-template-columns: 1fr;
-  }
-
-  .exam-metrics {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 640px) {
-  .exam-stat-row {
-    grid-template-columns: 1fr;
-  }
-
-  .exam-panel {
-    padding: var(--lp-space-3) var(--lp-space-4) var(--lp-space-4);
-  }
-
-  .exam-card-top {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .exam-metrics {
-    grid-template-columns: 1fr;
-  }
-
-  .exam-actions .el-button {
-    width: 100%;
-    margin-left: 0;
-  }
-}
-</style>

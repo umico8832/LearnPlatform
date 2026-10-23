@@ -5,10 +5,9 @@ import ElementPlus from 'element-plus'
 import type { PrivateExamDraft } from '@/api/exam'
 import PrivateExamDraftReview from '@/components/exam/PrivateExamDraftReview.vue'
 
-const { generate, review, success, error } = vi.hoisted(() => ({
+const { generate, review, error } = vi.hoisted(() => ({
   generate: vi.fn(),
   review: vi.fn(),
-  success: vi.fn(),
   error: vi.fn(),
 }))
 vi.mock('@/api/exam', () => ({
@@ -18,7 +17,7 @@ vi.mock('@/api/exam', () => ({
 }))
 vi.mock('element-plus', async (original) => ({
   ...(await original<typeof import('element-plus')>()),
-  ElMessage: { success, error, warning: vi.fn() },
+  ElMessage: { error, warning: vi.fn() },
 }))
 
 type Question = PrivateExamDraft['questions'][number]
@@ -278,7 +277,7 @@ describe('私有试卷逐题复核编辑与请求边界', () => {
     expect(current.value.id).toBe(32)
     expect(row(0).get('textarea').element.value).toBe('新草稿答案')
     expect(child.emitted('updated')).toHaveLength(1)
-    expect(success).toHaveBeenCalledTimes(1)
+    expect(child.get('[role="status"]').text()).toContain('本题已人工复核')
   })
 
   it('卸载后晚到的失败不再反馈或发送排队请求', async () => {

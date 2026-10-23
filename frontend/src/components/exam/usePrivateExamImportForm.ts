@@ -1,5 +1,4 @@
 import { computed, ref, type ComputedRef } from 'vue'
-import type { UploadFile } from 'element-plus'
 import type { PrivateExamImportRequest } from '@/api/exam'
 
 export const PLACEHOLDER = `## 1. 单选题\n**题干**: 栈遵循哪种访问顺序？\n**选项**:\n- A. 先进先出\n- B. 先进后出\n**答案**: B\n**解析**: 栈遵循 LIFO。\n**分值**: 2`
@@ -26,10 +25,14 @@ export function usePrivateExamImportForm(defaultCourseId: ComputedRef<number>) {
       ? 'application/pdf,.pdf'
       : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document,.docx',
   )
-  const selectSourceFile = (uploadFile: UploadFile) => {
+  const selectSourceFile = (uploadFile: { raw?: File; name: string }) => {
     sourceFile.value = uploadFile.raw || null
     importForm.value.sourceName = uploadFile.name
     importForm.value.content = ''
+  }
+  const selectNativeFile = (event: Event) => {
+    const file = (event.target as HTMLInputElement).files?.[0]
+    if (file) selectSourceFile({ raw: file, name: file.name })
   }
   const removeSourceFile = () => {
     sourceFile.value = null
@@ -45,13 +48,17 @@ export function usePrivateExamImportForm(defaultCourseId: ComputedRef<number>) {
       ? '请填写试卷标题。'
       : !importForm.value.courseId
         ? '请选择所属课程。'
-        : isFileImport.value && !sourceFile.value
-          ? '请选择需要导入的文件。'
-          : !isFileImport.value && !importForm.value.sourceName.trim()
-            ? '请填写原始资料名称。'
-            : !isFileImport.value && !importForm.value.content.trim()
-              ? '请填写原始内容。'
-              : ''
+        : !Number.isInteger(importForm.value.duration) ||
+            importForm.value.duration < 1 ||
+            importForm.value.duration > 600
+          ? '考试时长须为 1 至 600 分钟的整数。'
+          : isFileImport.value && !sourceFile.value
+            ? '请选择需要导入的文件。'
+            : !isFileImport.value && !importForm.value.sourceName.trim()
+              ? '请填写原始资料名称。'
+              : !isFileImport.value && !importForm.value.content.trim()
+                ? '请填写原始内容。'
+                : ''
     return !validationError.value
   }
   const reset = () => {
@@ -65,6 +72,7 @@ export function usePrivateExamImportForm(defaultCourseId: ComputedRef<number>) {
     isFileImport,
     fileAccept,
     selectSourceFile,
+    selectNativeFile,
     removeSourceFile,
     changeSourceFormat,
     valid,

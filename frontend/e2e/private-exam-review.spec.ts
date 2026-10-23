@@ -44,10 +44,8 @@ async function reviewResponse(response: Response): Promise<PrivateExamDraftRespo
 }
 
 async function selectAnswer(question: Locator, from: string, to: string) {
-  const option = (label: string) =>
-    question.locator('.el-checkbox__label').filter({ hasText: new RegExp(`^${label}$`) })
-  await option(from).click()
-  await option(to).click()
+  await question.getByRole('checkbox', { name: from, exact: true }).uncheck()
+  await question.getByRole('checkbox', { name: to, exact: true }).check()
 }
 
 test('用户复核两道无答案私有题后可启用，未提交编辑不会因另一题确认而丢失', async ({ page }, testInfo) => {
@@ -61,8 +59,7 @@ test('用户复核两道无答案私有题后可启用，未提交编辑不会�
   const dialog = page.getByRole('dialog', { name: '导入私有试卷' })
 
   await dialog.getByRole('textbox', { name: '试卷标题' }).fill(paperTitle)
-  await dialog.getByRole('combobox', { name: '所属课程' }).click()
-  await page.getByRole('option', { name: '408 数据结构' }).click()
+  await dialog.getByRole('combobox', { name: '所属课程' }).selectOption({ label: '408 数据结构' })
   await dialog.getByRole('textbox', { name: '原始资料名称' }).fill('e2e-two-question-review.md')
   await dialog.getByRole('textbox', { name: '原始内容' }).fill(`## 1. 单选题
 **题干**: 后进先出的数据结构是？

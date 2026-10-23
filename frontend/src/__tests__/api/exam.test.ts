@@ -315,14 +315,16 @@ describe('Exam API', () => {
     it('以 blob 响应下载已确认试卷和草稿的所有者原文件', async () => {
       mockedRequest.get.mockResolvedValue({ data: new Blob() })
 
-      await downloadPrivateExamSourceFile(51)
-      await downloadPrivateExamDraftSourceFile(31)
+      await downloadPrivateExamSourceFile(51, { errorDisplay: 'inline' })
+      await downloadPrivateExamDraftSourceFile(31, { errorDisplay: 'inline' })
 
       expect(mockedRequest.get).toHaveBeenNthCalledWith(1, '/exam/private-papers/51/source/file', {
         responseType: 'blob',
+        errorDisplay: 'inline',
       })
       expect(mockedRequest.get).toHaveBeenNthCalledWith(2, '/exam/private-papers/drafts/31/source/file', {
         responseType: 'blob',
+        errorDisplay: 'inline',
       })
     })
 

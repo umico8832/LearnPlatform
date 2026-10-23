@@ -1,68 +1,17 @@
 <template>
-  <div v-loading="loading" class="record-panel">
-    <LpStatePanel
-      v-if="loadError"
-      state="error"
-      title="暂时无法读取考试记录"
-      :description="loadError"
-      :retrying="loading"
-      @retry="loadRecords"
-    />
-    <LpEmptyState v-else-if="!loading && records.length === 0" title="暂无考试记录" />
-
-    <el-table v-else :data="records" stripe class="record-table">
-      <el-table-column prop="examTitle" label="试卷名称" min-width="200" />
-      <el-table-column label="得分" width="120">
-        <template #default="{ row }">
-          <span :class="['score-text', getScoreClass(row as ExamRecordVO)]">
-            {{ formatScore(row as ExamRecordVO) }}
-          </span>
-        </template>
-      </el-table-column>
-      <el-table-column label="状态" width="100">
-        <template #default="{ row }">
-          <el-tag :type="recordStatusTag((row as ExamRecordVO).status)" size="small">
-            {{ recordStatusLabel((row as ExamRecordVO).status) }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="开始时间" width="180">
-        <template #default="{ row }">{{ formatTime((row as ExamRecordVO).startTime) }}</template>
-      </el-table-column>
-      <el-table-column label="操作" width="120" fixed="right">
-        <template #default="{ row }">
-          <el-button
-            v-if="[1, 3].includes((row as ExamRecordVO).status)"
-            type="primary"
-            link
-            size="small"
-            :icon="View"
-            @click="viewResult((row as ExamRecordVO).id)"
-          >
-            查看结果
-          </el-button>
-          <el-button
-            v-else-if="(row as ExamRecordVO).status === 0"
-            type="warning"
-            link
-            size="small"
-            :icon="EditPen"
-            @click="continueExam(row as ExamRecordVO)"
-          >
-            继续考试
-          </el-button>
-          <span v-else class="record-finished-hint">不可继续</span>
-        </template>
-      </el-table-column>
-    </el-table>
-
-    <div v-if="records.length > 0" class="record-mobile-list" aria-label="考试记录">
+  <div class="record-panel">
+    <div v-if="loading" class="state" role="status" aria-busy="true">正在读取考试记录</div>
+    <div v-else-if="loadError" class="state" role="alert">
+      <h2>暂时无法读取考试记录</h2>
+      <p>{{ loadError }}</p>
+      <LtButton @click="loadRecords">重试</LtButton>
+    </div>
+    <div v-else-if="!records.length" class="state" role="status">暂无考试记录</div>
+    <div v-else class="record-mobile-list" aria-label="考试记录">
       <article v-for="record in records" :key="record.id" class="record-mobile-card">
         <div class="record-mobile-header">
           <h3>{{ record.examTitle }}</h3>
-          <el-tag :type="recordStatusTag(record.status)" size="small">
-            {{ recordStatusLabel(record.status) }}
-          </el-tag>
+          <span class="tag" :data-tone="recordStatusTag(record.status)">{{ recordStatusLabel(record.status) }}</span>
         </div>
         <dl class="record-mobile-meta">
           <div>
@@ -75,39 +24,29 @@
           </div>
         </dl>
         <div class="record-mobile-action">
-          <el-button v-if="[1, 3].includes(record.status)" type="primary" :icon="View" @click="viewResult(record.id)">
-            查看结果
-          </el-button>
-          <el-button v-else-if="record.status === 0" type="warning" :icon="EditPen" @click="continueExam(record)">
-            继续考试
-          </el-button>
-          <span v-else class="record-finished-hint">考试已超时，不可继续</span>
+          <LtButton v-if="[1, 3].includes(record.status)" @click="viewResult(record.id)">查看结果</LtButton
+          ><LtButton v-else-if="record.status === 0" @click="continueExam(record)">继续考试</LtButton
+          ><span v-else class="muted">考试已超时，不可继续</span>
         </div>
       </article>
     </div>
-  </div>
-
-  <div v-if="!loadError && total > 0" class="pagination-wrapper">
-    <el-pagination
-      v-model:current-page="pageNum"
-      :total="total"
-      :page-size="10"
-      layout="total, prev, pager, next"
-      @current-change="loadRecords"
-    />
+    <nav v-if="!loading && !loadError && total > 0" class="pagination-wrapper" aria-label="考试记录分页">
+      <span>共 {{ total }} 条 · 第 {{ pageNum }} / {{ Math.ceil(total / 10) }} 页</span
+      ><LtButton :disabled="pageNum <= 1" @click="changePage(-1)">上一页</LtButton
+      ><LtButton :disabled="pageNum * 10 >= total" @click="changePage(1)">下一页</LtButton>
+    </nav>
   </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { EditPen, View } from '@element-plus/icons-vue'
 import { getMyExamRecords } from '@/api/exam'
 import type { ExamRecordVO, ExamStatus } from '@/api/exam'
 import { formatTime } from '@/utils/format'
-import LpEmptyState from '@/components/ui/LpEmptyState.vue'
-import LpStatePanel from '@/components/ui/LpStatePanel.vue'
 import { getAuthSessionVersion, isAuthenticated, onAuthSessionChange } from '@/utils/auth'
+
+import { LtButton } from '@/components/living'
 
 const emit = defineEmits<{
   totalChange: [total: number | null]
@@ -204,117 +143,15 @@ const recordStatusLabel = (status: ExamStatus) => {
 
 const recordStatusTag = (status: ExamStatus): 'success' | 'warning' | 'danger' | 'info' => {
   if (status === 0) return 'warning'
-  if (status === 1) return 'success'
-  if (status === 2) return 'danger'
+  if (status === 1) return 'info'
+  if (status === 2) return 'warning'
   if (status === 3) return 'warning'
   return 'info'
 }
 
 defineExpose({ reload: loadRecords })
+function changePage(delta: number) {
+  pageNum.value += delta
+  void loadRecords()
+}
 </script>
-
-<style scoped>
-.record-panel {
-  min-height: 180px;
-}
-
-.pagination-wrapper {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: var(--lp-space-4);
-}
-
-.score-text {
-  font-weight: var(--lp-weight-semibold);
-}
-
-.score-high {
-  color: var(--lp-success);
-}
-
-.score-mid {
-  color: var(--lp-warning);
-}
-
-.score-low {
-  color: var(--lp-danger);
-}
-
-.record-finished-hint {
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
-}
-
-.record-mobile-list {
-  display: none;
-}
-
-@media (max-width: 860px) {
-  .record-panel > .el-table {
-    display: none;
-  }
-
-  .record-mobile-list {
-    display: grid;
-    gap: var(--lp-space-3);
-  }
-
-  .record-mobile-card {
-    padding: var(--lp-space-4);
-    background: var(--lp-surface);
-    border: var(--lp-border-hairline);
-    border-radius: var(--lp-radius-md);
-  }
-
-  .record-mobile-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: var(--lp-space-3);
-  }
-
-  .record-mobile-header h3 {
-    min-width: 0;
-    margin: 0;
-    color: var(--lp-text);
-    font-size: var(--lp-text-lg);
-    line-height: var(--lp-leading-snug);
-  }
-
-  .record-mobile-meta {
-    display: grid;
-    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
-    gap: var(--lp-space-3);
-    margin: var(--lp-space-4) 0;
-  }
-
-  .record-mobile-meta div {
-    min-width: 0;
-  }
-
-  .record-mobile-meta dt {
-    margin-bottom: var(--lp-space-1);
-    color: var(--lp-text-secondary);
-    font-size: var(--lp-text-xs);
-  }
-
-  .record-mobile-meta dd {
-    margin: 0;
-    overflow-wrap: anywhere;
-    color: var(--lp-text);
-    font-size: var(--lp-text-sm);
-    line-height: var(--lp-leading-snug);
-  }
-
-  .record-mobile-action {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    min-height: 44px;
-  }
-
-  .record-mobile-action .el-button {
-    min-height: 44px;
-  }
-}
-</style>

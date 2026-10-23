@@ -37,12 +37,11 @@ async function loginToAdminApp(page: Page, username: string, password: string) {
 }
 
 async function findPublishedPaper(page: Page, title: string) {
-  await page.locator('.paper-filters .el-select').first().click()
   await Promise.all([
     page.waitForResponse(
       (response) => response.url().includes('/api/exam/papers') && response.request().method() === 'GET',
     ),
-    page.getByRole('option', { name: '官方原题' }).click(),
+    page.getByRole('combobox', { name: '试卷类型' }).selectOption({ label: '官方原题' }),
   ])
   await page.getByRole('textbox', { name: '按试卷名称查找' }).fill(title)
   await Promise.all([
@@ -53,9 +52,10 @@ async function findPublishedPaper(page: Page, title: string) {
   ])
 
   for (let pageIndex = 1; pageIndex <= 100; pageIndex += 1) {
+    await expect(page.getByText('正在读取可用试卷', { exact: true })).toBeHidden()
     const card = page.locator('.exam-card').filter({ hasText: title })
     if (await card.count()) return card.first()
-    const next = page.locator('.exam-tabs .btn-next:visible')
+    const next = page.getByRole('button', { name: '下一页', exact: true })
     if (await next.isDisabled()) break
     await Promise.all([
       page.waitForResponse(
@@ -340,8 +340,7 @@ test('用户可预览确认结构化私有试卷并隔离给其他账号', async
   const dialog = page.getByRole('dialog', { name: '导入私有试卷' })
   await expect(dialog).toContainText('原文件存储：0 KB / 100 MB')
   await dialog.getByRole('textbox', { name: '试卷标题' }).fill(paperTitle)
-  await dialog.getByRole('combobox', { name: '所属课程' }).click()
-  await page.getByRole('option', { name: '408 数据结构' }).click()
+  await dialog.getByRole('combobox', { name: '所属课程' }).selectOption({ label: '408 数据结构' })
   await dialog.getByRole('textbox', { name: '原始资料名称' }).fill('e2e-private.md')
   await dialog.getByRole('textbox', { name: '原始内容' }).fill(`## 1. 单选题
 **题干**: 栈遵循哪种访问顺序？
@@ -399,8 +398,7 @@ test('无答案私有题必须经过AI建议与逐题人工复核才可启用', 
   await page.getByRole('button', { name: '导入私有试卷' }).click()
   let dialog = page.getByRole('dialog', { name: '导入私有试卷' })
   await dialog.getByRole('textbox', { name: '试卷标题' }).fill(paperTitle)
-  await dialog.getByRole('combobox', { name: '所属课程' }).click()
-  await page.getByRole('option', { name: '408 数据结构' }).click()
+  await dialog.getByRole('combobox', { name: '所属课程' }).selectOption({ label: '408 数据结构' })
   await dialog.getByRole('textbox', { name: '原始资料名称' }).fill('e2e-answerless.md')
   await dialog.getByRole('textbox', { name: '原始内容' }).fill(`## 1. 单选题
 **题干**: 先进后出的数据结构是？
@@ -450,8 +448,7 @@ test('用户可删除未引用的私有试卷和未确认草稿', async ({ page 
   await page.getByRole('button', { name: '导入私有试卷' }).click()
   let dialog = page.getByRole('dialog', { name: '导入私有试卷' })
   await dialog.getByRole('textbox', { name: '试卷标题' }).fill(paperTitle)
-  await dialog.getByRole('combobox', { name: '所属课程' }).click()
-  await page.getByRole('option', { name: '408 数据结构' }).click()
+  await dialog.getByRole('combobox', { name: '所属课程' }).selectOption({ label: '408 数据结构' })
   await dialog.getByRole('textbox', { name: '原始资料名称' }).fill('delete-paper.md')
   await dialog.getByRole('textbox', { name: '原始内容' }).fill(`## 1. 单选题
 **题干**: 待删除试卷题目？
@@ -475,8 +472,7 @@ test('用户可删除未引用的私有试卷和未确认草稿', async ({ page 
   await page.getByRole('button', { name: '导入私有试卷' }).click()
   dialog = page.getByRole('dialog', { name: '导入私有试卷' })
   await dialog.getByRole('textbox', { name: '试卷标题' }).fill(draftTitle)
-  await dialog.getByRole('combobox', { name: '所属课程' }).click()
-  await page.getByRole('option', { name: '408 数据结构' }).click()
+  await dialog.getByRole('combobox', { name: '所属课程' }).selectOption({ label: '408 数据结构' })
   await dialog.getByRole('textbox', { name: '原始资料名称' }).fill('delete-draft.md')
   await dialog.getByRole('textbox', { name: '原始内容' }).fill(`## 1. 单选题
 **题干**: 待删除草稿题目？
@@ -492,7 +488,7 @@ test('用户可删除未引用的私有试卷和未确认草稿', async ({ page 
   const draftDeleteResponse = waitForPrivatePaperDelete(page)
   await page.getByRole('dialog', { name: '删除私有试卷草稿' }).getByRole('button', { name: '确认删除' }).click()
   expect((await deleteResponsePayload(draftDeleteResponse)).code).toBe(0)
-  await expect(dialog.getByText(draftTitle)).toHaveCount(0)
+  await expect(draftItem).toHaveCount(0)
 })
 
 test('用户可上传文本型PDF并沿用预览确认与来源追溯', async ({ page }) => {
@@ -502,11 +498,8 @@ test('用户可上传文本型PDF并沿用预览确认与来源追溯', async ({
   await page.getByRole('button', { name: '导入私有试卷' }).click()
   const dialog = page.getByRole('dialog', { name: '导入私有试卷' })
   await dialog.getByRole('textbox', { name: '试卷标题' }).fill(paperTitle)
-  await dialog.getByRole('combobox', { name: '所属课程' }).click()
-  await page.getByRole('option', { name: '408 数据结构' }).click()
-  await dialog.getByRole('combobox', { name: '格式' }).focus()
-  await page.keyboard.press('ArrowDown')
-  await page.getByRole('option', { name: '文本型 PDF' }).click()
+  await dialog.getByRole('combobox', { name: '所属课程' }).selectOption({ label: '408 数据结构' })
+  await dialog.getByRole('combobox', { name: '格式' }).selectOption({ label: '文本型 PDF' })
   await dialog.locator('input[type="file"]').setInputFiles(path.resolve('e2e/fixtures/private-exam-text.pdf'))
   await expect(dialog.getByRole('textbox', { name: '原始资料名称' })).toHaveValue('private-exam-text.pdf')
   await dialog.getByRole('button', { name: '解析并预览' }).click()
@@ -545,11 +538,8 @@ test('用户可上传有限DOCX并提取段落表格进入同一确认闭环', a
   await page.getByRole('button', { name: '导入私有试卷' }).click()
   const dialog = page.getByRole('dialog', { name: '导入私有试卷' })
   await dialog.getByRole('textbox', { name: '试卷标题' }).fill(paperTitle)
-  await dialog.getByRole('combobox', { name: '所属课程' }).click()
-  await page.getByRole('option', { name: '408 数据结构' }).click()
-  await dialog.getByRole('combobox', { name: '格式' }).focus()
-  await page.keyboard.press('ArrowDown')
-  await page.getByRole('option', { name: '有限 DOCX' }).click()
+  await dialog.getByRole('combobox', { name: '所属课程' }).selectOption({ label: '408 数据结构' })
+  await dialog.getByRole('combobox', { name: '格式' }).selectOption({ label: '有限 DOCX' })
   await dialog.locator('input[type="file"]').setInputFiles(path.resolve('e2e/fixtures/private-exam-text.docx'))
   await expect(dialog.getByRole('textbox', { name: '原始资料名称' })).toHaveValue('private-exam-text.docx')
   await dialog.getByRole('button', { name: '解析并预览' }).click()

@@ -1,205 +1,154 @@
 <template>
-  <el-dialog v-model="dialogVisible" title="导入私有试卷" width="min(760px, 92vw)" class="private-import-dialog">
-    <p v-if="validationError" class="import-error" role="alert">{{ validationError }}</p>
-    <el-alert v-if="actionError" :title="actionError" type="error" :closable="false" show-icon class="import-error">
-      <template v-if="retryKind" #default
-        ><el-button link type="primary" @click="retryAction">重试</el-button></template
-      >
-    </el-alert>
-    <el-alert
-      title="支持结构化 Markdown、文本、文本型 PDF 或有限 DOCX；无答案题目会先保存为草稿，AI 建议必须逐题人工复核后才能启用。"
-      type="info"
-      :closable="false"
-      show-icon
-      class="import-intro"
-    />
-
-    <p v-if="readLoading.usage" role="status">正在读取原文件用量</p>
-    <el-alert
-      v-else-if="loadErrors.usage"
-      :title="loadErrors.usage"
-      type="error"
-      :closable="false"
-      class="import-error"
-    >
-      <template #default><el-button @click="loadStorageUsage">重试用量</el-button></template>
-    </el-alert>
-    <div v-else-if="storageUsage" class="storage-summary">
-      <span>
-        原文件存储：{{ formatStorage(storageUsage.usedBytes) }} / {{ formatStorage(storageUsage.limitBytes) }} ·
-        {{ storageUsage.fileCount }} 个文件
-      </span>
-      <el-button type="primary" link @click="emit('open-storage')">查看明细</el-button>
-    </div>
-
-    <el-form
-      v-if="!importPreview && !activeDraft"
-      label-position="top"
-      class="import-form"
-      :disabled="previewLoading || confirmLoading"
-    >
-      <p v-if="readLoading.drafts" role="status">正在读取待复核草稿</p>
-      <el-alert
-        v-else-if="loadErrors.drafts"
-        :title="loadErrors.drafts"
-        type="error"
-        :closable="false"
-        class="import-error"
-      >
-        <template #default><el-button @click="loadPrivateDrafts">重试草稿</el-button></template>
-      </el-alert>
-      <section v-else-if="privateDrafts.length" class="draft-list">
-        <strong class="draft-list-title">待复核草稿</strong>
-        <div v-for="draft in privateDrafts" :key="draft.id" class="draft-list-item">
-          <el-button plain class="draft-open-button" @click="openDraft(draft)">
-            {{ draft.title }} · {{ draft.reviewedQuestionCount }}/{{ draft.questionCount }} 已复核
-          </el-button>
-          <el-button
-            type="danger"
-            link
-            :loading="deletingDraftId === draft.id"
-            :disabled="deletingDraftId !== null"
-            @click="deleteDraft(draft)"
-          >
-            删除草稿
-          </el-button>
-        </div>
-      </section>
-      <p v-else-if="readLoaded.drafts" class="import-hint">暂无待复核草稿</p>
-
-      <div class="import-grid">
-        <el-form-item label="试卷标题">
-          <el-input v-model="importForm.title" maxlength="200" />
-        </el-form-item>
-        <el-form-item label="所属课程">
-          <el-select
-            :model-value="importForm.courseId || undefined"
-            @update:model-value="importForm.courseId = Number($event) || 0"
-            :loading="readLoading.courses"
-            :disabled="readLoading.courses || !!loadErrors.courses"
-            filterable
-            placeholder="选择课程"
-          >
-            <el-option v-for="course in courses" :key="course.id" :label="course.name" :value="course.id" />
-          </el-select>
-          <div v-if="loadErrors.courses" class="import-error" role="alert">
-            {{ loadErrors.courses }} <el-button link @click="loadCourses">重试课程</el-button>
-          </div>
-          <p v-else-if="readLoaded.courses && !courses.length" class="import-hint">暂无可选课程</p>
-        </el-form-item>
-        <el-form-item label="原始资料名称">
-          <el-input
-            v-model="importForm.sourceName"
-            maxlength="255"
-            :disabled="isFileImport"
-            placeholder="例如：数据结构练习.md"
-          />
-        </el-form-item>
-        <el-form-item label="格式">
-          <el-select v-model="importForm.sourceFormat" @change="changeSourceFormat">
-            <el-option label="Markdown" value="MARKDOWN" />
-            <el-option label="结构化文本" value="TEXT" />
-            <el-option label="文本型 PDF" value="PDF" />
-            <el-option label="有限 DOCX" value="DOCX" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="考试时长（分钟）">
-          <el-input-number v-model="importForm.duration" :min="1" :max="600" />
-        </el-form-item>
-      </div>
-
-      <el-form-item v-if="isFileImport" :label="`${importForm.sourceFormat} 文件`">
-        <el-upload
-          :accept="fileAccept"
-          :auto-upload="false"
-          :limit="1"
-          :on-change="selectSourceFile"
-          :on-remove="removeSourceFile"
-        >
-          <el-button plain>{{ importForm.sourceFormat === 'PDF' ? '选择文本型 PDF' : '选择 DOCX' }}</el-button>
-          <template #tip>
-            <span v-if="importForm.sourceFormat === 'PDF'" class="upload-tip">
-              最大 10MB、200 页；只提取已有文本，扫描件不做 OCR。
-            </span>
-            <span v-else class="upload-tip">最大 10MB；只提取普通段落和表格，图片、公式和复杂排版不支持。</span>
-          </template>
-        </el-upload>
-      </el-form-item>
-      <el-form-item v-else label="原始内容">
-        <el-input
-          v-model="importForm.content"
-          type="textarea"
-          :rows="14"
-          maxlength="100000"
-          show-word-limit
-          :placeholder="PLACEHOLDER"
-        />
-      </el-form-item>
-    </el-form>
-
-    <section v-else-if="importPreview" class="import-preview">
-      <div class="preview-summary">
-        <strong>{{ importPreview.title }}</strong>
+  <LtSheet v-model:open="dialogVisible" title="导入私有试卷" :width="760"
+    ><div class="private-import-dialog">
+      <p v-if="validationError" class="import-error" role="alert">{{ validationError }}</p>
+      <p v-if="actionError" class="import-error" role="alert">
+        {{ actionError }} <LtButton v-if="retryKind" @click="retryAction">重试</LtButton>
+      </p>
+      <p v-if="actionNotice" role="status">{{ actionNotice }}</p>
+      <p class="muted">
+        支持结构化 Markdown、文本、文本型 PDF 或有限 DOCX；无答案题目会先保存为草稿，AI 建议必须逐题人工复核后才能启用。
+      </p>
+      <p v-if="readLoading.usage" role="status">正在读取原文件用量</p>
+      <p v-else-if="loadErrors.usage" class="import-error" role="alert">
+        {{ loadErrors.usage }} <LtButton @click="loadStorageUsage">重试用量</LtButton>
+      </p>
+      <div v-else-if="storageUsage" class="storage-summary">
         <span
-          >{{ importPreview.questionCount }} 题 · {{ importPreview.totalScore }} 分 ·
-          {{ importPreview.duration }} 分钟</span
+          >原文件存储：{{ formatStorage(storageUsage.usedBytes) }} / {{ formatStorage(storageUsage.limitBytes) }} ·
+          {{ storageUsage.fileCount }} 个文件</span
+        ><LtButton @click="emit('open-storage')">查看明细</LtButton>
+      </div>
+      <fieldset v-if="!importPreview && !activeDraft" class="import-form" :disabled="previewLoading || confirmLoading">
+        <legend class="sr-only">导入试卷资料</legend>
+        <p v-if="readLoading.drafts" role="status">正在读取待复核草稿</p>
+        <p v-else-if="loadErrors.drafts" role="alert" class="import-error">
+          {{ loadErrors.drafts }} <LtButton @click="loadPrivateDrafts">重试草稿</LtButton>
+        </p>
+        <section v-else-if="privateDrafts.length" class="draft-list">
+          <h3>待复核草稿</h3>
+          <div v-for="draft in privateDrafts" :key="draft.id" class="draft-list-item">
+            <LtButton class="draft-open-button" @click="openDraft(draft)"
+              >{{ draft.title }} · {{ draft.reviewedQuestionCount }}/{{ draft.questionCount }} 已复核</LtButton
+            ><LtButton class="danger" :disabled="deletingDraftId !== null" @click="deleteDraft(draft)"
+              >删除草稿</LtButton
+            >
+          </div>
+        </section>
+        <p v-else-if="readLoaded.drafts" class="muted">暂无待复核草稿</p>
+        <div class="import-grid">
+          <label class="field">试卷标题<input v-model="importForm.title" maxlength="200" /></label
+          ><label class="field"
+            >所属课程<select v-model="importForm.courseId" :disabled="readLoading.courses || !!loadErrors.courses">
+              <option :value="0">选择课程</option>
+              <option v-for="course in courses" :key="course.id" :value="course.id">{{ course.name }}</option></select
+            ><span v-if="readLoading.courses" role="status">正在读取课程</span
+            ><span v-else-if="loadErrors.courses" class="import-error" role="alert"
+              >{{ loadErrors.courses }} <LtButton @click="loadCourses">重试课程</LtButton></span
+            ><span v-else-if="readLoaded.courses && !courses.length" class="muted">暂无可选课程</span></label
+          >
+          <label class="field"
+            >原始资料名称<input
+              v-model="importForm.sourceName"
+              maxlength="255"
+              :disabled="isFileImport"
+              placeholder="例如：数据结构练习.md" /></label
+          ><label class="field"
+            >格式<select v-model="importForm.sourceFormat" @change="changeSourceFormat">
+              <option value="MARKDOWN">Markdown</option>
+              <option value="TEXT">结构化文本</option>
+              <option value="PDF">文本型 PDF</option>
+              <option value="DOCX">有限 DOCX</option>
+            </select></label
+          ><label class="field"
+            >考试时长（分钟）<input v-model.number="importForm.duration" type="number" min="1" max="600"
+          /></label>
+        </div>
+        <label v-if="isFileImport" class="field"
+          >{{ importForm.sourceFormat }} 文件<input
+            :key="importForm.sourceFormat"
+            type="file"
+            :accept="fileAccept"
+            @change="selectNativeFile"
+          /><span v-if="sourceFile">{{ sourceFile.name }} <LtButton @click="removeSourceFile">移除文件</LtButton></span
+          ><span class="muted">{{
+            importForm.sourceFormat === 'PDF'
+              ? '最大 10MB、200 页；只提取已有文本，扫描件不做 OCR。'
+              : '最大 10MB；只提取普通段落和表格，图片、公式和复杂排版不支持。'
+          }}</span></label
+        ><label v-else class="field"
+          >原始内容<textarea v-model="importForm.content" :rows="14" maxlength="100000" :placeholder="PLACEHOLDER" />
+        </label>
+      </fieldset>
+      <section v-else-if="importPreview" class="import-preview">
+        <div class="preview-summary">
+          <strong>{{ importPreview.title }}</strong
+          ><span
+            >{{ importPreview.questionCount }} 题 · {{ importPreview.totalScore }} 分 ·
+            {{ importPreview.duration }} 分钟</span
+          >
+        </div>
+        <article v-for="(question, index) in importPreview.questions" :key="index" class="preview-question">
+          <div class="draft-question-title">
+            <strong>{{ index + 1 }}. {{ question.content }}</strong
+            ><span class="tag">{{ question.score }} 分</span>
+          </div>
+          <ul>
+            <li v-for="option in question.options" :key="option.label" :class="{ correct: option.correct }">
+              {{ option.label }}. {{ option.content }}
+            </li>
+          </ul>
+          <p v-if="question.answerComplete">确认答案：{{ question.answer }}</p>
+          <p v-else class="notice">未提供可靠答案，将进入 AI 建议与人工逐题复核草稿</p>
+        </article>
+      </section>
+      <PrivateExamDraftReview
+        v-else-if="activeDraft && dialogVisible"
+        :key="activeDraft.id"
+        :draft="activeDraft"
+        @updated="replaceDraft"
+      />
+      <div class="sheet-actions">
+        <LtButton v-if="importPreview" :disabled="confirmLoading" @click="openDraft(null)">返回修改</LtButton
+        ><LtButton v-if="activeDraft" :disabled="confirmLoading" @click="openDraft(null)">返回导入</LtButton
+        ><LtButton @click="dialogVisible = false">取消</LtButton
+        ><LtButton
+          v-if="!importPreview && !activeDraft"
+          variant="primary"
+          :disabled="previewLoading"
+          @click="previewImport"
+          >{{ previewLoading ? '正在解析…' : '解析并预览' }}</LtButton
+        ><LtButton
+          v-else-if="importPreview?.requiresAnswerReview"
+          variant="primary"
+          :disabled="confirmLoading"
+          @click="createAnswerDraft"
+          >创建 AI 补全草稿</LtButton
+        ><LtButton v-else-if="importPreview" variant="primary" :disabled="confirmLoading" @click="confirmImport"
+          >确认导入</LtButton
+        ><LtButton
+          v-else-if="activeDraft?.status === 'READY'"
+          variant="primary"
+          :disabled="confirmLoading"
+          @click="confirmDraft"
+          >确认启用试卷</LtButton
         >
       </div>
-      <article v-for="(question, index) in importPreview.questions" :key="index" class="preview-question">
-        <div class="preview-question-title">
-          <strong>{{ index + 1 }}. {{ question.content }}</strong>
-          <el-tag size="small">{{ question.score }} 分</el-tag>
-        </div>
-        <ul>
-          <li v-for="option in question.options" :key="option.label" :class="{ correct: option.correct }">
-            {{ option.label }}. {{ option.content }}
-          </li>
-        </ul>
-        <p v-if="question.answerComplete">确认答案：{{ question.answer }}</p>
-        <el-alert v-else title="未提供可靠答案，将进入 AI 建议与人工逐题复核草稿" type="warning" :closable="false" />
-      </article>
-    </section>
-
-    <PrivateExamDraftReview
-      v-else-if="activeDraft && dialogVisible"
-      :key="activeDraft.id"
-      :draft="activeDraft"
-      @updated="replaceDraft"
-    />
-
-    <template #footer>
-      <el-button v-if="importPreview" :disabled="confirmLoading" @click="openDraft(null)">返回修改</el-button>
-      <el-button v-if="activeDraft" :disabled="confirmLoading" @click="openDraft(null)">返回导入</el-button>
-      <el-button @click="dialogVisible = false">取消</el-button>
-      <el-button v-if="!importPreview && !activeDraft" type="primary" :loading="previewLoading" @click="previewImport">
-        解析并预览
-      </el-button>
-      <el-button
-        v-else-if="importPreview?.requiresAnswerReview"
-        type="warning"
-        :loading="confirmLoading"
-        @click="createAnswerDraft"
+      <LtSheet v-model:open="deleteOpen" title="删除私有试卷草稿"
+        ><p>{{ deletePrompt }}</p>
+        <div class="sheet-actions">
+          <LtButton @click="deleteSheet.answer(false)">取消</LtButton
+          ><LtButton class="danger" @click="deleteSheet.answer(true)">确认删除</LtButton>
+        </div></LtSheet
       >
-        创建 AI 补全草稿
-      </el-button>
-      <el-button v-else-if="importPreview" type="primary" :loading="confirmLoading" @click="confirmImport">
-        确认导入
-      </el-button>
-      <el-button
-        v-else-if="activeDraft?.status === 'READY'"
-        type="primary"
-        :loading="confirmLoading"
-        @click="confirmDraft"
-      >
-        确认启用试卷
-      </el-button>
-    </template>
-  </el-dialog>
+    </div></LtSheet
+  >
 </template>
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { LtButton, LtSheet } from '@/components/living'
+import { useConfirmSheet } from '@/composables/useConfirmSheet'
 import { confirmPrivateExamDraft, deletePrivateExamDraft } from '@/api/exam'
 import type { PrivateExamDraft, PrivateExamImportPreview, PrivateExamStorageUsage } from '@/api/exam'
 import { formatStorage } from '@/utils/format'
@@ -223,6 +172,7 @@ const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void
   (e: 'imported'): void
   (e: 'open-storage'): void
+  (e: 'notice', value: string): void
 }>()
 
 const dialogVisible = computed({
@@ -230,6 +180,10 @@ const dialogVisible = computed({
   set: (value: boolean) => emit('update:modelValue', value),
 })
 
+const deleteSheet = useConfirmSheet()
+const deleteOpen = deleteSheet.open
+const deletePrompt = ref('')
+const actionNotice = ref('')
 const courses = ref([] as import('@/api/course').CourseVO[])
 const previewLoading = ref(false)
 const confirmLoading = ref(false)
@@ -241,20 +195,18 @@ const storageUsage = ref<PrivateExamStorageUsage | null>(null)
 const actionError = ref('')
 const retryKind = ref<'preview' | 'confirm' | 'draft' | 'enable' | null>(null)
 
-const initialCourseId = computed(() => initialPrivateExamCourseId(props.defaultCourseId))
-
 const {
   sourceFile,
   importForm,
   isFileImport,
   fileAccept,
-  selectSourceFile,
+  selectNativeFile,
   removeSourceFile,
   changeSourceFormat,
   valid: validImportForm,
   validationError,
   reset: resetForm,
-} = usePrivateExamImportForm(initialCourseId)
+} = usePrivateExamImportForm(computed(() => initialPrivateExamCourseId(props.defaultCourseId)))
 
 let dialogVersion = 0
 let alive = true
@@ -274,6 +226,7 @@ const {
 } = usePrivateExamImportLoaders(courses, privateDrafts, storageUsage, () => alive && dialogVisible.value)
 
 function invalidateDialogRequests() {
+  deleteSheet.answer(false)
   dialogVersion++
   previewLoading.value = false
   confirmLoading.value = false
@@ -355,7 +308,7 @@ const confirmImport = async () => {
     const res = await confirmPrivateExamSource(importForm.value, importPreview.value, sourceFile.value)
     if (!current(version, session)) return
     if (res.code === 0 && res.data) {
-      ElMessage.success('私有试卷已导入')
+      emit('notice', '私有试卷已导入')
       emit('update:modelValue', false)
       emit('imported')
     } else {
@@ -396,13 +349,8 @@ const deleteDraft = async (draft: PrivateExamDraft) => {
   const version = dialogVersion
   const session = getAuthSessionVersion()
   deletingDraftId.value = draft.id
-  const confirmed = await ElMessageBox.confirm(
-    `删除草稿“${draft.title}”及其未引用原始资料？此操作不可恢复。`,
-    '删除私有试卷草稿',
-    { type: 'warning', confirmButtonText: '确认删除', cancelButtonText: '取消' },
-  )
-    .then(() => true)
-    .catch(() => false)
+  deletePrompt.value = `删除草稿“${draft.title}”及其未引用原始资料？此操作不可恢复。`
+  const confirmed = await deleteSheet.ask()
   if (!current(version, session)) return
   if (!confirmed) {
     deletingDraftId.value = null
@@ -417,7 +365,7 @@ const deleteDraft = async (draft: PrivateExamDraft) => {
       privateDrafts.value = privateDrafts.value.filter((item) => item.id !== draft.id)
       if (activeDraft.value?.id === draft.id) activeDraft.value = null
       await loadStorageUsage()
-      if (current(version, session)) ElMessage.success('私有试卷草稿已删除')
+      if (current(version, session)) actionNotice.value = '私有试卷草稿已删除'
     } else actionError.value = res.message || '删除草稿失败，请重试。'
   } catch (cause) {
     if (current(version, session)) actionError.value = errorMessage(cause, '删除草稿失败，请重试。')
@@ -439,7 +387,7 @@ const createAnswerDraft = async () => {
     if (res.code === 0 && res.data) {
       updateDraftList(res.data)
       openDraft(res.data)
-      ElMessage.success('草稿已保存，请逐题生成并复核答案')
+      actionNotice.value = '草稿已保存，请逐题生成并复核答案'
     } else {
       actionError.value = res.message || '创建草稿失败'
       retryKind.value = 'draft'
@@ -465,7 +413,7 @@ const confirmDraft = async () => {
     const res = await confirmPrivateExamDraft(activeDraft.value.id, { errorDisplay: 'inline' })
     if (!current(version, session)) return
     if (res.code === 0 && res.data) {
-      ElMessage.success('私有试卷已人工确认并启用')
+      emit('notice', '私有试卷已人工确认并启用')
       emit('update:modelValue', false)
       emit('imported')
     } else {
@@ -489,6 +437,7 @@ const retryAction = () => {
 }
 
 const resetImport = () => {
+  actionNotice.value = ''
   importPreview.value = null
   activeDraft.value = null
   resetForm()
@@ -496,155 +445,3 @@ const resetImport = () => {
 
 defineExpose({ reload: () => Promise.all([loadPrivateDrafts(), loadStorageUsage()]) })
 </script>
-
-<style scoped>
-.import-error {
-  margin: var(--lp-space-3) 0;
-  overflow-wrap: anywhere;
-}
-p.import-error,
-div.import-error[role='alert'] {
-  color: var(--lp-danger);
-}
-.import-hint {
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-sm);
-}
-.private-import-dialog :deep(.el-dialog__body) {
-  padding-top: var(--lp-space-3);
-}
-
-.import-intro {
-  border-radius: var(--lp-radius-md);
-}
-
-.storage-summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--lp-space-3);
-  margin: var(--lp-space-3) 0;
-  padding: var(--lp-space-3) var(--lp-space-4);
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
-  background: var(--lp-surface-soft);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-md);
-}
-
-.import-form {
-  margin-top: var(--lp-space-4);
-}
-
-.draft-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--lp-space-2);
-  margin-bottom: var(--lp-space-4);
-  padding: var(--lp-space-3);
-  background: var(--lp-warning-soft);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-md);
-}
-
-.draft-list-title {
-  color: var(--lp-warning);
-  font-size: var(--lp-text-xs);
-  font-weight: var(--lp-weight-bold);
-  letter-spacing: var(--lp-tracking-wide);
-  text-transform: uppercase;
-}
-
-.draft-list-item {
-  display: flex;
-  align-items: center;
-  gap: var(--lp-space-2);
-}
-
-.draft-open-button {
-  flex: 1;
-  min-width: 0;
-}
-
-.import-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0 var(--lp-space-4);
-}
-
-.import-grid .el-select {
-  width: 100%;
-}
-
-.upload-tip {
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-xs);
-}
-
-.preview-summary {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--lp-space-3);
-  margin: var(--lp-space-4) 0 var(--lp-space-3);
-}
-
-.preview-summary strong {
-  min-width: 0;
-  color: var(--lp-text);
-  overflow-wrap: anywhere;
-}
-
-.preview-summary span {
-  flex-shrink: 0;
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
-}
-
-.preview-question {
-  padding: var(--lp-space-4);
-  margin-bottom: var(--lp-space-3);
-  background: var(--lp-surface);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-md);
-}
-
-.preview-question-title {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--lp-space-3);
-}
-
-.preview-question ul {
-  margin: var(--lp-space-3) 0;
-  padding-left: var(--lp-space-6);
-  color: var(--lp-text-secondary);
-}
-
-.preview-question li.correct {
-  color: var(--lp-success);
-  font-weight: var(--lp-weight-bold);
-}
-
-.preview-question p {
-  margin: 0;
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
-}
-
-@media (max-width: 640px) {
-  .import-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .storage-summary {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .preview-summary {
-    flex-direction: column;
-  }
-}
-</style>

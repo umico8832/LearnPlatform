@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises, shallowMount } from '@vue/test-utils'
-import ElementPlus, { ElMessageBox } from 'element-plus'
+import { flushPromises, mount, shallowMount } from '@vue/test-utils'
+import { defineComponent, ref } from 'vue'
+import { LtSheet } from '@/components/living'
 import type { PrivateExamDraft, PrivateExamImportPreview, PrivateExamImportRequest } from '@/api/exam'
 import { deletePrivateExamDraft, getPrivateExamDrafts } from '@/api/exam'
 import {
@@ -10,6 +11,16 @@ import {
 } from '@/components/exam/privateExamImportRequests'
 import PrivateExamImportDialog from '@/components/exam/PrivateExamImportDialog.vue'
 import PrivateExamDraftReview from '@/components/exam/PrivateExamDraftReview.vue'
+
+const { mockConfirmSheet } = vi.hoisted(() => ({ mockConfirmSheet: vi.fn() }))
+
+vi.mock('@/composables/useConfirmSheet', () => ({
+  useConfirmSheet: () => ({
+    open: ref(false),
+    ask: (...args: unknown[]) => mockConfirmSheet(...args),
+    answer: vi.fn(),
+  }),
+}))
 
 vi.mock('@/api/exam', () => ({
   confirmPrivateExamDraft: vi.fn(),
@@ -36,6 +47,7 @@ type DialogVm = {
   confirmLoading: boolean
   loadPrivateDrafts: () => Promise<void>
   deleteDraft: (draft: PrivateExamDraft) => Promise<void>
+  validationError: string
   actionError: string
   retryKind: string | null
   retryAction: () => void
@@ -86,16 +98,30 @@ function setup() {
   const wrapper = shallowMount(PrivateExamImportDialog, {
     props: { modelValue: true },
     global: {
-      plugins: [ElementPlus],
-      stubs: { ElDialog: { template: '<div><slot /><slot name="footer" /></div>' } },
+      stubs: {
+        LtSheet: { template: '<div><slot /></div>' },
+        LtButton: { template: '<button @click="$emit(\'click\')"><slot /></button>', emits: ['click'] },
+      },
     },
   })
   return { wrapper, vm: wrapper.vm as unknown as DialogVm }
 }
 
-beforeEach(() => vi.clearAllMocks())
+beforeEach(() => {
+  vi.clearAllMocks()
+  mockConfirmSheet.mockResolvedValue(true)
+})
 
 describe('私有试卷导入弹窗的草稿更新隔离', () => {
+  it('原生时长输入继续限制为 1 至 600 分钟，越界时不请求解析', async () => {
+    const { wrapper, vm } = setup()
+    vm.importForm = { ...previewFixture(), duration: 601 }
+    await vm.previewImport()
+    expect(previewPrivateExamSource).not.toHaveBeenCalled()
+    expect(vm.validationError).toContain('1 至 600')
+    wrapper.unmount()
+  })
+
   it('预览失败保留输入并可以原位重试', async () => {
     vi.mocked(previewPrivateExamSource)
       .mockRejectedValueOnce(new Error('网络暂时不可用'))
@@ -130,17 +156,16 @@ describe('私有试卷导入弹窗的草稿更新隔离', () => {
   })
 
   it('删除确认期间阻止重复弹窗，关闭导入后不执行迟到的确认', async () => {
-    const pending = deferred<Awaited<ReturnType<typeof ElMessageBox.confirm>>>()
-    const confirmation = vi.spyOn(ElMessageBox, 'confirm').mockReturnValueOnce(pending.promise)
+    const pending = deferred<boolean>()
+    mockConfirmSheet.mockReturnValueOnce(pending.promise)
     const { wrapper, vm } = setup()
     const first = vm.deleteDraft(fixture(31))
     await vm.deleteDraft(fixture(31))
-    expect(confirmation).toHaveBeenCalledTimes(1)
+    expect(mockConfirmSheet).toHaveBeenCalledTimes(1)
     await wrapper.setProps({ modelValue: false })
-    pending.resolve('confirm' as Awaited<ReturnType<typeof ElMessageBox.confirm>>)
+    pending.resolve(true)
     await first
     expect(deletePrivateExamDraft).not.toHaveBeenCalled()
-    confirmation.mockRestore()
     wrapper.unmount()
   })
 
@@ -234,9 +259,7 @@ describe('私有试卷导入弹窗的草稿更新隔离', () => {
     const old = deferred<Awaited<ReturnType<typeof getPrivateExamDrafts>>>()
     vi.mocked(getPrivateExamDrafts).mockReturnValueOnce(old.promise)
     vi.mocked(deletePrivateExamDraft).mockResolvedValueOnce({ code: 0, message: '', data: null })
-    const confirmation = vi
-      .spyOn(ElMessageBox, 'confirm')
-      .mockResolvedValue('confirm' as Awaited<ReturnType<typeof ElMessageBox.confirm>>)
+    mockConfirmSheet.mockResolvedValueOnce(true)
     const { wrapper, vm } = setup()
     vm.privateDrafts = [fixture(31)]
     const loading = vm.loadPrivateDrafts()
@@ -244,7 +267,45 @@ describe('私有试卷导入弹窗的草稿更新隔离', () => {
     old.resolve({ code: 0, message: '', data: [fixture(31)] })
     await loading
     expect(vm.privateDrafts).toEqual([])
-    confirmation.mockRestore()
+    wrapper.unmount()
+  })
+})
+
+describe('LtSheet 删除确认交互', () => {
+  it('取消和确认前不会请求删除，确认后才请求一次', async () => {
+    const { useConfirmSheet } = await vi.importActual<typeof import('@/composables/useConfirmSheet')>(
+      '@/composables/useConfirmSheet',
+    )
+    const remove = vi.fn()
+    const Harness = defineComponent({
+      components: { LtSheet },
+      setup() {
+        const confirm = useConfirmSheet()
+        const open = confirm.open
+        async function deleteDraft() {
+          if (await confirm.ask()) remove()
+        }
+        return { confirm, deleteDraft, open }
+      },
+      template: `<button type="button" @click="deleteDraft">删除草稿</button><LtSheet v-model:open="open" title="删除私有试卷草稿"><button type="button" @click="confirm.answer(false)">取消</button><button type="button" @click="confirm.answer(true)">确认删除</button></LtSheet>`,
+    })
+    const wrapper = mount(Harness, { attachTo: document.body })
+    await wrapper.get('button').trigger('click')
+    await flushPromises()
+    expect(remove).not.toHaveBeenCalled()
+    const dialog = document.querySelector('dialog')!
+    const buttons = Array.from(dialog.querySelectorAll('button'))
+    await (buttons.find((button) => button.textContent === '取消') as HTMLButtonElement).click()
+    await flushPromises()
+    expect(remove).not.toHaveBeenCalled()
+    await wrapper.get('button').trigger('click')
+    await flushPromises()
+    const confirmButton = Array.from(document.querySelector('dialog')!.querySelectorAll('button')).find(
+      (button) => button.textContent === '确认删除',
+    ) as HTMLButtonElement
+    confirmButton.click()
+    await flushPromises()
+    expect(remove).toHaveBeenCalledOnce()
     wrapper.unmount()
   })
 })

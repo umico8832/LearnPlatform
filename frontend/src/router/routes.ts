@@ -180,7 +180,7 @@ export const learnerRoutes: RouteRecordRaw[] = [
         path: 'exams',
         name: 'ExamList',
         component: () => import('@/views/exam/ExamListView.vue'),
-        meta: { title: '考试与试卷' },
+        meta: { title: '考试与试卷', living: true },
       },
     ],
   },

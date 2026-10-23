@@ -1,101 +1,83 @@
 <template>
-  <el-dialog
-    v-model="storageDialogVisible"
-    title="我的原文件存储"
-    width="min(760px, 92vw)"
-    append-to-body
-    @close="invalidateStorage"
-  >
-    <div v-loading="storageFilesLoading" class="storage-list">
-      <el-alert v-if="storageError" :title="storageError" type="error" :closable="false" show-icon>
-        <template #default><el-button link type="primary" @click="loadStorageFiles">重试读取</el-button></template>
-      </el-alert>
-      <LpEmptyState
-        v-else-if="!storageFilesLoading && storageLoaded && !storageFiles.length"
-        title="暂无已保存的 PDF 或 DOCX 原文件"
-        compact
-      />
-      <article v-for="item in storageFiles" :key="item.id" class="storage-item">
-        <div class="storage-item-main">
-          <div class="storage-item-title">
-            <strong>{{ item.sourceName }}</strong>
-            <el-tag size="small">{{ item.sourceFormat }}</el-tag>
+  <LtSheet v-model:open="storageDialogVisible" title="我的原文件存储" :width="760"
+    ><div class="storage-list">
+      <p v-if="storageFilesLoading" role="status" aria-busy="true">正在读取原文件清单</p>
+      <div v-else-if="storageError" class="failure" role="alert">
+        {{ storageError }} <LtButton @click="loadStorageFiles">重试读取</LtButton>
+      </div>
+      <p v-else-if="storageLoaded && !storageFiles.length" role="status">暂无已保存的 PDF 或 DOCX 原文件</p>
+      <template v-else
+        ><article v-for="item in storageFiles" :key="item.id" class="storage-item">
+          <div class="storage-item-main">
+            <div class="storage-item-title">
+              <strong>{{ item.sourceName }}</strong
+              ><span class="tag">{{ item.sourceFormat }}</span>
+            </div>
+            <p class="muted">{{ formatStorage(item.sourceSize) }} · {{ formatTime(item.createTime) }}</p>
+            <p>{{ storageAssociationLabel(item) }}</p>
+            <p v-if="storageDownloadErrorId === item.id" class="action-error" role="alert">
+              {{ storageDownloadError }} <LtButton @click="downloadStorageItem(item)">重试下载</LtButton>
+            </p>
+            <p v-if="storageDeleteErrorId === item.id" class="action-error" role="alert">
+              {{ storageDeleteError }} <LtButton @click="deleteStorageItem(item)">重试删除</LtButton>
+            </p>
           </div>
-          <p>{{ formatStorage(item.sourceSize) }} · {{ formatTime(item.createTime) }}</p>
-          <p>{{ storageAssociationLabel(item) }}</p>
-          <p v-if="storageDownloadErrorId === item.id" class="action-error" role="alert">
-            {{ storageDownloadError }}
-          </p>
-          <p v-if="storageDeleteErrorId === item.id" class="action-error" role="alert">{{ storageDeleteError }}</p>
-        </div>
-        <div class="storage-item-actions">
-          <el-button
-            v-if="item.associationType !== 'UNREFERENCED'"
-            plain
-            :loading="storageDownloadingId === item.id"
-            :disabled="storageDownloadingId !== null"
-            @click="downloadStorageItem(item)"
-          >
-            下载
-          </el-button>
-          <el-button
-            v-if="item.associationType !== 'UNREFERENCED'"
-            type="danger"
-            plain
-            :loading="storageDeletingId === item.id"
-            :disabled="storageDeletingId !== null"
-            @click="deleteStorageItem(item)"
-          >
-            删除关联内容
-          </el-button>
-        </div>
-      </article>
-    </div>
-    <div v-if="storageFilesTotal > 10" class="pagination-wrapper">
-      <el-pagination
-        v-model:current-page="storageFilesPage"
-        :total="storageFilesTotal"
-        :page-size="10"
-        layout="total, prev, pager, next"
-        @current-change="loadStorageFiles"
-      />
-    </div>
-  </el-dialog>
-
-  <el-dialog v-model="sourceDialogVisible" title="私有试卷原始资料" width="min(760px, 92vw)" @close="invalidateSource">
-    <div v-if="sourceLoading" v-loading="true" class="source-loading" aria-label="正在读取原始资料" />
-    <el-alert v-else-if="sourceError" :title="sourceError" type="error" :closable="false" show-icon>
-      <template #default><el-button link type="primary" @click="retryPaperSource">重试读取</el-button></template>
-    </el-alert>
-    <template v-else-if="privateSource">
-      <p class="source-meta">{{ privateSource.sourceName }} · {{ privateSource.sourceFormat }}</p>
-      <el-button
-        v-if="privateSource.originalFileAvailable"
-        type="primary"
-        plain
-        :loading="sourceDownloading"
-        :disabled="sourceDownloading"
-        @click="downloadPaperSource"
+          <div class="storage-item-actions">
+            <LtButton
+              v-if="item.associationType !== 'UNREFERENCED'"
+              :disabled="storageDownloadingId !== null"
+              @click="downloadStorageItem(item)"
+              >下载</LtButton
+            ><LtButton
+              v-if="item.associationType !== 'UNREFERENCED'"
+              class="danger"
+              :disabled="storageDeletingId !== null"
+              @click="deleteStorageItem(item)"
+              >删除关联内容</LtButton
+            >
+          </div>
+        </article></template
       >
-        下载原文件
-      </el-button>
-      <el-alert
-        v-if="sourceDownloadError"
-        :title="sourceDownloadError"
-        type="error"
-        :closable="false"
-        class="source-action-error"
+    </div>
+    <nav
+      v-if="!storageFilesLoading && !storageError && storageFilesTotal > 10"
+      class="pagination-wrapper"
+      aria-label="原文件分页"
+    >
+      <span>共 {{ storageFilesTotal }} 个 · 第 {{ storageFilesPage }} 页</span
+      ><LtButton :disabled="storageFilesPage <= 1" @click="changePage(-1)">上一页</LtButton
+      ><LtButton :disabled="storageFilesPage * 10 >= storageFilesTotal" @click="changePage(1)">下一页</LtButton>
+    </nav></LtSheet
+  >
+  <LtSheet v-model:open="sourceDialogVisible" title="私有试卷原始资料" :width="760"
+    ><p v-if="sourceLoading" role="status" aria-busy="true">正在读取原始资料</p>
+    <p v-else-if="sourceError" class="failure" role="alert">
+      {{ sourceError }} <LtButton @click="retryPaperSource">重试读取</LtButton>
+    </p>
+    <template v-else-if="privateSource"
+      ><p class="source-meta">{{ privateSource.sourceName }} · {{ privateSource.sourceFormat }}</p>
+      <LtButton v-if="privateSource.originalFileAvailable" :disabled="sourceDownloading" @click="downloadPaperSource"
+        >下载原文件</LtButton
       >
-        <template #default><el-button link type="primary" @click="downloadPaperSource">重试下载</el-button></template>
-      </el-alert>
+      <p v-if="sourceDownloadError" class="failure" role="alert">
+        {{ sourceDownloadError }} <LtButton @click="downloadPaperSource">重试下载</LtButton>
+      </p>
       <pre class="source-content">{{ privateSource.originalContent }}</pre>
-    </template>
-  </el-dialog>
+    </template></LtSheet
+  >
+  <LtSheet v-model:open="deleteOpen" title="删除关联内容"
+    ><p>{{ deletePrompt }}</p>
+    <div class="sheet-actions">
+      <LtButton @click="deleteSheet.answer(false)">取消</LtButton
+      ><LtButton class="danger" @click="deleteSheet.answer(true)">确认删除</LtButton>
+    </div></LtSheet
+  >
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, ref } from 'vue'
-import { ElMessageBox } from 'element-plus'
+import { onBeforeUnmount, ref, watch } from 'vue'
+import { LtButton, LtSheet } from '@/components/living'
+import { useConfirmSheet } from '@/composables/useConfirmSheet'
 import {
   deletePrivateExamDraft,
   deletePrivateExamPaper,
@@ -108,8 +90,10 @@ import type { PrivateExamSource, PrivateExamSourceStorageItem } from '@/api/exam
 import { getAuthSessionVersion, onAuthSessionChange } from '@/utils/auth'
 import { errorMessage } from '@/utils/errors'
 import { formatStorage, formatTime } from '@/utils/format'
-import LpEmptyState from '@/components/ui/LpEmptyState.vue'
 
+const deleteSheet = useConfirmSheet()
+const deleteOpen = deleteSheet.open
+const deletePrompt = ref('')
 const emit = defineEmits<{ contentDeleted: [] }>()
 const sourceDialogVisible = ref(false)
 const privateSource = ref<PrivateExamSource | null>(null)
@@ -141,6 +125,15 @@ let storageDeleteVersion = 0
 function current(version: number, activeVersion: number, session: number) {
   return alive && version === activeVersion && session === getAuthSessionVersion()
 }
+watch(sourceDialogVisible, (open) => {
+  if (!open) invalidateSource()
+})
+watch(storageDialogVisible, (open) => {
+  if (!open) {
+    deleteSheet.answer(false)
+    invalidateStorage()
+  }
+})
 function invalidateSource() {
   sourceVersion++
   sourceActionVersion++
@@ -259,13 +252,8 @@ async function deleteStorageItem(item: PrivateExamSourceStorageItem) {
   const beforeConfirm = ++storageDeleteVersion
   const session = getAuthSessionVersion()
   storageDeletingId.value = item.id
-  const confirmed = await ElMessageBox.confirm(
-    `确认删除“${item.associationTitle || item.sourceName}”对应的${target}？受学习或考试记录引用时将无法删除。`,
-    '删除关联内容',
-    { type: 'warning', confirmButtonText: '确认删除', cancelButtonText: '取消' },
-  )
-    .then(() => true)
-    .catch(() => false)
+  deletePrompt.value = `确认删除“${item.associationTitle || item.sourceName}”对应的${target}？受学习或考试记录引用时将无法删除。`
+  const confirmed = await deleteSheet.ask()
   if (!confirmed || !current(beforeConfirm, storageDeleteVersion, session)) {
     if (current(beforeConfirm, storageDeleteVersion, session)) storageDeletingId.value = null
     return
@@ -316,6 +304,7 @@ async function downloadPaperSource() {
   }
 }
 const unsubscribe = onAuthSessionChange(() => {
+  deleteSheet.answer(false)
   sourceActionVersion++
   storageDownloadVersion++
   storageDeleteVersion++
@@ -341,83 +330,15 @@ const unsubscribe = onAuthSessionChange(() => {
   storageDeleteError.value = ''
 })
 onBeforeUnmount(() => {
+  deleteSheet.answer(false)
   alive = false
   unsubscribe()
   invalidateSource()
   invalidateStorage()
 })
 defineExpose({ openPaperSource, openStorage })
+function changePage(delta: number) {
+  storageFilesPage.value += delta
+  void loadStorageFiles()
+}
 </script>
-
-<style scoped>
-.pagination-wrapper {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: var(--lp-space-4);
-}
-.source-meta {
-  overflow-wrap: anywhere;
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
-}
-.storage-list {
-  min-height: 120px;
-}
-.source-loading {
-  min-height: 160px;
-}
-.storage-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--lp-space-4);
-  padding: var(--lp-space-4) 0;
-  border-bottom: var(--lp-border-hairline);
-}
-.storage-item:last-child {
-  border-bottom: 0;
-}
-.storage-item-main {
-  min-width: 0;
-}
-.storage-item-title,
-.storage-item-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--lp-space-2);
-}
-.storage-item-title strong {
-  overflow-wrap: anywhere;
-}
-.storage-item p {
-  margin: var(--lp-space-1) 0 0;
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
-}
-.action-error {
-  color: var(--lp-danger) !important;
-}
-.source-action-error {
-  margin-top: var(--lp-space-3);
-}
-.source-content {
-  max-height: 56vh;
-  overflow: auto;
-  padding: var(--lp-space-4);
-  white-space: pre-wrap;
-  word-break: break-word;
-  background: var(--lp-surface-soft);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-md);
-  margin-top: var(--lp-space-3);
-}
-@media (max-width: 640px) {
-  .storage-item {
-    align-items: stretch;
-    flex-direction: column;
-  }
-  .storage-item-actions .el-button {
-    min-height: 44px;
-  }
-}
-</style>
