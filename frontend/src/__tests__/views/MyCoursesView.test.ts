@@ -235,4 +235,52 @@ describe('MyCoursesView', () => {
 
     expect((wrapper.vm as unknown as { courses: unknown[] }).courses).toEqual([])
   })
+  it('searches, filters real learning facts and resets pagination when the scope changes', async () => {
+    mockGetMyCourses.mockResolvedValue({
+      data: Array.from({ length: 13 }, (_, index) => ({
+        courseId: index + 1,
+        courseName: `课程 ${index + 1}`,
+        description: '',
+      })),
+    })
+    mockGetCourseOverview.mockImplementation((id: number) =>
+      Promise.resolve({
+        data: {
+          answeredCount: 0,
+          correctCount: 0,
+          dueReviewCount: id === 13 ? 1 : 0,
+          recommendedTargets: [],
+          lastLearningTime: null,
+        },
+      }),
+    )
+    const wrapper = mountView()
+    await flushPromises()
+    expect(wrapper.findAll('.course-card')).toHaveLength(12)
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === '下一页')!
+      .trigger('click')
+    expect(wrapper.findAll('.course-card')).toHaveLength(1)
+    await wrapper.get('select').setValue('due')
+    expect(wrapper.get('.course-card').text()).toContain('课程 13')
+    expect(wrapper.text()).not.toContain('上一页')
+    await wrapper.get('input').setValue('不存在')
+    expect(wrapper.text()).toContain('没有匹配的课程')
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === '清空筛选')!
+      .trigger('click')
+    expect(wrapper.findAll('.course-card')).toHaveLength(12)
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === '下一页')!
+      .trigger('click')
+    mockGetMyCourses.mockResolvedValueOnce({ data: [{ courseId: 99, courseName: '新账号课程', description: '' }] })
+    auth.version += 1
+    auth.listeners.forEach((listener) => listener())
+    await flushPromises()
+    expect(wrapper.get('.course-card').text()).toContain('新账号课程')
+    expect(wrapper.text()).not.toContain('没有匹配的课程')
+  })
 })

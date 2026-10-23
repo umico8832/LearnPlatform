@@ -102,7 +102,7 @@ export const learnerRoutes: RouteRecordRaw[] = [
         path: 'my-courses',
         name: 'MyCourses',
         component: () => import('@/views/course/MyCoursesView.vue'),
-        meta: { title: '我的课程' },
+        meta: { title: '我的课程', living: true },
       },
       {
         path: 'courses',

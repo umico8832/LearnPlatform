@@ -1,68 +1,95 @@
 <template>
-  <div class="my-courses page-container">
-    <LpPageHeader title="我的课程" :description="pageDescription">
-      <template v-if="courses.length" #actions
-        ><el-button :icon="Plus" @click="router.push({ name: 'CourseList' })">浏览课程库</el-button></template
-      >
-    </LpPageHeader>
-
-    <LpStatePanel v-if="loading" state="loading" loading-label="正在读取我的课程" />
-    <LpStatePanel
+  <div class="lt course-page" data-appearance="dark">
+    <header class="course-head">
+      <LtIconButton label="返回课程库" @click="router.push({ name: 'CourseList' })"
+        ><ChevronLeft aria-hidden="true"
+      /></LtIconButton>
+      <div class="my-heading">
+        <h1>我的课程</h1>
+        <LtButton v-if="courses.length" @click="router.push({ name: 'CourseList' })">浏览课程库</LtButton>
+      </div>
+      <p>{{ pageDescription }}</p>
+    </header>
+    <CoursePageState v-if="loading" state="loading" title="正在读取我的课程" />
+    <CoursePageState
       v-else-if="loadFailed"
       state="error"
       title="暂时无法读取我的课程"
       description="课程和学习概况尚未加载，请重试。"
       @retry="fetchCourses"
     />
-    <LpStatePanel v-else-if="!courses.length" state="empty" title="还没有加入课程" :description="emptyDescription">
-      <template #actions>
-        <el-button
-          v-if="recommendedCourse"
-          type="primary"
-          :icon="ArrowRight"
-          :loading="joiningRecommended"
-          @click="startRecommended"
-          >加入并开始学习</el-button
-        >
-        <el-button v-else-if="recommendationError" @click="loadRecommendedCourse">重新查找推荐课程</el-button>
-        <el-button v-if="!recommendedCourse && !recommendationLoading" @click="router.push({ name: 'CourseList' })"
-          >浏览课程库</el-button
-        >
-      </template>
-    </LpStatePanel>
+    <CoursePageState v-else-if="!courses.length" state="empty" title="还没有加入课程" :description="emptyDescription">
+      <LtButton v-if="recommendedCourse" variant="primary" :disabled="joiningRecommended" @click="startRecommended">{{
+        joiningRecommended ? '正在加入…' : '加入并开始学习'
+      }}</LtButton>
+      <LtButton v-else-if="recommendationError" @click="loadRecommendedCourse">重新查找推荐课程</LtButton>
+      <LtButton v-if="!recommendedCourse && !recommendationLoading" @click="router.push({ name: 'CourseList' })"
+        >浏览课程库</LtButton
+      >
+    </CoursePageState>
     <template v-else>
-      <section v-if="continueCourse" class="continue-section" aria-labelledby="continue-heading">
+      <LtCard
+        v-if="continueCourse"
+        as="section"
+        radius="xl"
+        class="continue-section"
+        aria-labelledby="continue-heading"
+      >
         <div>
-          <LpKicker>继续学习</LpKicker>
+          <p class="course-muted">继续学习</p>
           <h2 id="continue-heading">{{ continueCourse.name }}</h2>
-          <p v-if="continueTarget" class="continue-target">{{ continueTarget.title }} · {{ continueTarget.reason }}</p>
-          <p v-else class="continue-target">回到课程空间，选择下一步学习内容。</p>
+          <p v-if="continueTarget" class="course-muted">{{ continueTarget.title }} · {{ continueTarget.reason }}</p>
+          <p v-else class="course-muted">回到课程空间，选择下一步学习内容。</p>
         </div>
-        <el-button type="primary" size="large" :icon="ArrowRight" :loading="starting" @click="startContinue">
-          继续学习
-        </el-button>
-      </section>
-
-      <section class="course-list-section" aria-labelledby="course-list-heading">
-        <LpSectionHeading heading-id="course-list-heading" title="全部课程" :description="`共 ${courses.length} 门`" />
-        <div class="course-list">
-          <article v-for="course in courses" :key="course.courseId" class="course-card">
-            <span class="course-icon" aria-hidden="true"
-              ><el-icon :size="20"><Reading /></el-icon
-            ></span>
+        <LtButton variant="primary" :disabled="starting" @click="startContinue">{{
+          starting ? '正在准备…' : '继续学习'
+        }}</LtButton>
+      </LtCard>
+      <section class="my-list-section" aria-labelledby="course-list-heading">
+        <div class="my-heading">
+          <h2 id="course-list-heading">全部课程</h2>
+          <span class="course-muted">共 {{ courses.length }} 门</span>
+        </div>
+        <div class="course-toolbar">
+          <label class="course-search"
+            ><Search aria-hidden="true" /><input
+              v-model="keyword"
+              type="search"
+              placeholder="搜索我的课程"
+              aria-label="搜索我的课程"
+          /></label>
+          <label class="course-select-label"
+            >学习状态<select v-model="filter">
+              <option value="all">全部状态</option>
+              <option value="started">已开始学习</option>
+              <option value="not-started">尚未开始</option>
+              <option value="due">有到期复习</option>
+            </select></label
+          >
+        </div>
+        <CoursePageState
+          v-if="!visibleCourses.length"
+          state="empty"
+          title="没有匹配的课程"
+          description="换一个关键词或学习状态再试。"
+          ><LtButton @click="clearFilters">清空筛选</LtButton></CoursePageState
+        >
+        <LtCard v-else radius="xl" padding="none" class="my-list">
+          <article v-for="course in visibleCourses" :key="course.courseId" class="course-card">
+            <BookOpen class="course-symbol" aria-hidden="true" />
             <div class="course-copy">
-              <h3 class="course-name">{{ course.name }}</h3>
-              <p class="course-desc">{{ course.description || '暂无课程描述' }}</p>
-              <p v-if="course.overviewState === 'error'" class="overview-error" role="alert">
-                学习概况暂时无法读取。
-                <button type="button" @click="retryOverview(course.courseId)">重新读取</button>
+              <h3>{{ course.name }}</h3>
+              <p class="course-muted">{{ course.description || '暂无课程描述' }}</p>
+              <p v-if="course.overviewState === 'error'" class="course-error" role="alert">
+                学习概况暂时无法读取。<LtButton variant="quiet" @click="retryOverview(course.courseId)"
+                  >重新读取</LtButton
+                >
               </p>
               <template v-else-if="course.overview">
                 <p class="course-meta">
                   <template v-if="course.overview.lastLearningTime"
                     >上次学习 {{ formatRelativeTime(course.overview.lastLearningTime) }}</template
-                  >
-                  <template v-else>尚未开始学习</template>
+                  ><template v-else>尚未开始学习</template>
                 </p>
                 <dl class="course-facts" aria-label="课程学习事实">
                   <div>
@@ -80,24 +107,30 @@
                 </dl>
               </template>
             </div>
-            <el-button plain @click="openCourse(course.courseId)">进入课程空间</el-button>
+            <LtButton @click="openCourse(course.courseId)">进入课程空间</LtButton>
           </article>
-        </div>
+        </LtCard>
+        <nav v-if="pages > 1" class="course-pager" aria-label="我的课程翻页">
+          <LtButton :disabled="page <= 1" @click="page--">上一页</LtButton><span>第 {{ page }} / {{ pages }} 页</span
+          ><LtButton :disabled="page >= pages" @click="page++">下一页</LtButton>
+        </nav>
       </section>
     </template>
-    <p v-if="!courses.length && recommendationError && !loading && !loadFailed" class="course-empty-error" role="alert">
+    <p v-if="!courses.length && recommendationError && !loading && !loadFailed" class="course-error" role="alert">
       {{ recommendationError }}
     </p>
-    <p v-if="!courses.length && joinError && !loading && !loadFailed" class="course-empty-error" role="alert">
+    <p v-if="!courses.length && joinError && !loading && !loadFailed" class="course-error" role="alert">
       {{ joinError }}
     </p>
   </div>
 </template>
-
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowRight, Plus, Reading } from '@element-plus/icons-vue'
+import { BookOpen, ChevronLeft, Search } from '@lucide/vue'
+import { LtButton, LtCard, LtIconButton } from '@/components/living'
+import CoursePageState from './CoursePageState.vue'
+import './course-baseline.css'
 import type { CourseVO, LearningTargetVO } from '@/api/course'
 import {
   addCourseToLibrary,
@@ -133,6 +166,30 @@ const joiningRecommended = ref(false)
 const joinError = ref('')
 let alive = true
 let generation = 0
+
+const keyword = ref('')
+const filter = ref('all')
+const page = ref(1)
+const pageSize = 12
+const filtered = computed(() =>
+  courses.value.filter((course) => {
+    if (!`${course.name} ${course.description || ''}`.toLowerCase().includes(keyword.value.trim().toLowerCase()))
+      return false
+    if (filter.value === 'started') return !!course.overview?.lastLearningTime
+    if (filter.value === 'not-started') return !!course.overview && !course.overview.lastLearningTime
+    if (filter.value === 'due') return !!course.overview?.dueReviewCount
+    return true
+  }),
+)
+const pages = computed(() => Math.ceil(filtered.value.length / pageSize))
+const visibleCourses = computed(() => filtered.value.slice((page.value - 1) * pageSize, page.value * pageSize))
+watch([keyword, filter], () => {
+  page.value = 1
+})
+function clearFilters() {
+  keyword.value = ''
+  filter.value = 'all'
+}
 
 const continueCourse = computed(
   () =>
@@ -259,6 +316,7 @@ async function startContinue() {
 
 const unsubscribeSession = onAuthSessionChange(() => {
   generation++
+  page.value = 1
   courses.value = []
   loading.value = false
   loadFailed.value = false
@@ -276,117 +334,64 @@ onUnmounted(() => {
   unsubscribeSession()
 })
 </script>
-
 <style scoped>
-.my-courses {
-  display: grid;
-  gap: var(--lp-space-6);
-}
-.course-empty-error {
-  margin: calc(var(--lp-space-4) * -1) 0 0;
-  color: var(--lp-danger);
-  font-size: var(--lp-text-sm);
-}
+.my-heading,
 .continue-section {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--lp-space-6);
-  padding: var(--lp-space-6);
-  border: var(--lp-border-hairline);
-  border-inline-start: 3px solid var(--lp-primary);
-  border-radius: var(--lp-radius-lg);
-  background: var(--lp-surface);
-  box-shadow: var(--lp-shadow-xs);
+  gap: var(--lt-space-6);
 }
 .continue-section h2 {
-  margin: var(--lp-space-2) 0 0;
-  color: var(--lp-text);
-  font-size: var(--lp-text-2xl);
-  line-height: var(--lp-leading-snug);
+  margin: var(--lt-space-2) 0;
 }
-.continue-target,
-.course-desc,
-.course-meta {
-  margin: var(--lp-space-2) 0 0;
-  color: var(--lp-text-secondary);
-  line-height: var(--lp-leading-body);
+.continue-section p {
+  margin: var(--lt-space-2) 0 0;
 }
-.course-list-section,
-.course-list {
+.my-list-section {
   display: grid;
-  gap: var(--lp-space-4);
+  gap: var(--lt-space-4);
 }
-.course-list {
-  gap: var(--lp-space-3);
+.my-heading h2,
+.course-copy h3,
+.course-copy p {
+  margin: 0;
 }
 .course-card {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: var(--lp-space-4);
   align-items: start;
-  padding: var(--lp-space-5);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-lg);
-  background: var(--lp-surface);
-  box-shadow: var(--lp-shadow-xs);
+  gap: var(--lt-space-4);
+  padding: var(--lt-space-6);
 }
-.course-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  color: var(--lp-primary);
-  background: var(--lp-primary-soft);
-  border-radius: var(--lp-radius-md);
+.course-card + .course-card {
+  border-top: calc(var(--lt-space-1) / 4) solid var(--lt-separator);
 }
-.course-copy {
-  min-width: 0;
+.course-copy p {
+  margin-top: var(--lt-space-2);
 }
-.course-name {
-  margin: 0;
-  color: var(--lp-text);
-  font-size: var(--lp-text-lg);
+.course-meta {
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
 }
 .course-facts {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--lp-space-4);
-  margin: var(--lp-space-3) 0 0;
+  gap: var(--lt-space-5);
+  margin: var(--lt-space-3) 0 0;
 }
 .course-facts div {
   display: flex;
   align-items: baseline;
-  gap: var(--lp-space-1);
+  gap: var(--lt-space-2);
 }
-.course-facts dt,
-.overview-error {
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-sm);
+.course-facts dt {
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
 }
 .course-facts dd {
   margin: 0;
-  color: var(--lp-text);
-  font-weight: var(--lp-weight-semibold);
+  font-family: var(--lt-font-rounded);
   font-variant-numeric: tabular-nums;
-}
-.overview-error {
-  margin: var(--lp-space-3) 0 0;
-}
-.overview-error button {
-  padding: 0;
-  border: 0;
-  color: var(--lp-primary);
-  background: transparent;
-  font: inherit;
-  text-decoration: underline;
-  cursor: pointer;
-}
-@media (max-width: 900px) {
-  .continue-section {
-    align-items: stretch;
-    flex-direction: column;
-  }
 }
 </style>
