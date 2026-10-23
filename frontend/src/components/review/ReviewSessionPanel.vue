@@ -257,11 +257,7 @@ async function submitCurrentAnswer() {
   submissionError.value = ''
   submitting.value = true
   try {
-    const { data } = await submitReview(
-      submission.body,
-      { errorDisplay: 'inline' },
-      submission.key,
-    )
+    const { data } = await submitReview(submission.body, { errorDisplay: 'inline' }, submission.key)
     if (!alive || requestGeneration !== generation || session !== getAuthSessionVersion()) return
     lastResult.value = data
     lastCorrect.value = data.correct ?? null
@@ -360,6 +356,9 @@ defineExpose({ start, reviewing })
 .question-content :deep(.markdown-body) {
   font-size: var(--lp-text-lg);
   line-height: var(--lp-leading-relaxed);
+}
+.question-content:focus {
+  outline: none;
 }
 
 .question-loading,

@@ -2,7 +2,7 @@
 import { computed, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { Play, RefreshCw } from '@lucide/vue'
-import { LtBackLink, LtButton, LtCard, LtLinkButton } from '@/components/living'
+import { LtBackLink, LtButton, LtCard, LtLinkButton, LtPageHeader } from '@/components/living'
 import { useLivingTheme } from '@/composables/useLivingTheme'
 import { getPracticeRecords, type PracticeRecordVO } from '@/api/practice'
 import { usePersonalCollection } from './usePersonalCollection'
@@ -70,16 +70,12 @@ function goBack(event: MouseEvent) {
 </script>
 <template>
   <main class="record-page lt" data-appearance="dark">
-    <header class="head">
-      <LtBackLink to="/practice" label="返回练习" @click.capture="goBack" />
-      <div class="heading-row">
-        <div>
-          <h1>练习记录</h1>
-          <p>回看每一次作答，再决定下一步练习什么。</p>
-        </div>
-        <LtLinkButton to="/practice" variant="primary"><Play aria-hidden="true" />开始练习</LtLinkButton>
-      </div>
-    </header>
+    <LtPageHeader title="练习记录" description="回看每一次作答，再决定下一步练习什么。">
+      <template #lead><LtBackLink to="/practice" label="返回练习" @click.capture="goBack" /></template>
+      <template #actions
+        ><LtLinkButton to="/practice" variant="primary"><Play aria-hidden="true" />开始练习</LtLinkButton></template
+      >
+    </LtPageHeader>
     <LtCard as="section" radius="xl" class="filters" aria-label="练习记录筛选"
       ><label
         >题型<select v-model="filter.questionType" @change="resetPage">
@@ -166,14 +162,6 @@ function goBack(event: MouseEvent) {
   </main>
 </template>
 <style scoped>
-.record-page {
-  max-width: calc(var(--lt-space-10) * 15);
-  margin: 0 auto;
-  padding: 0 var(--lt-space-7) var(--lt-space-10);
-}
-.head {
-  padding: var(--lt-space-7) 0 var(--lt-space-6);
-}
 .heading-row,
 .filters,
 .section-head,
@@ -185,11 +173,9 @@ function goBack(event: MouseEvent) {
   align-items: center;
   gap: var(--lt-space-3);
 }
-.heading-row,
 .section-head {
   justify-content: space-between;
 }
-.heading-row p,
 .total,
 .summary,
 .meta,
@@ -198,17 +184,10 @@ function goBack(event: MouseEvent) {
   color: var(--lt-label-2);
   font-size: var(--lt-text-footnote);
 }
-h1,
 h2,
 h3,
 p {
   margin: 0;
-}
-h1 {
-  font-size: var(--lt-text-title1);
-}
-.heading-row p {
-  margin-top: var(--lt-space-2);
 }
 .filters {
   flex-wrap: wrap;

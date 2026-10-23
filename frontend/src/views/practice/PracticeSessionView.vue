@@ -152,11 +152,7 @@ async function handleSubmit() {
   submissionError.value = ''
   submitting.value = true
   try {
-    const response = await submitAnswer(
-      submission.body,
-      { errorDisplay: 'inline' },
-      submission.key,
-    )
+    const response = await submitAnswer(submission.body, { errorDisplay: 'inline' }, submission.key)
     if (
       !alive ||
       requestVersion !== submissionVersion ||
@@ -326,17 +322,19 @@ function leavePractice() {
 </template>
 
 <style scoped>
-.page {
-  width: min(calc(var(--lt-space-10) * 13 + var(--lt-space-6)), 100%);
-  margin: 0 auto;
-  padding: var(--lt-space-7) var(--lt-space-7) calc(var(--lt-space-10) + var(--lt-space-8));
-}
 .session-header {
   display: grid;
   grid-template-columns: auto minmax(calc(var(--lt-space-10) * 2 + var(--lt-space-6)), 1fr) auto;
   gap: var(--lt-space-4);
   align-items: center;
   margin-bottom: var(--lt-space-6);
+}
+.session-header,
+.question-card,
+.finish-container {
+  max-width: calc(var(--lt-space-10) * 13 + var(--lt-space-6));
+  margin-right: auto;
+  margin-left: auto;
 }
 .session-header > p {
   margin: 0;
@@ -394,6 +392,9 @@ function leavePractice() {
   padding: var(--lt-space-7) var(--lt-space-6) var(--lt-space-4);
   font-size: var(--lt-text-reading);
   line-height: var(--lt-leading-reading);
+}
+.question-content:focus {
+  outline: none;
 }
 .knowledge-points {
   display: flex;
@@ -554,9 +555,6 @@ function leavePractice() {
   cursor: pointer;
 }
 @media (max-width: 640px) {
-  .page {
-    padding: var(--lt-space-4) var(--lt-space-3) var(--lt-space-8);
-  }
   .session-header {
     grid-template-columns: auto 1fr;
   }

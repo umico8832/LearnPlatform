@@ -6,7 +6,7 @@ import { getAdaptiveQuestions, getAdaptiveSummary, getPracticeQuestions, getPrac
 import type { AdaptiveSummaryVO, PracticeStatsVO } from '@/api/practice'
 import { getCoursePage, type CourseVO } from '@/api/course'
 import { getKnowledgeTree, type KnowledgePointVO } from '@/api/knowledgePoint'
-import { LtButton, LtCard, LtSegmented } from '@/components/living'
+import { LtButton, LtCard, LtPageHeader, LtSegmented } from '@/components/living'
 import { useLivingTheme } from '@/composables/useLivingTheme'
 import { useUserStore } from '@/stores/user'
 import { getAuthSessionVersion, isAuthenticated, onAuthSessionChange } from '@/utils/auth'
@@ -214,10 +214,7 @@ async function startPractice() {
 
 <template>
   <main class="lt page" data-appearance="dark">
-    <header class="head">
-      <h1>练习</h1>
-      <p>选好范围，开始一组专注练习。推荐只根据已经完成的练习调整难度。</p>
-    </header>
+    <LtPageHeader title="练习" description="选好范围，开始一组专注练习。推荐只根据已经完成的练习调整难度。" />
     <div class="grid">
       <LtCard as="section" radius="xl" class="configuration" aria-labelledby="config-title"
         ><h2 id="config-title">开始练习</h2>
@@ -332,28 +329,12 @@ async function startPractice() {
 </template>
 
 <style scoped>
-.page {
-  max-width: calc(var(--lt-space-10) * 15 + var(--lt-space-5));
-  margin: 0 auto;
-  padding: 0 var(--lt-space-7) calc(var(--lt-space-10) + var(--lt-space-8));
-}
-.head {
-  padding: var(--lt-space-7) 0 var(--lt-space-6);
-}
-.head h1 {
-  margin: var(--lt-space-4) 0 0;
-  font-size: var(--lt-text-title1);
-}
-.head > p,
 .section-lead,
 .recommendation > p,
 .records > div > p {
   margin: var(--lt-space-2) 0 0;
   color: var(--lt-label-2);
   line-height: var(--lt-leading-reading);
-}
-.head > p {
-  max-width: 60ch;
 }
 .grid {
   display: grid;

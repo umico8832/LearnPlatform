@@ -215,7 +215,9 @@ defineExpose({ start, reviewing })
       >
     </div>
     <template v-else-if="question"
-      ><div ref="questionRoot" tabindex="-1"><QuestionProse class="question" :content="question.content" /></div>
+      ><div ref="questionRoot" class="question-root" tabindex="-1">
+        <QuestionProse class="question" :content="question.content" />
+      </div>
       <fieldset :disabled="submitted || submitting">
         <legend>作答</legend>
         <div v-if="question.questionType === 'SINGLE_CHOICE'" class="options">
@@ -307,6 +309,9 @@ p {
 }
 .question {
   margin-top: var(--lt-space-5);
+}
+.question-root:focus {
+  outline: none;
 }
 fieldset {
   display: grid;

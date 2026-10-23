@@ -173,14 +173,14 @@ onMounted(() => review.load())
 </template>
 
 <style scoped>
-.page {
-  max-width: 1040px;
-  margin: 0 auto;
-  padding: 0 var(--lt-space-7) 120px;
+.page > * {
+  width: min(100%, 1040px);
+  margin-right: auto;
+  margin-left: auto;
 }
 
 .head {
-  padding: var(--lt-space-7) 0 var(--lt-space-6);
+  margin-bottom: var(--lt-space-7);
 }
 
 .back {

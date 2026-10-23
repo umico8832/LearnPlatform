@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Brain, Download, RefreshCw, Sparkles } from '@lucide/vue'
-import { LtBackLink, LtButton, LtCard, LtSheet } from '@/components/living'
+import { LtBackLink, LtButton, LtCard, LtPageHeader, LtSheet } from '@/components/living'
 import { useLivingTheme } from '@/composables/useLivingTheme'
 import QuestionProse from '@/views/question/QuestionProse.vue'
 import { errorMessage } from '@/utils/errors'
@@ -219,22 +219,18 @@ onBeforeUnmount(() => {
 </script>
 <template>
   <main class="page lt" data-appearance="dark">
-    <header class="head">
-      <LtBackLink to="/review" label="返回复习" @click.capture="goBack" />
-      <div class="title-row">
-        <div>
-          <h1>复习工具</h1>
-          <p>在这里同步错题、获得复习建议，并完成今天到期的题。</p>
-        </div>
-        <LtButton data-testid="review-start" variant="primary" :disabled="!canStart" @click="startReview"
+    <LtPageHeader title="复习工具" description="在这里同步错题、获得复习建议，并完成今天到期的题。">
+      <template #lead><LtBackLink to="/review" label="返回复习" @click.capture="goBack" /></template>
+      <template #actions
+        ><LtButton data-testid="review-start" variant="primary" :disabled="!canStart" @click="startReview"
           ><template #icon><Brain aria-hidden="true" /></template
           >{{ startingReview ? '正在准备' : '开始复习' }}</LtButton
-        >
-      </div>
+        ></template
+      >
       <button v-if="targetKnowledgePointName" type="button" class="chip" @click="clearKnowledgePointFilter">
         知识点：{{ targetKnowledgePointName }} ×
       </button>
-    </header>
+    </LtPageHeader>
     <LtCard v-if="statsLoading" radius="xl" class="loading" aria-busy="true"
       ><span class="skeleton wide" /><span class="skeleton" /><span class="sr-only">正在读取复习计划</span></LtCard
     >
@@ -380,15 +376,6 @@ onBeforeUnmount(() => {
   </main>
 </template>
 <style scoped>
-.page {
-  max-width: calc(var(--lt-space-10) * 14);
-  margin: 0 auto;
-  padding: 0 var(--lt-space-7) var(--lt-space-10);
-}
-.head {
-  padding: var(--lt-space-7) 0 var(--lt-space-6);
-}
-.title-row,
 .tools,
 .section-title,
 .row-actions,
@@ -398,24 +385,16 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   gap: var(--lt-space-4);
 }
-h1,
 h2,
 p {
   margin: 0;
 }
-h1 {
-  font-size: var(--lt-text-title1);
-}
-.title-row p,
 .progress p,
 .card-list span,
 .notice,
 .state p {
   color: var(--lt-label-2);
   font-size: var(--lt-text-footnote);
-}
-.title-row p {
-  margin-top: var(--lt-space-2);
 }
 .chip {
   margin-top: var(--lt-space-3);

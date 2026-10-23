@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { BookOpen, Play, RefreshCw, StarOff } from '@lucide/vue'
-import { LtBackLink, LtButton, LtCard, LtLinkButton, LtSheet } from '@/components/living'
+import { LtBackLink, LtButton, LtCard, LtLinkButton, LtPageHeader, LtSheet } from '@/components/living'
 import { useLivingTheme } from '@/composables/useLivingTheme'
 import { difficultyLabel, questionTypeLabel, recordTime } from './practiceLibraryPresentation'
 import { useFavoriteLibrary } from './useFavoriteLibrary'
@@ -67,16 +67,12 @@ function changeSize(event: Event) {
 
 <template>
   <main class="favorite-page lt" data-appearance="dark">
-    <header class="head">
-      <LtBackLink to="/practice" label="返回练习" @click.capture="goBack" />
-      <div class="heading-row">
-        <div>
-          <h1>我的收藏</h1>
-          <p>把值得回看的题留在这里，再按自己的节奏练习。</p>
-        </div>
-        <LtLinkButton to="/questions"><BookOpen aria-hidden="true" />浏览题库</LtLinkButton>
-      </div>
-    </header>
+    <LtPageHeader title="我的收藏" description="把值得回看的题留在这里，再按自己的节奏练习。">
+      <template #lead><LtBackLink to="/practice" label="返回练习" @click.capture="goBack" /></template>
+      <template #actions
+        ><LtLinkButton to="/questions"><BookOpen aria-hidden="true" />浏览题库</LtLinkButton></template
+      >
+    </LtPageHeader>
     <LtCard as="section" radius="xl" class="practice-card" aria-label="收藏题练习"
       ><div>
         <p class="eyebrow">收藏题目</p>
@@ -183,14 +179,6 @@ function changeSize(event: Event) {
 </template>
 
 <style scoped>
-.favorite-page {
-  max-width: calc(var(--lt-space-10) * 15);
-  margin: 0 auto;
-  padding: 0 var(--lt-space-7) var(--lt-space-10);
-}
-.head {
-  padding: var(--lt-space-7) 0 var(--lt-space-6);
-}
 .heading-row,
 .practice-card,
 .section-head,
@@ -203,16 +191,11 @@ function changeSize(event: Event) {
   justify-content: space-between;
   gap: var(--lt-space-4);
 }
-h1,
 h2,
 h3,
 p {
   margin: 0;
 }
-h1 {
-  font-size: var(--lt-text-title1);
-}
-.heading-row p,
 .muted,
 .section-head p,
 time,
@@ -220,9 +203,6 @@ time,
 .notice {
   color: var(--lt-label-2);
   font-size: var(--lt-text-footnote);
-}
-.heading-row p {
-  margin-top: var(--lt-space-2);
 }
 .practice-card {
   margin-bottom: var(--lt-space-5);

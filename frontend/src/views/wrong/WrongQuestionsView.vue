@@ -2,7 +2,7 @@
 import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ChevronLeft, RotateCcw, X } from '@lucide/vue'
-import { LtButton, LtCard, LtIconButton, LtSegmented } from '@/components/living'
+import { LtButton, LtCard, LtIconButton, LtPageHeader, LtSegmented } from '@/components/living'
 import { useLivingTheme } from '@/composables/useLivingTheme'
 import { useWrongQuestions, type WrongScope } from './useWrongQuestions'
 import AiNotice from '../question/AiNotice.vue'
@@ -49,12 +49,13 @@ onMounted(() => wrong.load())
 
 <template>
   <main class="page">
-    <header class="head">
-      <LtIconButton class="back" label="返回" @click="goBack">
-        <ChevronLeft aria-hidden="true" />
-      </LtIconButton>
-      <h1 class="title">错题</h1>
-      <p class="lead">每道题先说清你为什么选错，再告诉你什么时候重做。只有不看提示的独立作答会计入复习安排。</p>
+    <LtPageHeader
+      title="错题"
+      description="每道题先说清你为什么选错，再告诉你什么时候重做。只有不看提示的独立作答会计入复习安排。"
+    >
+      <template #lead
+        ><LtIconButton class="back" label="返回" @click="goBack"><ChevronLeft aria-hidden="true" /></LtIconButton
+      ></template>
       <ul v-if="chips.length" class="chips" aria-label="当前范围">
         <li v-for="chip in chips" :key="chip.key" class="chip">
           {{ chip.text }}
@@ -68,7 +69,7 @@ onMounted(() => wrong.load())
           </button>
         </li>
       </ul>
-    </header>
+    </LtPageHeader>
 
     <div class="toolbar">
       <LtSegmented v-model="scope" :options="SCOPES" label="显示哪些错题" />
@@ -163,31 +164,10 @@ onMounted(() => wrong.load())
 </template>
 
 <style scoped>
-.page {
-  max-width: 1040px;
-  margin: 0 auto;
-  padding: 0 var(--lt-space-7) 120px;
-}
-
-.head {
-  padding: var(--lt-space-7) 0 var(--lt-space-6);
-}
-
 .back {
+  width: var(--lt-space-7);
+  height: var(--lt-space-7);
   margin-left: -8px;
-}
-
-.title {
-  margin: var(--lt-space-4) 0 0;
-  font-size: var(--lt-text-title1);
-}
-
-.lead {
-  max-width: 60ch;
-  margin: var(--lt-space-2) 0 0;
-  color: var(--lt-label-2);
-  font-size: var(--lt-text-body);
-  line-height: 1.6;
 }
 
 .chips {
