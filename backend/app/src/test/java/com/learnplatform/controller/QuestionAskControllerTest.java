@@ -53,7 +53,8 @@ class QuestionAskControllerTest {
                 "问题", null, java.util.UUID.randomUUID(), 190000L, new Cancellation());
         SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(
                 new CustomUserDetails(7L, "learner", "USER"), null, List.of()));
-        executor = new AiTaskExecutor(new AiExecutionProperties(1, AiExecutionProperties.Mode.PLATFORM), new SimpleMeterRegistry());
+        executor = new AiTaskExecutor(new AiExecutionProperties(1, AiExecutionProperties.Mode.PLATFORM,
+                Duration.ofMillis(10)), new SimpleMeterRegistry());
         mvc = MockMvcBuilders.standaloneSetup(new QuestionAskController(service, executor))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .setCustomArgumentResolvers(new CustomUserDetailsArgumentResolver()).build();
@@ -77,6 +78,7 @@ class QuestionAskControllerTest {
                         .contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(request().asyncStarted()).andReturn();
         mvc.perform(asyncDispatch(response)).andExpect(status().isOk())
+                .andExpect(content().string(containsString("event:status")))
                 .andExpect(content().string(containsString("event:content")))
                 .andExpect(content().string(containsString("event:done")));
     }
@@ -89,6 +91,30 @@ class QuestionAskControllerTest {
                     .andExpect(jsonPath("$.code").value(1007));
             verify(service, never()).prepare(anyLong(), anyLong(), any());
         }
+    }
+
+    @Test void heartbeatsContainNoAnswerWhileTheValidatedResultIsStillPending() throws Exception {
+        var entered = new CountDownLatch(1);
+        var finish = new CountDownLatch(1);
+        when(service.execute(eq(job), any())).thenAnswer(call -> {
+            entered.countDown();
+            assertTrue(finish.await(3, TimeUnit.SECONDS));
+            return new QuestionAskResponse.Done(job.requestId(), 4, 49, null);
+        });
+        try {
+            var response = mvc.perform(post("/api/understanding/attempts/11/ask/stream")
+                    .contentType(MediaType.APPLICATION_JSON).content("{}")).andReturn();
+            assertTrue(entered.await(2, TimeUnit.SECONDS));
+            await().atMost(Duration.ofSeconds(2)).untilAsserted(() -> {
+                String body = response.getResponse().getContentAsString();
+                assertTrue(body.contains("event:status\ndata:{\"state\":\"processing\"}"));
+                assertTrue(body.contains("event:heartbeat\ndata:{}"));
+                org.junit.jupiter.api.Assertions.assertFalse(body.contains("event:content"));
+                org.junit.jupiter.api.Assertions.assertFalse(body.contains("event:done"));
+            });
+            finish.countDown();
+            mvc.perform(asyncDispatch(response)).andExpect(content().string(containsString("event:done")));
+        } finally { finish.countDown(); }
     }
 
     @ParameterizedTest @ValueSource(strings = {"timeout", "error", "completion"})

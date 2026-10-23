@@ -109,6 +109,7 @@ export async function streamAsk(
       for (const block of blocks) {
         const event = parseEvent(block)
         if (!event) continue
+        if (event.name === 'status' || event.name === 'heartbeat') continue
         if (event.name === 'content') handlers.onContent(String((event.data as { content?: string }).content ?? ''))
         else if (event.name === 'done') return event.data as AskDone
         else if (event.name === 'error') {

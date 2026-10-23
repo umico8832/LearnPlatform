@@ -25,7 +25,9 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 @RestController
 @RequestMapping("/api/understanding/attempts/{attemptId}/ask")
@@ -64,7 +66,13 @@ public class QuestionAskController {
         var ended = new AtomicBoolean();
         var executing = new AtomicBoolean();
         var writes = new Object();
+        var heartbeat = new AtomicReference<ScheduledFuture<?>>();
+        Runnable clearHeartbeat = () -> {
+            var scheduled = heartbeat.get();
+            if (scheduled != null) { scheduled.cancel(false); }
+        };
         Runnable stop = () -> {
+            clearHeartbeat.run();
             if (!ended.compareAndSet(false, true)) { return; }
             job.cancellation().cancel();
             reservation.cancel();
@@ -75,6 +83,7 @@ public class QuestionAskController {
         emitter.onTimeout(stop);
         emitter.onError(error -> stop.run());
         reservation.onShutdown(() -> {
+            clearHeartbeat.run();
             if (!ended.compareAndSet(false, true)) { return; }
             job.cancellation().cancel();
             try {
@@ -86,6 +95,14 @@ public class QuestionAskController {
             } finally { emitter.complete(); }
         });
         try {
+            send(emitter, "status", Map.of("state", "processing"));
+            heartbeat.set(executor.heartbeat(() -> {
+                synchronized (writes) {
+                    if (ended.get()) { return; }
+                    try { send(emitter, "heartbeat", Map.of()); }
+                    catch (RuntimeException exception) { stop.run(); }
+                }
+            }));
             reservation.execute(() -> {
                 executing.set(true);
                 try {
@@ -108,11 +125,13 @@ public class QuestionAskController {
                     }
                 } finally {
                     ended.set(true);
-                            emitter.complete();
+                    clearHeartbeat.run();
+                    emitter.complete();
                 }
             });
         } catch (RuntimeException exception) {
             ended.set(true);
+            clearHeartbeat.run();
             job.cancellation().cancel();
             reservation.close();
             service.reject(job);

@@ -25,6 +25,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.time.Duration;
 import java.util.List;
 
 import static org.mockito.Mockito.mock;
@@ -41,7 +42,8 @@ class AiCapacityExceptionHandlerTest {
         var ai = mock(AiService.class);
         var diagnosis = mock(LearningDiagnosisService.class);
         var exam = mock(ExamLearningAiService.class);
-        try (var executor = new AiTaskExecutor(new AiExecutionProperties(1, AiExecutionProperties.Mode.PLATFORM), new SimpleMeterRegistry()); var occupied = executor.reserve()) {
+        try (var executor = new AiTaskExecutor(new AiExecutionProperties(1, AiExecutionProperties.Mode.PLATFORM,
+                Duration.ofSeconds(5)), new SimpleMeterRegistry()); var occupied = executor.reserve()) {
             org.junit.jupiter.api.Assertions.assertNotNull(occupied);
             var mvc = MockMvcBuilders.standaloneSetup(
                     new AiController(ai, mock(AiCallGovernanceService.class),

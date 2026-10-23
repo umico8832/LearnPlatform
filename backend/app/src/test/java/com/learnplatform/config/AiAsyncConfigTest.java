@@ -18,7 +18,7 @@ import static org.awaitility.Awaitility.await;
 class AiAsyncConfigTest {
     private AiTaskExecutor executor(AiExecutionProperties.Mode mode, int capacity) {
         return new AiAsyncConfig().aiTaskExecutor(
-                new AiExecutionProperties(capacity, mode), new SimpleMeterRegistry());
+                new AiExecutionProperties(capacity, mode, Duration.ofMillis(10)), new SimpleMeterRegistry());
     }
 
     @ParameterizedTest @EnumSource(AiExecutionProperties.Mode.class)

@@ -17,6 +17,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -27,15 +29,18 @@ import java.util.concurrent.atomic.AtomicReference;
 public final class AiTaskExecutor implements Executor, AutoCloseable, SmartLifecycle {
     private static final Logger log = LoggerFactory.getLogger(AiTaskExecutor.class);
     private final ExecutorService workers;
+    private final ScheduledThreadPoolExecutor timer;
     private final Semaphore permits;
     private final AtomicBoolean closed = new AtomicBoolean();
     private final AtomicInteger active = new AtomicInteger();
     private final Set<Reservation> reservations = ConcurrentHashMap.newKeySet();
     private final Counter rejected;
+    private final long heartbeatMillis;
 
     public AiTaskExecutor(AiExecutionProperties properties, MeterRegistry meters) {
         int limit = properties.concurrency();
         permits = new Semaphore(limit);
+        heartbeatMillis = properties.heartbeat().toMillis();
         if (properties.mode() == AiExecutionProperties.Mode.VIRTUAL) {
             workers = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("ai-virtual-", 0).factory());
         } else {
@@ -44,6 +49,9 @@ public final class AiTaskExecutor implements Executor, AutoCloseable, SmartLifec
             pool.prestartAllCoreThreads();
             workers = pool;
         }
+        timer = new ScheduledThreadPoolExecutor(2,
+                Thread.ofPlatform().daemon().name("ai-heartbeat-", 0).factory());
+        timer.setRemoveOnCancelPolicy(true);
         rejected = Counter.builder("ai.admission.rejected").register(meters);
         Gauge.builder("ai.admission.inflight", permits, s -> limit - s.availablePermits()).register(meters);
         Gauge.builder("executor.active", active, AtomicInteger::get).baseUnit("threads")
@@ -65,6 +73,10 @@ public final class AiTaskExecutor implements Executor, AutoCloseable, SmartLifec
 
     @Override public void execute(Runnable command) { reserve().execute(command); }
 
+    public ScheduledFuture<?> heartbeat(Runnable command) {
+        return timer.scheduleAtFixedRate(command, heartbeatMillis, heartbeatMillis, TimeUnit.MILLISECONDS);
+    }
+
     private BusinessException rejection() {
         rejected.increment();
         return new AiCapacityException();
@@ -75,6 +87,7 @@ public final class AiTaskExecutor implements Executor, AutoCloseable, SmartLifec
         reservations.forEach(Reservation::shutdown);
         // Admitted wrappers must run their finally blocks, including tasks not started yet.
         workers.shutdown();
+        timer.shutdownNow();
     }
 
     @Override public void start() { }

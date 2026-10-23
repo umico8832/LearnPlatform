@@ -118,6 +118,10 @@
 `{action, reason, reasonSource}`，仅允许 `HINT` 或 `PLAY_VIZ`，不推进等级、不自动播放。
 刷新后以 attemptId 读取同一次理解流程；其他用户、预览尝试或已撤回版本统一 1004。
 
+准入成功后立即发送 `status` 事件 `{"state":"processing"}`；等待期间每 5 秒发送一次
+`heartbeat` 事件 `{}`。两者仅表示连接与执行仍在进行，不包含题目、答案、提示、模型 delta
+或推理内容，前端识别后不得当作正文渲染，也不能据此认为回答成功。
+
 SSE 的 JSON data：`content` 事件 `{content: "正文增量"}`；结束 `done`
 `{requestId, questionRemaining, dailyRemaining, suggestion}`；失败 `error` 为 `{code, message}`，之后关闭。
 业务校验失败发生在建流前，使用统一错误外壳；建流后的失败通过 error 事件。正文完整缓冲后分片发送；未解锁时还须通过下述两道检查，因此首次正文可能在多次上游调用后到达。
