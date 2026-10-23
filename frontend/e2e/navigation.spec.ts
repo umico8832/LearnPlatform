@@ -151,7 +151,7 @@ test('搜索错误重试、迟到响应和空结果不会混淆状态', async ({
   })
   await input.fill('')
   await input.fill('Java')
-  await expect(dialog.locator('.search-state')).toBeVisible()
+  await expect(dialog.getByRole('status')).toHaveText('正在搜索…')
   await maybeScreenshot(page, 'navigation-search-loading')
   await expect.poll(() => javaRequestSeen, { timeout: 15_000 }).toBe(true)
   await input.fill('408')
