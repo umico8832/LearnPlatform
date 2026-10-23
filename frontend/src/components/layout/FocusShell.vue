@@ -14,7 +14,7 @@ import ShellProgress from './ShellProgress.vue'
  */
 withDefaults(defineProps<{ narrow?: boolean }>(), { narrow: true })
 
-useLivingTheme({ dark: true, legacyBridge: true })
+useLivingTheme({ dark: true })
 
 const route = useRoute()
 const router = useRouter()

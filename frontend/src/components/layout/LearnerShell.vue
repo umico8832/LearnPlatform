@@ -14,11 +14,10 @@ import { useOpsAlerts } from './useOpsAlerts'
 
 /**
  * Learner shell (Phase 28, dark only): one bar for every learner page with the
- * sections, today's learning facts, search and the account menu. Redesigned pages
- * (`meta.living`) share the content frame; pages not yet redesigned keep
- * their old padding and sit on the dark bridge until they are migrated.
+ * sections, today's learning facts, search and the account menu. Every page
+ * inside shares one content frame aligned with the bar.
  */
-useLivingTheme({ dark: true, legacyBridge: true })
+useLivingTheme({ dark: true })
 
 const route = useRoute()
 const userStore = useUserStore()
@@ -29,8 +28,6 @@ const alertsOpen = ref(false)
 const mainRef = ref<HTMLElement>()
 const searchDialog = ref<InstanceType<typeof GlobalSearchDialog>>()
 const scrolled = ref(false)
-
-const legacy = computed(() => !route.meta.living)
 
 function focusMain() {
   mainRef.value?.focus({ preventScroll: true })
@@ -87,7 +84,7 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
       </div>
     </header>
 
-    <main id="app-main" ref="mainRef" class="main" :data-legacy="legacy || undefined" tabindex="-1">
+    <main id="app-main" ref="mainRef" class="main" tabindex="-1">
       <router-view v-slot="{ Component, route: current }">
         <transition name="lp-content" @leave="finishPageLeave">
           <component :is="Component" :key="current.meta.living ? current.path : current.fullPath" />
@@ -201,20 +198,10 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
 }
 
 .main {
-  outline: none;
-}
-
-.main:not([data-legacy]) {
   max-width: 1280px;
   margin: 0 auto;
   padding: var(--lt-space-7) var(--lt-space-7) var(--lt-space-10);
-}
-
-/* 尚未重做的页面：保留旧外壳的内边距与内容宽度，迁移到新基线后去掉。 */
-.main[data-legacy] {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: var(--lp-space-6) var(--lp-content-gutter) var(--lp-space-12);
+  outline: none;
 }
 
 .skip-link {
@@ -250,7 +237,7 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
   .bar-inner {
     padding-inline: var(--lt-space-4);
   }
-  .main:not([data-legacy]) {
+  .main {
     padding-inline: var(--lt-space-4);
   }
 

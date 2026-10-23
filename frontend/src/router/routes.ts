@@ -67,7 +67,6 @@ export const learnerRoutes: RouteRecordRaw[] = [
     component: () => import('@/components/layout/LearnerShell.vue'),
     meta: { requiresAuth: true },
     children: [
-      // living 页共用外框内容区；旧页面保留原内边距和深色桥接。
       {
         path: 'my-courses/:id(\\d+)',
         name: 'CourseOverview',

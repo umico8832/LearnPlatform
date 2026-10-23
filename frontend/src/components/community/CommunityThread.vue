@@ -131,6 +131,7 @@
 <script setup lang="ts">
 import { nextTick, ref } from 'vue'
 import { ElMessageBox, type InputInstance } from 'element-plus'
+import LpSkeleton from '@/components/ui/LpSkeleton.vue'
 import { useUserStore } from '@/stores/user'
 import { communityTypes, communityStatuses } from '@/api/community'
 import { formatTime } from '@/utils/format'
