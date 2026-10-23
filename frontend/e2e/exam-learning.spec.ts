@@ -2,12 +2,11 @@ import { expect, test, type Page } from '@playwright/test'
 import { createLearnerAndLogin } from './helpers/registerLearner'
 
 async function findPublishedPaper(page: Page, title: string) {
-  await page.locator('.paper-filters .el-select').first().click()
   await Promise.all([
     page.waitForResponse(
       (response) => response.url().includes('/api/exam/papers') && response.request().method() === 'GET',
     ),
-    page.getByRole('option', { name: '官方原题' }).click(),
+    page.getByRole('combobox', { name: '试卷类型' }).selectOption({ label: '官方原题' }),
   ])
   await page.getByRole('textbox', { name: '按试卷名称查找' }).fill(title)
   await Promise.all([
@@ -49,7 +48,7 @@ test('试卷学习的补充解析遵守 Markdown 响应契约', async ({ page, b
 
   const assistant = page.getByRole('region', { name: 'AI 学习助手', exact: true })
   await assistant.getByRole('button', { name: '补充解析', exact: true }).click()
-  await expect(assistant.locator('.ai-result')).toHaveAttribute('aria-busy', 'false')
+  await expect(assistant.locator('.result')).toHaveAttribute('aria-busy', 'false')
   await expect(assistant.getByRole('button', { name: '停止生成' })).toHaveCount(0)
   const markdown = assistant.locator('.markdown-body')
   await expect(markdown).toContainText('补充解析')

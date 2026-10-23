@@ -137,7 +137,7 @@ describe('ExamLearningView', () => {
       }),
       { errorDisplay: 'inline' },
     )
-    expect(wrapper.text()).toContain('本题反馈')
+    expect(wrapper.get('.exam-learning-feedback [role="status"]').text()).toContain('回答正确')
     expect(wrapper.text()).toContain('回答正确')
     expect((wrapper.find('.option-item input[type="radio"]').element as HTMLInputElement).checked).toBe(true)
     expect(wrapper.find('.sheet-item').attributes('aria-current')).toBe('step')

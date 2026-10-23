@@ -1,151 +1,98 @@
 <template>
-  <div class="paper-learning">
-    <LpStatePanel v-if="loading" state="loading" loading-label="正在恢复试卷学习会话" />
-    <LpStatePanel
-      v-else-if="loadFailed"
-      state="error"
-      title="试卷学习会话暂时无法读取"
-      :description="loadError || '请重新读取会话。'"
-      @retry="loadSession"
-    />
-    <LpEmptyState v-else-if="!session" title="试卷学习会话不存在" description="该学习会话可能已失效或被删除。">
-      <template #actions><el-button type="primary" @click="router.push('/exams')">返回试卷列表</el-button></template>
-    </LpEmptyState>
-
-    <template v-else-if="currentQuestion">
-      <section class="learning-header">
-        <div class="learning-header-copy">
-          <span class="section-kicker">试卷学习</span>
-          <h1 class="learning-title">{{ session.paperTitle }}</h1>
-          <p v-if="session.paperType === 'OFFICIAL_EXAM' && session.sourceVerified" class="paper-source">
-            {{ session.examYear }} · {{ session.examName }} · 来源：{{ session.sourceReference }}
-          </p>
-        </div>
-        <div class="header-actions">
-          <span class="learning-progress" aria-live="polite">
-            {{
-              session.status === 1
-                ? '本轮已完成'
-                : `已作答 ${session.answeredQuestionCount}/${session.questions.length}`
-            }}
-          </span>
-          <el-button @click="router.push('/exams')">返回试卷列表</el-button>
-        </div>
-      </section>
-
+  <div class="lt paper-learning" data-appearance="dark">
+    <div v-if="loading" class="state" role="status" aria-busy="true">正在恢复试卷学习会话</div>
+    <div v-else-if="loadFailed" class="state" role="alert">
+      <h1>试卷学习会话暂时无法读取</h1>
+      <p>{{ loadError || '请重新读取会话。' }}</p>
+      <LtButton @click="loadSession">重试</LtButton>
+    </div>
+    <div v-else-if="!session" class="state">
+      <h1>试卷学习会话不存在</h1>
+      <p>该学习会话可能已失效或被删除。</p>
+      <LtButton @click="router.push('/exams')">查看试卷列表</LtButton>
+    </div>
+    <template v-else-if="currentQuestion"
+      ><header class="learning-header">
+        <h1>{{ session.paperTitle }}</h1>
+        <p v-if="session.paperType === 'OFFICIAL_EXAM' && session.sourceVerified" class="muted">
+          {{ session.examYear }} · {{ session.examName }} · 来源：{{ session.sourceReference }}
+        </p>
+        <p class="muted">
+          {{
+            session.status === 1 ? '本轮已完成' : `已作答 ${session.answeredQuestionCount}/${session.questions.length}`
+          }}
+        </p>
+        <progress :value="session.answeredQuestionCount" :max="session.questions.length" aria-label="本轮学习进度" />
+      </header>
       <section class="learning-layout">
         <article class="question-card" aria-labelledby="learning-question-title">
-          <div v-if="currentQuestion.sectionTitle" class="question-section">{{ currentQuestion.sectionTitle }}</div>
+          <p v-if="currentQuestion.sectionTitle" class="muted">{{ currentQuestion.sectionTitle }}</p>
           <div class="question-meta">
-            <strong>{{ currentQuestion.displayNumber || `第 ${currentIndex + 1} 题` }}</strong>
-            <el-tag size="small" effect="plain">{{ questionTypeLabel(currentQuestion.questionType) }}</el-tag>
-            <span>{{ currentQuestion.score }} 分</span>
+            <strong>{{ currentQuestion.displayNumber || `第 ${currentIndex + 1} 题` }}</strong
+            ><span>{{ questionTypeLabel(currentQuestion.questionType) }}</span
+            ><span>{{ currentQuestion.score }} 分</span>
           </div>
           <div id="learning-question-title" ref="questionTitle" class="question-content" tabindex="-1">
-            {{ currentQuestion.content }}
+            <QuestionProse :content="currentQuestion.content" />
           </div>
-
           <fieldset class="answer-box" :disabled="answerLocked" aria-describedby="answer-help">
-            <legend>作答</legend>
+            <legend class="sr-only">作答</legend>
             <p id="answer-help" class="sr-only">选择答案后提交。本题保存后将锁定作答内容。</p>
-            <div
-              v-if="currentQuestion.questionType === 'SINGLE_CHOICE'"
-              class="option-list"
-              role="radiogroup"
-              aria-label="单选答案"
-            >
-              <label
-                v-for="option in currentQuestion.options"
-                :key="option.id"
-                class="option-item"
-                :class="{ selected: userAnswer === option.optionLabel }"
-              >
-                <input v-model="userAnswer" type="radio" name="learning-answer" :value="option.optionLabel" />
-                <span class="option-badge">{{ option.optionLabel }}</span
-                ><span>{{ option.content }}</span>
-              </label>
-            </div>
-            <div
-              v-else-if="currentQuestion.questionType === 'MULTIPLE_CHOICE'"
-              class="option-list"
-              role="group"
-              aria-label="多选答案"
-            >
-              <label
-                v-for="option in currentQuestion.options"
-                :key="option.id"
-                class="option-item"
-                :class="{ selected: multiAnswers.has(option.optionLabel) }"
-              >
-                <input
-                  type="checkbox"
-                  :checked="multiAnswers.has(option.optionLabel)"
-                  @change="toggleMulti(option.optionLabel)"
-                />
-                <span class="option-badge">{{ option.optionLabel }}</span
-                ><span>{{ option.content }}</span>
-              </label>
-            </div>
-            <div
-              v-else-if="currentQuestion.questionType === 'TRUE_FALSE'"
-              class="option-list true-false-list"
-              role="radiogroup"
-              aria-label="判断答案"
-            >
-              <label class="option-item" :class="{ selected: userAnswer === 'TRUE' }"
-                ><input v-model="userAnswer" type="radio" name="learning-answer" value="TRUE" />正确</label
-              >
-              <label class="option-item" :class="{ selected: userAnswer === 'FALSE' }"
-                ><input v-model="userAnswer" type="radio" name="learning-answer" value="FALSE" />错误</label
-              >
-            </div>
-            <el-input v-else v-model="userAnswer" type="textarea" :rows="4" placeholder="请输入你的答案" />
+            <ExamLearningChoices
+              v-if="choiceOptions.length"
+              :options="choiceOptions"
+              :multiple="currentQuestion.questionType === 'MULTIPLE_CHOICE'"
+              :binary="currentQuestion.questionType === 'TRUE_FALSE'"
+              :name="`learning-answer-${currentQuestion.questionId}`"
+              :label="
+                currentQuestion.questionType === 'MULTIPLE_CHOICE'
+                  ? '多选答案'
+                  : currentQuestion.questionType === 'TRUE_FALSE'
+                    ? '判断答案'
+                    : '单选答案'
+              "
+              :is-selected="isSelected"
+              :evaluated="evaluated"
+              :correct-answers="correctAnswers"
+              @pick="pick"
+            /><textarea v-else v-model="userAnswer" :rows="4" aria-label="你的答案" placeholder="请输入你的答案" />
           </fieldset>
-
           <div v-if="saveError" class="inline-error" role="alert">
             <p>{{ saveError }}</p>
-            <el-button size="small" @click="submitCurrentAnswer">重新提交</el-button>
+            <LtButton @click="submitCurrentAnswer">重新提交</LtButton>
           </div>
-          <ExamLearningFeedback
-            v-if="currentQuestion.latestAnswer && !redoing"
-            ref="answerFeedback"
-            :result="currentQuestion.latestAnswer"
-          />
-
           <div class="question-actions">
-            <el-button :disabled="currentIndex === 0 || submitting" @click="goTo(currentIndex - 1)">上一题</el-button>
-            <el-button v-if="currentQuestion.latestAnswer && session.status === 0 && !redoing" @click="startRedo">
-              重新作答
-            </el-button>
-            <el-button
+            <LtButton :disabled="currentIndex === 0 || submitting" @click="goTo(currentIndex - 1)">上一题</LtButton
+            ><LtButton v-if="currentQuestion.latestAnswer && session.status === 0 && !redoing" @click="startRedo"
+              >重新作答</LtButton
+            ><LtButton
               v-if="(!currentQuestion.latestAnswer || redoing) && session.status === 0"
-              type="primary"
+              variant="primary"
               :disabled="!canSubmit"
-              :loading="submitting"
               @click="submitCurrentAnswer"
-              >提交答案</el-button
-            >
-            <el-button
+              >{{ submitting ? '正在提交…' : '提交答案' }}</LtButton
+            ><LtButton
               :disabled="currentIndex >= session.questions.length - 1 || submitting"
               @click="goTo(currentIndex + 1)"
-              >下一题</el-button
+              >下一题</LtButton
             >
           </div>
-
-          <AiQuestionAssistant
-            :key="`${currentQuestion.questionId}:${currentQuestion.latestAnswer?.answerId || 0}:${redoing}`"
-            :question-id="currentQuestion.questionId"
-            :learning-session-id="session.id"
-            :disabled="!currentQuestion.latestAnswer || redoing"
-            disabled-reason="先提交本题答案，再让 AI 结合本轮真实作答提供辅导。"
-          />
         </article>
-
+        <ExamLearningFeedback
+          v-if="currentQuestion.latestAnswer && !redoing"
+          ref="answerFeedback"
+          :result="currentQuestion.latestAnswer"
+        />
+        <AiQuestionAssistant
+          :key="`${currentQuestion.questionId}:${currentQuestion.latestAnswer?.answerId || 0}:${redoing}`"
+          :question-id="currentQuestion.questionId"
+          :learning-session-id="session.id"
+          :disabled="!currentQuestion.latestAnswer || redoing"
+          disabled-reason="先提交本题答案，再让 AI 结合本轮真实作答提供辅导。"
+        />
         <aside class="answer-sheet" aria-label="答题进度">
-          <h2 class="sheet-title">本轮学习</h2>
-          <p class="sheet-summary">
-            已答 {{ session.answeredQuestionCount }} · 已判分答对 {{ session.correctQuestionCount }}
-          </p>
+          <h2>本轮学习</h2>
+          <p class="muted">已答 {{ session.answeredQuestionCount }} · 已判分答对 {{ session.correctQuestionCount }}</p>
           <div class="sheet-grid">
             <button
               v-for="(question, index) in session.questions"
@@ -157,6 +104,7 @@
                   current: index === currentIndex,
                   answered: question.latestAnswer,
                   correct: question.latestAnswer?.correct === true,
+                  wrong: question.latestAnswer?.correct === false,
                 },
               ]"
               :aria-current="index === currentIndex ? 'step' : undefined"
@@ -166,37 +114,35 @@
               {{ question.displayNumber || index + 1 }}
             </button>
           </div>
-          <el-button
+          <LtButton
             v-if="session.status === 0"
-            type="primary"
-            :disabled="session.answeredQuestionCount < session.questions.length || redoing || submitting"
-            :loading="completing"
+            :disabled="session.answeredQuestionCount < session.questions.length || redoing || submitting || completing"
             class="complete-button"
             @click="completeLearning"
-            >完成本轮学习</el-button
+            >完成本轮学习</LtButton
           >
-          <p
-            v-if="session.status === 0 && session.answeredQuestionCount < session.questions.length"
-            class="complete-hint"
-          >
+          <p v-if="session.status === 0 && session.answeredQuestionCount < session.questions.length" class="muted">
             全部题目至少作答一次后可完成。
           </p>
+          <p v-if="completing" role="status">正在保存本轮学习…</p>
           <div v-if="completionError" class="inline-error" role="alert">
             <p>{{ completionError }}</p>
-            <el-button size="small" @click="completeLearning">重新完成</el-button>
+            <LtButton @click="completeLearning">重新完成</LtButton>
           </div>
         </aside>
       </section>
-
-      <section v-if="session.status === 1" class="completion-summary" aria-live="polite">
+      <section v-if="session.status === 1" class="completion-summary">
         <h2>本轮学习已完成</h2>
         <p>已保存 {{ session.answeredQuestionCount }} 题作答；可继续查看每题反馈，或返回试卷列表开始下一项学习。</p>
-        <el-button type="primary" @click="router.push('/exams')">返回试卷列表</el-button>
+        <LtButton variant="primary" @click="router.push('/exams')">查看试卷列表</LtButton>
       </section>
     </template>
+    <div v-else class="state" role="status">
+      <h1>这份试卷暂无可作答题目</h1>
+      <p>请核对试卷内容后重新开始学习。</p>
+    </div>
   </div>
 </template>
-
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -208,9 +154,10 @@ import {
   submitExamLearningAnswer,
   type ExamLearningSessionVO,
 } from '@/api/exam'
-import AiQuestionAssistant from '@/components/AiQuestionAssistant.vue'
-import LpEmptyState from '@/components/ui/LpEmptyState.vue'
-import LpStatePanel from '@/components/ui/LpStatePanel.vue'
+import AiQuestionAssistant from '@/views/practice/PracticeAiAssistant.vue'
+import { LtButton } from '@/components/living'
+import ExamLearningChoices from './ExamLearningChoices.vue'
+import QuestionProse from '@/views/question/QuestionProse.vue'
 import ExamLearningFeedback from './ExamLearningFeedback.vue'
 
 const route = useRoute()
@@ -270,6 +217,34 @@ function toggleMulti(label: string) {
   if (next.has(label)) next.delete(label)
   else next.add(label)
   multiAnswers.value = next
+}
+const choiceOptions = computed(() => {
+  const question = currentQuestion.value
+  if (!question) return []
+  if (question.questionType === 'TRUE_FALSE')
+    return [
+      { key: '', value: 'TRUE', content: '正确' },
+      { key: '', value: 'FALSE', content: '错误' },
+    ]
+  return question.options.map((option) => ({
+    key: option.optionLabel,
+    value: option.optionLabel,
+    content: option.content,
+  }))
+})
+const evaluated = computed(() => !redoing.value && currentQuestion.value?.latestAnswer?.correct != null)
+const correctAnswers = computed(() =>
+  (currentQuestion.value?.latestAnswer?.correctAnswer || '').split(',').map((value) => value.trim()),
+)
+function isSelected(value: string) {
+  return currentQuestion.value?.questionType === 'MULTIPLE_CHOICE'
+    ? multiAnswers.value.has(value)
+    : userAnswer.value === value
+}
+function pick(value: string) {
+  if (answerLocked.value) return
+  if (currentQuestion.value?.questionType === 'MULTIPLE_CHOICE') toggleMulti(value)
+  else userAnswer.value = value
 }
 function questionTypeLabel(type: string) {
   return (
@@ -332,7 +307,7 @@ function startRedo() {
 watch(currentQuestion, async () => {
   resetAnswerInput()
   await nextTick()
-  questionTitle.value?.scrollIntoView({ block: 'start', behavior: 'auto' })
+  questionTitle.value?.scrollIntoView({ block: 'nearest', behavior: 'auto' })
   questionTitle.value?.focus({ preventScroll: true })
 })
 
@@ -416,280 +391,174 @@ onUnmounted(() => {
   unsubscribeAuth()
 })
 </script>
-
 <style scoped>
 .paper-learning {
   display: grid;
-  gap: var(--lp-space-5);
-  width: min(100%, var(--lp-container-narrow));
-  margin: 0 auto;
-  padding: var(--lp-space-4) 0;
+  gap: var(--lt-space-6);
+  color: var(--lt-label);
 }
-.learning-header,
-.question-card,
-.answer-sheet,
-.completion-summary {
-  background: var(--lp-surface);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-lg);
-  box-shadow: var(--lp-shadow-xs);
-}
-.learning-header {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: var(--lp-space-5);
-  padding: var(--lp-space-6);
-}
-.learning-header-copy {
-  min-width: 0;
-}
-.section-kicker {
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-xs);
-}
-.learning-title {
-  margin: var(--lp-space-1) 0 0;
-  color: var(--lp-text);
-  font-size: var(--lp-text-3xl);
-  line-height: var(--lp-leading-tight);
-}
-.paper-source {
-  margin: var(--lp-space-2) 0 0;
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
+h1 {
+  margin: 0;
+  font-size: var(--lt-text-title1);
+  line-height: var(--lt-leading-tight);
   overflow-wrap: anywhere;
 }
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--lp-space-3);
-  flex-shrink: 0;
+h2 {
+  margin: 0;
+  font-size: var(--lt-text-title3);
 }
-.learning-progress {
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
-  white-space: nowrap;
+.learning-header {
+  display: grid;
+  gap: var(--lt-space-3);
+  padding-block: var(--lt-space-5);
+}
+p {
+  margin: 0;
+  line-height: var(--lt-leading-reading);
+}
+.muted {
+  color: var(--lt-label-2);
+}
+progress {
+  display: block;
+  width: 100%;
+  height: var(--lt-space-1);
+  border: 0;
+  border-radius: var(--lt-radius-pill);
+  background: var(--lt-fill);
+  color: var(--lt-accent);
+  accent-color: var(--lt-accent);
+}
+progress::-webkit-progress-bar {
+  background: var(--lt-fill);
+  border-radius: var(--lt-radius-pill);
+}
+progress::-webkit-progress-value {
+  background: var(--lt-accent);
+  border-radius: var(--lt-radius-pill);
+}
+progress::-moz-progress-bar {
+  background: var(--lt-accent);
+  border-radius: var(--lt-radius-pill);
 }
 .learning-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 240px;
-  gap: var(--lp-space-4);
-  align-items: start;
+  gap: var(--lt-space-6);
 }
 .question-card {
+  padding: var(--lt-space-6);
+  background: var(--lt-surface);
+  border-radius: var(--lt-radius-xl);
+  box-shadow: var(--lt-shadow-card);
   min-width: 0;
-  padding: var(--lp-space-6);
-}
-.question-section,
-.question-meta {
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
-}
-.question-section {
-  margin-bottom: var(--lp-space-2);
-  font-weight: var(--lp-weight-bold);
 }
 .question-meta {
   display: flex;
-  align-items: center;
-  gap: var(--lp-space-2);
+  flex-wrap: wrap;
+  gap: var(--lt-space-3);
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
 }
 .question-meta strong {
-  color: var(--lp-text);
-  font-size: var(--lp-text-lg);
+  color: var(--lt-label);
 }
 .question-content {
-  margin: var(--lp-space-5) 0;
-  color: var(--lp-text);
-  font-size: var(--lp-text-lg);
-  line-height: var(--lp-leading-relaxed);
-  white-space: pre-wrap;
-  outline: none;
+  scroll-margin-top: calc(var(--lt-space-10) + var(--lt-space-4));
+  margin-block: var(--lt-space-5);
 }
 .answer-box {
-  min-width: 0;
-  padding: 0;
   border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
 }
-.answer-box legend {
-  margin-bottom: var(--lp-space-3);
-  color: var(--lp-text);
-  font-weight: var(--lp-weight-semibold);
-}
-.option-list {
-  display: grid;
-  gap: var(--lp-space-3);
-}
-.option-item {
-  display: flex;
-  align-items: center;
-  gap: var(--lp-space-3);
-  padding: var(--lp-space-3) var(--lp-space-4);
-  color: var(--lp-text);
-  background: var(--lp-surface);
-  border: 1px solid var(--lp-border-strong);
-  border-radius: var(--lp-radius-md);
-  cursor: pointer;
-}
-.option-item:focus-within,
-.option-item:hover {
-  border-color: var(--lp-primary);
-  background: var(--lp-surface-subtle);
-}
-.option-item.selected {
-  border-color: var(--lp-primary);
-  background: var(--lp-primary-soft);
-}
-.option-item input {
-  accent-color: var(--lp-primary);
-}
-.option-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  flex: 0 0 auto;
-  color: var(--lp-primary);
-  background: var(--lp-primary-soft);
-  border-radius: var(--lp-radius-full);
-  font-weight: var(--lp-weight-bold);
-}
-.true-false-list {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-.true-false-list .option-item {
-  justify-content: center;
+textarea {
+  width: 100%;
+  padding: var(--lt-space-4);
+  background: var(--lt-fill-2);
+  color: var(--lt-label);
+  border: 1px solid var(--lt-separator);
+  border-radius: var(--lt-radius-md);
+  font: var(--lt-text-reading)/var(--lt-leading-reading) var(--lt-font);
+  resize: vertical;
 }
 .question-actions {
   display: flex;
-  justify-content: center;
-  gap: var(--lp-space-3);
-  margin-top: var(--lp-space-5);
-}
-.inline-error {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--lp-space-3);
-  margin-top: var(--lp-space-4);
-  padding: var(--lp-space-3);
-  color: var(--lp-text);
-  background: var(--lp-danger-soft);
-  border-inline-start: 3px solid var(--lp-danger);
-}
-.inline-error p {
-  margin: 0;
+  justify-content: flex-end;
+  gap: var(--lt-space-2);
+  flex-wrap: wrap;
+  margin-top: var(--lt-space-5);
 }
 .answer-sheet {
-  position: sticky;
-  top: var(--lp-space-4);
-  padding: var(--lp-space-4);
-}
-.sheet-title {
-  margin: 0 0 var(--lp-space-2);
-  color: var(--lp-text);
-  font-size: var(--lp-text-lg);
-}
-.sheet-summary {
-  margin: 0 0 var(--lp-space-4);
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-xs);
+  padding: var(--lt-space-5);
+  background: var(--lt-surface);
+  border-radius: var(--lt-radius-lg);
+  display: grid;
+  gap: var(--lt-space-3);
 }
 .sheet-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--lp-space-2);
+  display: flex;
+  gap: var(--lt-space-2);
+  flex-wrap: wrap;
 }
 .sheet-item {
-  min-width: 0;
-  height: var(--lp-control-height-small);
-  color: var(--lp-text-secondary);
-  background: var(--lp-surface-soft);
-  border: 1px solid var(--lp-border);
-  border-radius: var(--lp-radius-sm);
+  padding: var(--lt-space-2);
+  min-width: var(--lt-control-lg);
+  min-height: var(--lt-control-lg);
+  background: var(--lt-fill-2);
+  border: 0;
+  border-radius: var(--lt-radius-sm);
+  color: var(--lt-label-2);
+  font: inherit;
   cursor: pointer;
 }
 .sheet-item.answered {
-  color: var(--lp-on-primary);
-  background: var(--lp-warning);
-  border-color: var(--lp-warning);
+  background: var(--lt-accent-soft);
+  color: var(--lt-accent);
 }
 .sheet-item.correct {
-  background: var(--lp-success);
-  border-color: var(--lp-success);
+  background: var(--lt-green-soft);
+  color: var(--lt-green-text);
+}
+.sheet-item.wrong {
+  background: var(--lt-orange-soft);
+  color: var(--lt-orange-text);
 }
 .sheet-item.current {
-  box-shadow: 0 0 0 var(--lp-focus-width) var(--lp-primary);
+  outline: 2px solid var(--lt-accent);
+  outline-offset: 2px;
 }
 .complete-button {
-  width: 100%;
-  margin-top: var(--lp-space-4);
+  justify-self: start;
 }
-.complete-hint {
-  margin: var(--lp-space-2) 0 0;
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-xs);
-  line-height: var(--lp-leading-snug);
+.inline-error {
+  color: var(--lt-red-text);
+  margin-top: var(--lt-space-4);
+}
+.state {
+  padding: var(--lt-space-8);
+  text-align: center;
+  background: var(--lt-surface);
+  border-radius: var(--lt-radius-xl);
+}
+.state p {
+  margin-block: var(--lt-space-4);
+  color: var(--lt-label-2);
 }
 .completion-summary {
   display: grid;
-  gap: var(--lp-space-3);
-  padding: var(--lp-space-5);
-}
-.completion-summary h2,
-.completion-summary p {
-  margin: 0;
-}
-.completion-summary h2 {
-  color: var(--lp-text);
-  font-size: var(--lp-text-xl);
-}
-.completion-summary p {
-  color: var(--lp-text-secondary);
-  line-height: var(--lp-leading-body);
+  gap: var(--lt-space-4);
 }
 .sr-only {
   position: absolute;
   width: 1px;
   height: 1px;
   overflow: hidden;
-  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
   white-space: nowrap;
 }
-@media (max-width: 860px) {
-  .learning-layout {
-    grid-template-columns: 1fr;
-  }
-  .answer-sheet {
-    position: static;
-  }
-}
-@media (max-width: 640px) {
-  .paper-learning {
-    padding: 0;
-  }
-  .learning-header {
-    align-items: stretch;
-    flex-direction: column;
-    padding: var(--lp-space-4);
-  }
-  .header-actions {
-    justify-content: space-between;
-  }
-  .question-card {
-    padding: var(--lp-space-4);
-  }
-  .true-false-list {
-    grid-template-columns: 1fr;
-  }
-  .question-actions {
-    flex-wrap: wrap;
-  }
-  .inline-error {
-    align-items: flex-start;
-    flex-direction: column;
-  }
+textarea::placeholder {
+  color: var(--lt-label-2);
+  opacity: 1;
 }
 </style>

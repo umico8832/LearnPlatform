@@ -205,7 +205,7 @@ export const learnerRoutes: RouteRecordRaw[] = [
         path: 'exams/learn/:sessionId',
         name: 'ExamLearning',
         component: () => import('@/views/exam/ExamLearningView.vue'),
-        meta: { title: '试卷学习', focusTitle: '试卷学习' },
+        meta: { title: '试卷学习', focusTitle: '试卷学习', living: true },
       },
       {
         path: 'exams/result/:recordId',

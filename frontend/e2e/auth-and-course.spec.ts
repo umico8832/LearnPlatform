@@ -676,7 +676,7 @@ test('用户可完成2026真题学习并恢复可信来源反馈', async ({ page
     '2026 · 全国硕士研究生招生考试计算机学科专业基础综合 · 来源：https://csgraduates.com/study_methods/408quiz/2026/',
   )
   await expect(page.locator('.question-meta')).toContainText('第1题')
-  await expect(page.locator('.question-section')).toHaveText('一、单项选择题（数据结构）')
+  await expect(page.locator('.question-card > .muted')).toHaveText('一、单项选择题（数据结构）')
   await expect(page.getByRole('heading', { name: 'AI 学习助手' })).toBeVisible()
 
   const firstChoice = page.locator('.question-card .option-item input').first()
@@ -697,7 +697,7 @@ test('用户可完成2026真题学习并恢复可信来源反馈', async ({ page
   await expect(firstChoice).toBeEnabled()
   await page.locator('.question-card .option-item input').nth(1).check()
   await page.getByRole('button', { name: '提交答案', exact: true }).click()
-  await expect(page.locator('.exam-learning-feedback dd').first()).toHaveText('B')
+  await expect(page.locator('.exam-learning-feedback .answer-value').first()).toHaveText('B')
 
   for (const item of await page.locator('.sheet-item').all()) {
     await item.click()
