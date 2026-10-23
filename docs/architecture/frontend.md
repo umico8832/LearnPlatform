@@ -97,8 +97,10 @@ frontend/admin/   # 独立管理端 HTML 入口
 - 新基线只在 `.lt` 根内生效。`assets/styles/living.css` 定义 `--lt-` 令牌，颜色用 `light-dark()` 同时给出浅色与深色，
   默认跟随系统，`data-appearance` 可强制其一；展示首页与 Phase 28 起新做的学员页面固定深色（[ADR-0014](decisions/0014-learner-dark-only.md)）。重做页面用 `useLivingTheme` 把整个文档放进新基线，嵌入式组件自带 `.lt` 根；
   学员外框与 404 用 `useLivingTheme({ dark: true })` 固定深色，外框内的页面一并为深色。
-- 学员端页面与外框（含全局搜索）全部在新基线上，不使用 `--lp-` 变量、Element Plus 或 `Lp*` 组件；这些只留给管理端。
-  `utils/request.ts` 的失败与登录过期提示经 `utils/notify.ts` 发出：管理端用 Element Plus 消息，学员端入口换成底部浮层提示条。
+- 学员端入口 `main.ts` 只加载 `living.css`（含基础重置），页面与外框（含全局搜索）全部在新基线上，不使用 `--lp-` 变量、
+  Element Plus 或 `Lp*` 组件；`global.css`、`tokens.css` 与 Element Plus 只由管理端入口加载。两端共用的 `TurnstileWidget`
+  以 `--lt-` 为主，`--lp-` 只作管理端回退。`utils/request.ts` 的失败与登录过期提示经 `utils/notify.ts` 发出，
+  由两端入口各自注册：管理端用 Element Plus 消息，学员端用底部浮层提示条。
 - `motion/` 是与框架无关的解析解弹簧核心（命名预设、共享帧循环）和 `linear()` 缓动生成，
   `useSpring` 提供 Vue 绑定；`living.css` 中的缓动令牌由同名预设生成，测试保证两边一致。
 - `components/living/` 提供按需导入的 `Lt*` 基础组件，图标使用 Lucide；需要按钮外观的导航用 `LtLinkButton`，保持链接语义。面板基于原生 `<dialog>`，

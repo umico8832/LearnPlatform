@@ -154,6 +154,8 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+// 开发用页面目录沿用旧基线变量；学员端入口不再加载 global.css，这里单独引入。
+import '@/assets/styles/tokens.css'
 import { pageGroups, pages, type PageEntry } from './pageCatalog'
 import { normalizeAdminBase, resolvePageUrl } from './pageDirectoryUrl'
 import { getAuthPreviewOptions } from './authPreviewOptions'

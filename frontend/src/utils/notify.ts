@@ -1,10 +1,8 @@
-import { ElMessage } from 'element-plus'
-
 type ErrorNotifier = (message: string) => void
 
-/** 管理端沿用 Element Plus 提示；学员端在入口处换成新基线的提示条。 */
+/** 各入口注册自己的提示：管理端用 Element Plus 消息，学员端用新基线的提示条。未注册时只写控制台。 */
 let errorNotifier: ErrorNotifier = (message) => {
-  ElMessage.error(message)
+  console.error(message)
 }
 
 export function setErrorNotifier(notifier: ErrorNotifier) {

@@ -1,4 +1,4 @@
-/* 全局样式 · Quiet Digital Textbook
+/* 管理端全局样式 · Quiet Digital Textbook（学员端入口只加载 living.css）
  * 所有视觉取值来自 tokens.css，页面组件不直接定义裸色值/裸尺寸。
  */
 @import './tokens.css';

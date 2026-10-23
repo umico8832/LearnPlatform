@@ -86,7 +86,7 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
 
     <main id="app-main" ref="mainRef" class="main" tabindex="-1">
       <router-view v-slot="{ Component, route: current }">
-        <transition name="lp-content" @leave="finishPageLeave">
+        <transition name="page" @leave="finishPageLeave">
           <component :is="Component" :key="current.meta.living ? current.path : current.fullPath" />
         </transition>
       </router-view>
@@ -202,6 +202,18 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
   margin: 0 auto;
   padding: var(--lt-space-7) var(--lt-space-7) var(--lt-space-10);
   outline: none;
+}
+
+/* 换页时新页面淡入并轻微上移；旧页面立即移除（见 finishPageLeave）。 */
+.page-enter-active {
+  transition:
+    opacity var(--lt-dur-fade) var(--lt-ease-fade),
+    transform var(--lt-dur-fade) var(--lt-ease-fade);
+}
+
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(4px);
 }
 
 .skip-link {

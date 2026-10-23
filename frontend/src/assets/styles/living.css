@@ -196,13 +196,52 @@
 
 /* ------------------------------------------------------------------ page */
 
+/* 学员端入口只加载本文件，基础重置写在这里；管理端的 global.css 另有一份。 */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-width: 320px;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+#app {
+  height: 100%;
+}
+
+:where(button, input, textarea, select) {
+  font: inherit;
+}
+
+:where(a) {
+  color: inherit;
+  text-decoration: none;
+}
+
+:where(h1, h2, h3, h4, h5, h6) {
+  margin: 0;
+}
+
+:where(button, a, input, select, textarea) {
+  -webkit-tap-highlight-color: transparent;
+}
+
 html.lt,
 html.lt body {
   background: var(--lt-canvas);
   color: var(--lt-label);
 }
 
-/* 中和旧基线 global.css 中的元素级规则，避免旧值漏进新页面。 */
+/* 跳到锚点或键盘聚焦时让开吸顶的导航栏。 */
+.lt main :is(button, a, input, select, textarea),
+.lt :target {
+  scroll-margin-block: calc(64px + var(--lt-space-6));
+}
+
 .lt :where(h1, h2, h3, h4, h5, h6) {
   color: inherit;
   font-weight: 600;
@@ -234,6 +273,17 @@ html.lt body {
     [role='tab']
   ):focus {
   outline: none;
+}
+
+html.lt::-webkit-scrollbar,
+.lt ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+html.lt::-webkit-scrollbar-track,
+.lt ::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 html.lt::-webkit-scrollbar-thumb,

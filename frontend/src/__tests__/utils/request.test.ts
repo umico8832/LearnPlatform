@@ -2,12 +2,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { AxiosError, type AxiosAdapter } from 'axios'
 
 const mocks = vi.hoisted(() => ({ error: vi.fn(), redirect: vi.fn() }))
-vi.mock('element-plus', () => ({ ElMessage: { error: mocks.error } }))
 vi.mock('@/utils/authNavigation', () => ({ redirectToLogin: mocks.redirect }))
 
 import request, { aiService } from '@/utils/request'
 import { getToken, setToken } from '@/utils/auth'
 import { BusinessError } from '@/utils/errors'
+import { setErrorNotifier } from '@/utils/notify'
 
 const networkFailure: AxiosAdapter = async (config) => {
   throw new AxiosError('Network Error', 'ERR_NETWORK', config)
@@ -22,6 +22,7 @@ const responseWithCode =
     config,
   })
 
+setErrorNotifier(mocks.error)
 beforeEach(() => vi.clearAllMocks())
 
 describe('learning request business codes', () => {
