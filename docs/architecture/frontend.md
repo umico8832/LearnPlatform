@@ -98,7 +98,7 @@ frontend/admin/   # 独立管理端 HTML 入口
   默认跟随系统，`data-appearance` 可强制其一；展示首页与 Phase 28 起新做的学员页面固定深色（[ADR-0014](decisions/0014-learner-dark-only.md)）。重做页面用 `useLivingTheme` 把整个文档放进新基线，嵌入式组件自带 `.lt` 根；
   学员外框与 404 用 `useLivingTheme({ dark: true })` 固定深色，外框内的页面一并为深色。
 - 学员端入口 `main.ts` 只加载 `living.css`（含基础重置），页面与外框（含全局搜索）全部在新基线上，不使用 `--lp-` 变量、
-  Element Plus 或 `Lp*` 组件；`global.css`、`tokens.css` 与 Element Plus 只由管理端入口加载。两端共用的 `TurnstileWidget`
+  Element Plus 或 `Lp*` 组件；`global.css`、`tokens.css` 与 Element Plus 只由管理端入口加载（开发用页面目录另行引入 `tokens.css`）。两端共用的 `TurnstileWidget`
   以 `--lt-` 为主，`--lp-` 只作管理端回退。`utils/request.ts` 的失败与登录过期提示经 `utils/notify.ts` 发出，
   由两端入口各自注册：管理端用 Element Plus 消息，学员端用底部浮层提示条。
 - `motion/` 是与框架无关的解析解弹簧核心（命名预设、共享帧循环）和 `linear()` 缓动生成，
