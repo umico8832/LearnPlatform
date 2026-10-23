@@ -6,6 +6,7 @@ import com.learnplatform.dto.QuestionSubmissionRequest;
 import com.learnplatform.dto.QuestionSubmissionVO;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.QuestionSubmissionService;
+import com.learnplatform.service.HttpIdempotencyService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -27,16 +29,21 @@ import org.springframework.web.bind.annotation.RestController;
 public class QuestionSubmissionController {
 
     private final QuestionSubmissionService submissionService;
+    private final HttpIdempotencyService idempotency;
 
-    public QuestionSubmissionController(QuestionSubmissionService submissionService) {
+    public QuestionSubmissionController(QuestionSubmissionService submissionService,
+                                        HttpIdempotencyService idempotency) {
         this.submissionService = submissionService;
+        this.idempotency = idempotency;
     }
 
     @Operation(summary = "提交题目投稿", description = "用户提交一道新题目，待管理员审核")
     @PostMapping
-    public R<QuestionSubmissionVO> submit(@Valid @RequestBody QuestionSubmissionRequest request) {
+    public R<QuestionSubmissionVO> submit(@Valid @RequestBody QuestionSubmissionRequest request,
+                                         @RequestHeader("Idempotency-Key") String requestKey) {
         Long userId = getCurrentUserId();
-        QuestionSubmissionVO vo = submissionService.submitQuestion(request, userId);
+        QuestionSubmissionVO vo = idempotency.execute(userId, "submission.create", requestKey, request,
+                QuestionSubmissionVO.class, () -> submissionService.submitQuestion(request, userId));
         return R.ok(vo);
     }
 

@@ -123,8 +123,10 @@ export interface SubmissionDifficultyAssessment {
 // ========== 用户端 ==========
 
 /** 提交题目投稿 */
-export function submitQuestion(data: SubmissionForm, options?: { errorDisplay?: 'inline' }) {
-  return request.post<unknown, ApiResponse<QuestionSubmissionVO>>('/submission', data, ...(options ? [options] : []))
+export function submitQuestion(data: SubmissionForm, options?: { errorDisplay?: 'inline' }, requestKey: string = crypto.randomUUID()) {
+  return request.post<unknown, ApiResponse<QuestionSubmissionVO>>('/submission', data, {
+    ...options, headers: { 'Idempotency-Key': requestKey },
+  })
 }
 
 /** 我的投稿列表 */

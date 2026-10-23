@@ -1,5 +1,7 @@
 package com.learnplatform.service;
 
+import java.util.Objects;
+
 import java.util.Arrays;
 
 import java.util.Collections;
@@ -65,6 +67,17 @@ public class QuestionSubmissionImportService {
         }
         referenceLocks.lockForReference(Collections.singletonList(submission.getCourseId()),
                 parseKnowledgePointIds(submission.getKnowledgePointIds()));
+
+        QuestionSubmission current = submissionMapper.selectActiveForUpdate(submissionId);
+        if (current == null) { throw new BusinessException(ResultCode.NOT_FOUND, "投稿不存在"); }
+        if (current.getStatus() != 1) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR, "只有已通过且尚未入库的投稿才能入库");
+        }
+        if (!Objects.equals(current.getCourseId(), submission.getCourseId())
+                || !Objects.equals(current.getKnowledgePointIds(), submission.getKnowledgePointIds())) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR, "投稿关联已变更，请重试");
+        }
+        submission = current;
 
         Question question = new Question();
         question.setContent(submission.getContent());

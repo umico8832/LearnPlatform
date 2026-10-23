@@ -10,6 +10,7 @@ import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +39,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 class AnswerIdempotencyIntegrationTest extends IntegrationTestBase {
     static final long USER = 88119L;
     @Autowired PracticeController practice;
+    @Autowired QuestionSubmissionController submissions;
     @Autowired ReviewController review;
     @Autowired QuestionUnderstandingController understanding;
     @Autowired QuestionUnderstandingService understandingService;
@@ -52,7 +54,7 @@ class AnswerIdempotencyIntegrationTest extends IntegrationTestBase {
         question = db.queryForObject("SELECT question_id FROM question_understanding_content WHERE source_title='系统种子生成：合法出栈序列'", Long.class);
         long course = db.queryForObject("SELECT course_id FROM question WHERE id=?", Long.class, question);
         db.update("INSERT INTO user_course(user_id,course_id) VALUES(?,?)", USER, course);
-        mvc = MockMvcBuilders.standaloneSetup(practice, review, understanding)
+        mvc = MockMvcBuilders.standaloneSetup(practice, review, understanding, submissions)
                 .setMessageConverters(new JacksonJsonHttpMessageConverter((tools.jackson.databind.json.JsonMapper) json))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .setCustomArgumentResolvers(new CustomUserDetailsArgumentResolver()).build();
@@ -97,6 +99,27 @@ class AnswerIdempotencyIntegrationTest extends IntegrationTestBase {
         }
         assertEquals(ResultCode.BUSINESS_ERROR.getCode(), submit(path, key, body.replace("\"A\"", "\"B\"")).path("code").asInt());
         assertEquals(after, counts(), "Conflicting reuse must not write any fact");
+    }
+
+    @Test void aSubmissionIntentIsCreatedOnceAndReplayedAfterResponseLoss() throws Exception {
+        long course = db.queryForObject("SELECT course_id FROM question WHERE id=?", Long.class, question);
+        String body = "{\"content\":\"D6 隔离投稿\",\"questionType\":\"FILL_BLANK\",\"courseId\":" + course
+                + ",\"difficulty\":1,\"correctAnswer\":\"fixture\"}";
+        String key = UUID.randomUUID().toString();
+        var barrier = new CyclicBarrier(2);
+        JsonNode first;
+        try (var pool = Executors.newFixedThreadPool(2)) {
+            var one = pool.submit(() -> { barrier.await(5, TimeUnit.SECONDS); return submit("/api/submission", key, body); });
+            var two = pool.submit(() -> { barrier.await(5, TimeUnit.SECONDS); return submit("/api/submission", key, body); });
+            first = one.get(30, TimeUnit.SECONDS);
+            assertEquals(0, first.path("code").asInt());
+            assertEquals(first.path("data"), two.get(30, TimeUnit.SECONDS).path("data"));
+        }
+        assertEquals(first.path("data"), submit("/api/submission", key, body).path("data"));
+        assertEquals(1, db.queryForObject("SELECT COUNT(*) FROM question_submission WHERE user_id=?", Integer.class, USER));
+        assertEquals(ResultCode.BUSINESS_ERROR.getCode(), submit("/api/submission", key,
+                body.replace("D6 隔离投稿", "D6 已修改投稿")).path("code").asInt());
+        assertEquals(1, db.queryForObject("SELECT COUNT(*) FROM question_submission WHERE user_id=?", Integer.class, USER));
     }
 
     private JsonNode submit(String path, String key, String body) throws Exception {

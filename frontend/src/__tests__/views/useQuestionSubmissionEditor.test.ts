@@ -88,10 +88,25 @@ describe('投稿表单与提交状态', () => {
     expect(editor.draft.content).toBe('题目内容')
     expect(editor.error.value).toContain('内容已保留')
     expect(saved).not.toHaveBeenCalled()
+    const first = vi.mocked(submitQuestion).mock.calls[0]
     await editor.submit()
+    expect(vi.mocked(submitQuestion).mock.calls[1][2]).toBe(first[2])
+    expect(vi.mocked(submitQuestion).mock.calls[1][0]).toEqual(first[0])
     expect(open.value).toBe(false)
     expect(saved).toHaveBeenCalledOnce()
     expect(editor.draft.content).toBe('')
+  })
+
+  it('修改未知结果的投稿内容后生成新的提交标识', async () => {
+    vi.mocked(submitQuestion).mockRejectedValue(new Error('offline'))
+    const { editor } = setup()
+    await flushPromises()
+    fill(editor)
+    await editor.submit()
+    const previous = vi.mocked(submitQuestion).mock.calls[0][2]
+    editor.draft.content = '修改后的题目'
+    await editor.submit()
+    expect(vi.mocked(submitQuestion).mock.calls[1][2]).not.toBe(previous)
   })
 
   it('快速重复提交只产生一个写请求', async () => {

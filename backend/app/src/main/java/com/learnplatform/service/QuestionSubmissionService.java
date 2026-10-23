@@ -153,7 +153,7 @@ public class QuestionSubmissionService {
      */
     @Transactional
     public QuestionSubmissionVO reviewSubmission(Long submissionId, QuestionReviewRequest request, Long reviewerId) {
-        QuestionSubmission submission = submissionMapper.selectById(submissionId);
+        QuestionSubmission submission = submissionMapper.selectActiveForUpdate(submissionId);
         if (submission == null) {
             throw new BusinessException(ResultCode.NOT_FOUND, "投稿不存在");
         }

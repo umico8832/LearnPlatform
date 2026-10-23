@@ -14,8 +14,8 @@ describe('个人题目列表的原位错误配置', () => {
       difficulty: 2,
       correctAnswer: 'TRUE',
     }
-    submitQuestion(payload, { errorDisplay: 'inline' })
-    expect(request.post).toHaveBeenCalledWith('/submission', payload, { errorDisplay: 'inline' })
+    submitQuestion(payload, { errorDisplay: 'inline' }, '00000000-0000-4000-8000-000000000006')
+    expect(request.post).toHaveBeenCalledWith('/submission', payload, { errorDisplay: 'inline', headers: { 'Idempotency-Key': '00000000-0000-4000-8000-000000000006' } })
     getMySubmissions({ pageNum: 2, pageSize: 10, status: 0 }, { errorDisplay: 'inline' })
     expect(request.get).toHaveBeenCalledWith('/submission/my', {
       params: { pageNum: 2, pageSize: 10, status: 0 },

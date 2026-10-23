@@ -46,6 +46,8 @@ class QuestionSubmissionImportServiceTest {
         QuestionSubmissionViewService viewService = new QuestionSubmissionViewService(userMapper, courseMapper);
         importService = new QuestionSubmissionImportService(submissionMapper, questionMapper, questionOptionMapper,
                 questionKnowledgePointMapper, referenceLocks, questionSourceService, optionService, viewService);
+        when(submissionMapper.selectActiveForUpdate(10L)).thenAnswer(
+                invocation -> submissionMapper.selectById(10L));
     }
 
     @Test

@@ -1,3 +1,4 @@
+import { createSubmissionIntent } from '@/utils/submissionIntent'
 import { computed, onScopeDispose, reactive, ref, watch, type Ref } from 'vue'
 import { getAllCourses, type CourseVO } from '@/api/course'
 import { submitQuestion, type SubmissionForm } from '@/api/submission'
@@ -15,6 +16,7 @@ export function useQuestionSubmissionEditor(open: Ref<boolean>, onSubmitted: () 
   const coursesLoaded = ref(false)
   const submitting = ref(false)
   const error = ref('')
+  const intent = createSubmissionIntent<SubmissionForm>()
   let alive = true
   let courseRequest = 0
   const showOptions = computed(() => ['SINGLE_CHOICE', 'MULTIPLE_CHOICE'].includes(draft.questionType))
@@ -76,9 +78,11 @@ export function useQuestionSubmissionEditor(open: Ref<boolean>, onSubmitted: () 
     const current = capture()
     submitting.value = true
     try {
-      const response = await submitQuestion(payload, { errorDisplay: 'inline' })
+      const submission = intent.prepare(payload)
+      const response = await submitQuestion(submission.body, { errorDisplay: 'inline' }, submission.key)
       if (!current()) return
       if (response.code !== 0) throw new Error('Submission failed')
+      intent.reset()
       open.value = false
       Object.assign(draft, emptySubmissionDraft())
       options.value = newOptions()
@@ -99,6 +103,7 @@ export function useQuestionSubmissionEditor(open: Ref<boolean>, onSubmitted: () 
   onScopeDispose(
     onAuthSessionChange(() => {
       courseRequest++
+      intent.reset()
       Object.assign(draft, emptySubmissionDraft())
       options.value = newOptions()
       courses.value = []
