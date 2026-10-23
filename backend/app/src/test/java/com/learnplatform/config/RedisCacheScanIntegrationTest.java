@@ -11,8 +11,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
 
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -31,6 +31,8 @@ class RedisCacheScanIntegrationTest {
                 for (int i = 0; i < 2500; i++) { region.put("fixture-" + i, "value"); }
                 manager.getCache("statistics").put(987405L, "unaffected");
                 try (var connection = factory.getConnection()) {
+                    await().untilAsserted(() -> assertEquals(2501L, connection.serverCommands().dbSize()));
+                    assertEquals("unaffected", manager.getCache("statistics").get(987405L, String.class));
                     Properties before = connection.serverCommands().info("commandstats");
                     new CacheEvictService(manager).evictAdminStatistics();
                     Properties after = connection.serverCommands().info("commandstats");
@@ -38,7 +40,8 @@ class RedisCacheScanIntegrationTest {
                     assertEquals(calls(before, "keys"), calls(after, "keys"));
                     assertNull(region.get("fixture-0"));
                     assertNull(region.get("fixture-2499"));
-                    assertNotNull(manager.getCache("statistics").get(987405L));
+                    assertEquals("unaffected", manager.getCache("statistics").get(987405L, String.class));
+                    assertEquals(1L, connection.serverCommands().dbSize());
                     var evidence = Path.of("target", "performance", "redis-scan.txt");
                     Files.createDirectories(evidence.getParent());
                     Files.writeString(evidence, "Fixture: 2500 region keys, 1 unrelated key\nSCAN calls="
