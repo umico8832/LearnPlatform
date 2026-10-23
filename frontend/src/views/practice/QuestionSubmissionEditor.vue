@@ -3,6 +3,7 @@ import { computed, nextTick, ref, watch } from 'vue'
 import { Plus, Trash2 } from '@lucide/vue'
 import LtButton from '@/components/living/LtButton.vue'
 import LtSheet from '@/components/living/LtSheet.vue'
+import LtSegmented from '@/components/living/LtSegmented.vue'
 import { useQuestionSubmissionEditor } from './useQuestionSubmissionEditor'
 import { difficultyLabel, practiceQuestionTypes } from './practiceLibraryPresentation'
 
@@ -31,6 +32,19 @@ const {
   removeOption,
   submit,
 } = useQuestionSubmissionEditor(open, () => emit('submitted'))
+const difficulty = computed({
+  get: () => String(draft.difficulty),
+  set: (value: string) => {
+    draft.difficulty = Number(value)
+  },
+})
+const difficultyOptions = computed(() =>
+  Array.from({ length: 5 }, (_, index) => ({
+    value: String(index + 1),
+    label: difficultyLabel(index + 1),
+    disabled: submitting.value,
+  })),
+)
 const errorElement = ref<HTMLElement>()
 watch(error, async (message) => {
   if (message) {
@@ -57,13 +71,13 @@ watch(error, async (message) => {
         </p>
         <div class="form-columns">
           <label
-            >所属课程 <em>必填</em
+            ><span>所属课程 <em>必填</em></span
             ><select v-model="draft.courseId" :disabled="submitting || !courses.length">
               <option :value="undefined" disabled>选择课程</option>
               <option v-for="course in courses" :key="course.id" :value="course.id">{{ course.name }}</option>
             </select></label
           ><label
-            >题型 <em>必填</em
+            ><span>题型 <em>必填</em></span
             ><select v-model="draft.questionType" :disabled="submitting" @change="typeChanged">
               <option value="" disabled>选择题型</option>
               <option v-for="type in practiceQuestionTypes" :key="type.value" :value="type.value">
@@ -74,16 +88,10 @@ watch(error, async (message) => {
         </div>
         <fieldset :disabled="submitting">
           <legend>难度 <em>必填</em></legend>
-          <div class="choice-row">
-            <label v-for="value in 5" :key="value" class="radio-choice"
-              ><input v-model="draft.difficulty" name="submission-difficulty" type="radio" :value="value" /><span>{{
-                difficultyLabel(value)
-              }}</span></label
-            >
-          </div>
+          <LtSegmented v-model="difficulty" :options="difficultyOptions" label="难度" />
         </fieldset>
         <label
-          >题干内容 <em>必填</em
+          ><span>题干内容 <em>必填</em></span
           ><textarea
             v-model="draft.content"
             rows="4"
@@ -134,7 +142,7 @@ watch(error, async (message) => {
           </div>
         </fieldset>
         <label v-else-if="['FILL_BLANK', 'SHORT_ANSWER'].includes(draft.questionType)"
-          >参考答案 <em>必填</em
+          ><span>参考答案 <em>必填</em></span
           ><textarea
             v-model="draft.correctAnswer"
             rows="3"
@@ -144,7 +152,7 @@ watch(error, async (message) => {
           />
         </label>
         <label
-          >解析 <em>选填</em
+          ><span>解析 <em>选填</em></span
           ><textarea
             v-model="draft.analysis"
             rows="3"
@@ -155,10 +163,10 @@ watch(error, async (message) => {
         </label>
         <div class="form-columns">
           <label
-            >标签 <em>选填</em
+            ><span>标签 <em>选填</em></span
             ><input v-model="draft.tags" maxlength="500" placeholder="用逗号分隔" :disabled="submitting" /></label
           ><label
-            >来源 <em>选填</em
+            ><span>来源 <em>选填</em></span
             ><input v-model="draft.source" maxlength="200" placeholder="例如：课本名称及章节" :disabled="submitting"
           /></label>
         </div>
@@ -253,6 +261,10 @@ textarea:focus-visible,
   outline: 2px solid var(--lt-accent);
   outline-offset: 2px;
 }
+.submission-form :deep(.lt-segmented) {
+  width: max-content;
+  max-width: 100%;
+}
 .choice-row {
   display: flex;
   gap: var(--lt-space-2);
@@ -269,7 +281,22 @@ textarea:focus-visible,
   background: var(--lt-fill-2);
   cursor: pointer;
 }
-.radio-choice input,
+.radio-choice {
+  position: relative;
+}
+.radio-choice input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.radio-choice:has(input:checked) {
+  background: var(--lt-accent-soft);
+  box-shadow: inset 0 0 0 1.5px var(--lt-accent);
+}
 .check input {
   width: auto;
   min-height: 0;

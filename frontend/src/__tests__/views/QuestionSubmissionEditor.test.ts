@@ -52,12 +52,18 @@ describe('QuestionSubmissionEditor', () => {
     const selects = wrapper.findAll('select')
     await selects[0]!.setValue('1')
     await selects[1]!.setValue('TRUE_FALSE')
+    await wrapper.get('[role="radio"]:nth-of-type(4)').trigger('click')
     await wrapper.get('textarea[placeholder="写下完整的题目"]').setValue('投稿题目')
     await wrapper.get('input[type="radio"][value="TRUE"]').setValue()
     await wrapper.get('form').trigger('submit')
     await flushPromises()
 
     expect(submitQuestion).toHaveBeenCalledOnce()
+    expect(submitQuestion).toHaveBeenCalledWith(
+      expect.objectContaining({ difficulty: 4 }),
+      { errorDisplay: 'inline' },
+      expect.any(String),
+    )
     const close = wrapper.get('button')
     ;(close.element as HTMLButtonElement).focus()
     expect(document.activeElement).toBe(close.element)
