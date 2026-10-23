@@ -128,16 +128,15 @@ public class GamificationRewardService {
     long xpBefore = number(before, "total_xp");
     LocalDate day = learningDate(event.getOccurredTime());
     boolean repeated =
-        jdbc.queryForObject(
-                "SELECT COUNT(*) FROM gamification_xp_ledger WHERE user_id=? AND course_id=? AND"
-                    + " subject_type=? AND subject_id=? AND event_date=?",
-                Long.class,
+        Boolean.TRUE.equals(jdbc.queryForObject(
+                "SELECT EXISTS(SELECT 1 FROM gamification_xp_ledger WHERE user_id=? AND course_id=? AND"
+                    + " subject_type=? AND subject_id=? AND event_date=?)",
+                Boolean.class,
                 event.getUserId(),
                 event.getCourseId(),
                 event.getSubjectType(),
                 event.getSubjectId(),
-                day)
-            > 0;
+                day));
     int xp = repeated ? 0 : GamificationRules.answerXp(correct, event.getEventType());
     String reason =
         repeated
