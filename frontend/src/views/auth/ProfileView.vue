@@ -218,6 +218,11 @@ onUnmounted(() => {
 })
 </script>
 <style scoped>
+.settings form > .lt-button {
+  justify-self: end;
+  width: max-content;
+}
+
 .profile-layout {
   display: grid;
   grid-template-columns: calc(var(--lt-space-10) * 4) minmax(0, 1fr);
@@ -343,5 +348,10 @@ form input:focus-visible {
 .profile-page :deep(input::placeholder) {
   color: var(--lt-label-2);
   opacity: 1;
+}
+@media (max-width: 720px) {
+  .profile-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 </style>
