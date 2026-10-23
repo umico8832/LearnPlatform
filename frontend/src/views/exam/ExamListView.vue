@@ -151,7 +151,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Document, EditPen, Medal, Reading, Timer, Upload } from '@element-plus/icons-vue'
 import { deletePrivateExamPaper, getPublishedPapers, startExam, startExamLearningSession } from '@/api/exam'
 import { getAuthSessionVersion, isAuthenticated, onAuthSessionChange } from '@/utils/auth'
@@ -160,6 +160,7 @@ import LpPageHeader from '@/components/ui/LpPageHeader.vue'
 import LpStat from '@/components/ui/LpStat.vue'
 import LpStatePanel from '@/components/ui/LpStatePanel.vue'
 import ExamRecordList from '@/components/exam/ExamRecordList.vue'
+import { takeExamNotice } from './examNotice'
 import PrivateExamImportDialog from '@/components/exam/PrivateExamImportDialog.vue'
 import PrivateExamSourceManager from '@/components/exam/PrivateExamSourceManager.vue'
 
@@ -218,6 +219,8 @@ function isPaperBusy(paperId: number) {
 }
 
 onMounted(() => {
+  const notice = takeExamNotice()
+  if (notice) ElMessage.warning(notice)
   void loadPapers()
 })
 

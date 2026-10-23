@@ -1,192 +1,25 @@
-<template>
-  <div class="exam-take-container">
-    <LpStatePanel v-if="loading" state="loading" loading-label="正在恢复考试与剩余时间" />
-    <LpStatePanel
-      v-else-if="loadError"
-      state="error"
-      title="暂时无法恢复考试"
-      :description="loadError"
-      retry-label="重试恢复"
-      @retry="load"
-    >
-      <template #retry
-        ><el-button type="primary" @click="load">重试恢复</el-button
-        ><el-button @click="leaveForRecords">返回考试记录</el-button></template
-      >
-    </LpStatePanel>
-    <LpEmptyState
-      v-else-if="!currentQuestion"
-      title="这份试卷暂无可作答题目"
-      description="请返回考试记录，核对试卷状态。"
-    >
-      <template #actions><el-button @click="leaveForRecords">返回考试记录</el-button></template>
-    </LpEmptyState>
-    <template v-else>
-      <header class="take-header">
-        <div class="take-header-title">
-          <span class="section-kicker">{{ paperTitle }}</span>
-          <h1 class="take-heading">考试进行中</h1>
-        </div>
-        <div class="take-header-progress">
-          <span class="progress-text">{{ currentIndex + 1 }} / {{ questions.length }}</span
-          ><LpProgress
-            :percent="progressPercent"
-            tone="primary"
-            :label="`已作答 ${answeredCount} / ${questions.length} 题`"
-          /><span class="answered-text">已答 {{ answeredCount }} / {{ questions.length }}</span>
-        </div>
-        <div class="take-header-right">
-          <span
-            :class="['countdown', { 'countdown-warn': remainSeconds < 300 }]"
-            role="timer"
-            aria-live="off"
-            :aria-label="`剩余 ${countdownText}`"
-            ><el-icon aria-hidden="true"><Timer /></el-icon>{{ countdownText }}</span
-          ><el-button type="primary" :loading="submitted" :disabled="locked" @click="handleSubmit">提交试卷</el-button>
-        </div>
-      </header>
-      <p class="exam-note">
-        答案暂存于当前标签页，刷新可继续作答；离开或交卷后清除。计时不会暂停。<span
-          v-if="draftStorageError"
-          role="status"
-          >{{ draftStorageError }}</span
-        ><span v-else-if="remainSeconds < 300" role="status">剩余不足 5 分钟，请留意交卷时间。</span>
-      </p>
-      <div class="question-area">
-        <article class="question-card" aria-labelledby="exam-question-title">
-          <div v-if="currentQuestion.sectionTitle" class="q-section">{{ currentQuestion.sectionTitle }}</div>
-          <div class="q-meta">
-            <strong class="q-number">{{ currentQuestion.displayNumber || `第 ${currentIndex + 1} 题` }}</strong
-            ><el-tag size="small" effect="plain">{{ getTypeLabel(currentQuestion.questionType) }}</el-tag
-            ><span class="q-score">{{ currentQuestion.score }} 分</span>
-          </div>
-          <div id="exam-question-title" ref="questionTitle" class="q-content" tabindex="-1">
-            <MarkdownRenderer :content="currentQuestion.content" />
-          </div>
-          <fieldset class="answer-options" :disabled="locked">
-            <legend>作答</legend>
-            <div
-              v-if="currentQuestion.questionType === 'SINGLE_CHOICE'"
-              class="option-list"
-              role="radiogroup"
-              aria-label="单选答案"
-            >
-              <label
-                v-for="opt in currentQuestion.options"
-                :key="opt.id"
-                class="option-item"
-                :class="{ selected: answers[currentQuestion.questionId] === opt.optionLabel }"
-                ><input
-                  v-model="answers[currentQuestion.questionId]"
-                  type="radio"
-                  name="exam-answer"
-                  :value="opt.optionLabel"
-                /><span class="opt-label">{{ opt.optionLabel }}</span
-                ><span>{{ opt.content }}</span></label
-              >
-            </div>
-            <div
-              v-else-if="currentQuestion.questionType === 'MULTIPLE_CHOICE'"
-              class="option-list"
-              role="group"
-              aria-label="多选答案"
-            >
-              <label
-                v-for="opt in currentQuestion.options"
-                :key="opt.id"
-                class="option-item"
-                :class="{ selected: isMultiSelected(currentQuestion.questionId, opt.optionLabel) }"
-                ><input
-                  type="checkbox"
-                  :checked="isMultiSelected(currentQuestion.questionId, opt.optionLabel)"
-                  @change="toggleMulti(currentQuestion.questionId, opt.optionLabel)"
-                /><span class="opt-label">{{ opt.optionLabel }}</span
-                ><span>{{ opt.content }}</span></label
-              >
-            </div>
-            <div
-              v-else-if="currentQuestion.questionType === 'TRUE_FALSE'"
-              class="option-list tf-list"
-              role="radiogroup"
-              aria-label="判断答案"
-            >
-              <label
-                v-for="opt in [
-                  { value: 'TRUE', label: '正确' },
-                  { value: 'FALSE', label: '错误' },
-                ]"
-                :key="opt.value"
-                class="option-item"
-                :class="{ selected: answers[currentQuestion.questionId] === opt.value }"
-                ><input
-                  v-model="answers[currentQuestion.questionId]"
-                  type="radio"
-                  name="exam-answer"
-                  :value="opt.value"
-                />{{ opt.label }}</label
-              >
-            </div>
-            <el-input
-              v-else
-              v-model="answers[currentQuestion.questionId]"
-              type="textarea"
-              :rows="6"
-              :aria-label="`${currentQuestion.displayNumber || `第 ${currentIndex + 1} 题`}答案`"
-              placeholder="请输入答案"
-            />
-          </fieldset>
-          <div v-if="submitError" class="submit-error" role="alert">
-            <p>{{ submitError }}</p>
-            <el-button :loading="submitted" :disabled="locked" @click="doSubmit">重试交卷</el-button>
-          </div>
-          <div class="nav-btns">
-            <el-button :disabled="currentIndex === 0 || locked" @click="goTo(currentIndex - 1)">上一题</el-button
-            ><el-button
-              v-if="currentIndex < questions.length - 1"
-              type="primary"
-              :disabled="locked"
-              @click="goTo(currentIndex + 1)"
-              >下一题</el-button
-            ><el-button v-else type="primary" :loading="submitted" :disabled="locked" @click="handleSubmit"
-              >提交试卷</el-button
-            >
-          </div>
-        </article>
-        <aside class="answer-sheet" aria-label="答题导航">
-          <h2 class="sheet-heading">答题卡</h2>
-          <p class="sheet-summary">已答 {{ answeredCount }} · 未答 {{ questions.length - answeredCount }}</p>
-          <div class="sheet-grid">
-            <button
-              v-for="(q, idx) in questions"
-              :key="q.questionId"
-              type="button"
-              class="sheet-item"
-              :class="{ answered: answers[q.questionId]?.trim(), current: idx === currentIndex }"
-              :disabled="locked"
-              :title="q.displayNumber || `第 ${idx + 1} 题`"
-              :aria-label="`前往${q.displayNumber || `第 ${idx + 1} 题`}${answers[q.questionId]?.trim() ? '，已作答' : '，未作答'}`"
-              :aria-current="idx === currentIndex ? 'step' : undefined"
-              @click="goTo(idx)"
-            >
-              {{ q.displayNumber || idx + 1
-              }}<span v-if="answers[q.questionId]?.trim()" class="sheet-check" aria-hidden="true">✓</span>
-            </button>
-          </div>
-        </aside>
-      </div>
-    </template>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { Timer } from '@element-plus/icons-vue'
+import { ChevronLeft, RotateCcw } from '@lucide/vue'
+import { LtButton, LtSheet } from '@/components/living'
+import { springAnimate, springs } from '@/motion'
+import QuestionProse from '@/views/question/QuestionProse.vue'
+import ExamChoices from './ExamChoices.vue'
+import ExamPanel from './ExamPanel.vue'
+import { leaveMessage } from './useExamLeaveGuard'
 import { useExamTakingSession } from './useExamTakingSession'
-import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
+
+/**
+ * 限时考试答题页（Phase 28 新基线，沉浸外框内）。左边是当前这道题，右边一列固定显示剩余时间、
+ * 交卷和答题卡。交卷前不出现任何对错提示；交卷与离开都先在弹层里确认。
+ */
+defineOptions({ name: 'ExamTakeView' })
+
 const route = useRoute()
 const recordId = computed(() => Number(route.params.recordId))
 const questionTitle = ref<HTMLElement>()
+const questionBody = ref<HTMLElement>()
 const {
   loading,
   loadError,
@@ -203,6 +36,8 @@ const {
   toggleMulti,
   submitted,
   locked,
+  submitSheet,
+  leaveSheet,
   remainSeconds,
   countdownText,
   load,
@@ -210,425 +45,454 @@ const {
   doSubmit,
   leaveForRecords,
 } = useExamTakingSession(recordId)
-function getTypeLabel(type: string) {
-  return (
-    (
-      {
-        SINGLE_CHOICE: '单选题',
-        MULTIPLE_CHOICE: '多选题',
-        TRUE_FALSE: '判断题',
-        FILL_BLANK: '填空题',
-        SHORT_ANSWER: '简答题',
-      } as Record<string, string>
-    )[type] || type
-  )
+
+const submitOpen = submitSheet.open
+const leaveOpen = leaveSheet.open
+
+const TYPE_LABELS: Record<string, string> = {
+  SINGLE_CHOICE: '单选题',
+  MULTIPLE_CHOICE: '多选题',
+  TRUE_FALSE: '判断题',
+  FILL_BLANK: '填空题',
+  SHORT_ANSWER: '简答题',
 }
+const TRUE_FALSE = [
+  { key: '', value: 'TRUE', content: '正确' },
+  { key: '', value: 'FALSE', content: '错误' },
+]
+
+const totalScore = computed(() => questions.value.reduce((sum, question) => sum + (question.score || 0), 0))
+const unanswered = computed(() => questions.value.length - answeredCount.value)
+const isLast = computed(() => currentIndex.value >= questions.value.length - 1)
+
+const choiceOptions = computed(() => {
+  const question = currentQuestion.value
+  if (!question) return []
+  if (question.questionType === 'TRUE_FALSE') return TRUE_FALSE
+  return question.options.map((option) => ({
+    key: option.optionLabel,
+    value: option.optionLabel,
+    content: option.content,
+  }))
+})
+
+function numberOf(index: number) {
+  return questions.value[index]?.displayNumber || `第 ${index + 1} 题`
+}
+
+function isSelected(value: string) {
+  const question = currentQuestion.value
+  if (!question) return false
+  if (question.questionType === 'MULTIPLE_CHOICE') return isMultiSelected(question.questionId, value)
+  return answers.value[question.questionId] === value
+}
+
+function pick(value: string) {
+  const question = currentQuestion.value
+  if (!question || locked.value) return
+  if (question.questionType === 'MULTIPLE_CHOICE') toggleMulti(question.questionId, value)
+  else answers.value[question.questionId] = value
+}
+
 function goTo(index: number) {
   if (!locked.value && index >= 0 && index < questions.value.length) currentIndex.value = index
 }
+
+// 换题时新题从前进方向轻轻滑入，看得出是往前还是往回翻。
 watch(
   () => currentQuestion.value?.questionId,
-  async () => {
+  async (_id, previousId) => {
+    const before = questions.value.findIndex((question) => question.questionId === previousId)
     await nextTick()
     questionTitle.value?.scrollIntoView({ block: 'nearest', behavior: 'auto' })
     questionTitle.value?.focus({ preventScroll: true })
+    if (before < 0 || !questionBody.value) return
+    const from = currentIndex.value > before ? 16 : -16
+    springAnimate(
+      questionBody.value,
+      [
+        { transform: `translate3d(${from}px, 0, 0)`, opacity: 0 },
+        { transform: 'translate3d(0, 0, 0)', opacity: 1 },
+      ],
+      springs.layout,
+    )
   },
 )
 </script>
 
+<template>
+  <div class="exam-take">
+    <div v-if="loading" class="layout" aria-busy="true">
+      <div class="paper">
+        <div class="paper-head" aria-hidden="true">
+          <span class="skeleton" style="width: 280px; height: 28px" />
+          <span class="skeleton" style="width: 140px; height: 14px; margin-top: 12px" />
+        </div>
+        <div class="question-card" aria-hidden="true">
+          <span class="skeleton" style="width: 120px; height: 16px" />
+          <span class="skeleton" style="width: 86%; height: 18px; margin-top: 24px" />
+          <span class="skeleton" style="width: 64%; height: 18px; margin-top: 12px" />
+          <span v-for="n in 4" :key="n" class="skeleton" style="height: 52px; margin-top: 10px" />
+        </div>
+      </div>
+      <div class="exam-panel" aria-hidden="true">
+        <span class="skeleton" style="width: 100%; height: 148px; border-radius: var(--lt-radius-lg)" />
+      </div>
+      <span class="sr-only" role="status">正在恢复考试与剩余时间</span>
+    </div>
+
+    <div v-else-if="loadError" class="state">
+      <h1 class="state-title">暂时无法恢复考试</h1>
+      <p class="state-text">{{ loadError }}</p>
+      <div class="state-actions">
+        <LtButton variant="primary" @click="load">
+          <template #icon><RotateCcw aria-hidden="true" /></template>
+          重试恢复
+        </LtButton>
+        <LtButton @click="leaveForRecords">返回考试记录</LtButton>
+      </div>
+    </div>
+
+    <div v-else-if="!currentQuestion" class="state">
+      <h1 class="state-title">这份试卷暂无可作答题目</h1>
+      <p class="state-text">请返回考试记录，核对试卷状态。</p>
+      <div class="state-actions">
+        <LtButton @click="leaveForRecords">返回考试记录</LtButton>
+      </div>
+    </div>
+
+    <div v-else class="layout">
+      <div class="paper">
+        <header class="paper-head">
+          <h1 class="paper-title">{{ paperTitle }}</h1>
+          <p class="paper-meta">
+            <span class="progress-text">第 {{ currentIndex + 1 }} / {{ questions.length }} 题</span>
+            <span aria-hidden="true">·</span>
+            <span>共 {{ questions.length }} 题，满分 {{ totalScore }} 分</span>
+          </p>
+        </header>
+
+        <article class="question-card question-area" aria-labelledby="exam-question-title">
+          <div ref="questionBody" class="question-body">
+            <p v-if="currentQuestion.sectionTitle" class="q-section">{{ currentQuestion.sectionTitle }}</p>
+            <div class="q-meta">
+              <strong class="q-number">{{ numberOf(currentIndex) }}</strong>
+              <span class="q-type">{{
+                TYPE_LABELS[currentQuestion.questionType] || currentQuestion.questionType
+              }}</span>
+              <span class="q-score">{{ currentQuestion.score }} 分</span>
+            </div>
+            <div id="exam-question-title" ref="questionTitle" class="q-content" tabindex="-1">
+              <QuestionProse :content="currentQuestion.content" />
+            </div>
+            <fieldset class="answer-options" :disabled="locked">
+              <legend class="sr-only">作答</legend>
+              <ExamChoices
+                v-if="choiceOptions.length"
+                :key="currentQuestion.questionId"
+                :options="choiceOptions"
+                :multiple="currentQuestion.questionType === 'MULTIPLE_CHOICE'"
+                :binary="currentQuestion.questionType === 'TRUE_FALSE'"
+                :label="
+                  currentQuestion.questionType === 'MULTIPLE_CHOICE'
+                    ? '多选答案'
+                    : currentQuestion.questionType === 'TRUE_FALSE'
+                      ? '判断答案'
+                      : '单选答案'
+                "
+                name="exam-answer"
+                :is-selected="isSelected"
+                @pick="pick"
+              />
+              <textarea
+                v-else
+                v-model="answers[currentQuestion.questionId]"
+                class="answer-text"
+                rows="7"
+                :aria-label="`${numberOf(currentIndex)}答案`"
+                placeholder="在这里写下你的答案"
+              />
+            </fieldset>
+          </div>
+
+          <div v-if="submitError" class="submit-error" role="alert">
+            <p>{{ submitError }}</p>
+            <LtButton size="sm" :disabled="locked" @click="doSubmit">重试交卷</LtButton>
+          </div>
+
+          <div class="nav-btns">
+            <LtButton :disabled="currentIndex === 0 || locked" @click="goTo(currentIndex - 1)">
+              <template #icon><ChevronLeft aria-hidden="true" /></template>
+              上一题
+            </LtButton>
+            <LtButton v-if="!isLast" variant="primary" :disabled="locked" @click="goTo(currentIndex + 1)">
+              下一题
+            </LtButton>
+            <LtButton v-else variant="primary" :disabled="locked" @click="handleSubmit">
+              {{ submitted ? '正在交卷…' : '提交试卷' }}
+            </LtButton>
+          </div>
+        </article>
+      </div>
+
+      <ExamPanel
+        :questions="questions"
+        :current-index="currentIndex"
+        :answers="answers"
+        :answered-count="answeredCount"
+        :progress-percent="progressPercent"
+        :countdown-text="countdownText"
+        :remain-seconds="remainSeconds"
+        :submitted="submitted"
+        :locked="locked"
+        :draft-storage-error="draftStorageError"
+        @submit="handleSubmit"
+        @go="goTo"
+      />
+    </div>
+
+    <LtSheet v-model:open="submitOpen" title="提交确认" :width="440">
+      <p class="sheet-text">
+        {{
+          unanswered
+            ? `还有 ${unanswered} 题未作答。确定提交试卷？提交后不可修改。`
+            : '已完成全部作答。确定提交试卷？提交后不可修改。'
+        }}
+      </p>
+      <div class="sheet-actions">
+        <LtButton @click="submitSheet.answer(false)">继续作答</LtButton>
+        <LtButton variant="primary" @click="submitSheet.answer(true)">提交试卷</LtButton>
+      </div>
+    </LtSheet>
+
+    <LtSheet v-model:open="leaveOpen" title="离开考试" :width="440">
+      <p class="sheet-text">{{ leaveMessage }}</p>
+      <div class="sheet-actions">
+        <LtButton @click="leaveSheet.answer(true)">离开考试</LtButton>
+        <LtButton variant="primary" @click="leaveSheet.answer(false)">继续考试</LtButton>
+      </div>
+    </LtSheet>
+  </div>
+</template>
+
 <style scoped>
-.exam-take-container {
-  padding: var(--lp-space-6) var(--lp-space-4);
-  max-width: var(--lp-container-max);
-  margin: 0 auto;
+.exam-take {
+  --panel-width: 296px;
 }
 
-.take-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--lp-space-5);
-  margin-bottom: var(--lp-space-5);
-  padding: var(--lp-space-4) var(--lp-space-5);
-  background: var(--lp-surface);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-lg);
-  box-shadow: var(--lp-shadow-sm);
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--panel-width);
+  gap: var(--lt-space-7);
+  align-items: start;
 }
 
-.take-header-title {
+.paper {
   min-width: 0;
 }
 
-.take-heading {
-  margin: var(--lp-space-1) 0 0;
-  color: var(--lp-text);
-  font-size: var(--lp-text-xl);
-  line-height: var(--lp-leading-tight);
+.paper-head {
+  display: grid;
+  padding: var(--lt-space-3) 0 var(--lt-space-6);
 }
 
-.take-header-progress {
+.paper-title {
+  margin: 0;
+  font-size: var(--lt-text-title2);
+  line-height: var(--lt-leading-tight);
+  letter-spacing: var(--lt-tracking-title);
+  overflow-wrap: anywhere;
+}
+
+.paper-meta {
   display: flex;
-  flex-direction: column;
-  gap: var(--lp-space-2);
-  flex: 1;
-  min-width: 140px;
+  flex-wrap: wrap;
+  gap: var(--lt-space-2);
+  margin: var(--lt-space-2) 0 0;
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-subhead);
+  font-variant-numeric: tabular-nums;
 }
 
 .progress-text {
-  font-weight: var(--lp-weight-semibold);
-  font-size: var(--lp-text-base);
-  font-variant-numeric: tabular-nums;
-}
-
-.answered-text {
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-xs);
-  font-variant-numeric: tabular-nums;
-}
-
-.take-header-right {
-  display: flex;
-  align-items: center;
-  gap: var(--lp-space-4);
-  flex-shrink: 0;
-}
-
-.question-area {
-  display: flex;
-  gap: var(--lp-space-5);
-  align-items: flex-start;
+  color: var(--lt-label);
+  font-family: var(--lt-font-rounded);
+  font-weight: 600;
 }
 
 .question-card {
-  flex: 1;
+  display: grid;
+  padding: var(--lt-space-7) var(--lt-space-7) var(--lt-space-6);
+  border-radius: var(--lt-radius-xl);
+  background: var(--lt-surface);
+  box-shadow: var(--lt-shadow-card);
+}
+
+.question-body {
   min-width: 0;
-  padding: var(--lp-space-6);
-  background: var(--lp-surface);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-lg);
-  box-shadow: var(--lp-shadow-xs);
+}
+
+.q-section {
+  margin: 0 0 var(--lt-space-3);
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
+  font-weight: 600;
 }
 
 .q-meta {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--lp-space-2);
-  margin-bottom: var(--lp-space-3);
-}
-
-.q-section {
-  margin-bottom: var(--lp-space-2);
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
-  font-weight: var(--lp-weight-semibold);
+  gap: var(--lt-space-2) var(--lt-space-3);
+  margin-bottom: var(--lt-space-4);
 }
 
 .q-number {
-  color: var(--lp-text);
-  font-size: var(--lp-text-md);
+  font: 600 var(--lt-text-headline) / 1.2 var(--lt-font-rounded);
+  font-variant-numeric: tabular-nums;
+}
+
+.q-type {
+  padding: 3px 10px;
+  border-radius: var(--lt-radius-pill);
+  background: var(--lt-fill-2);
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-caption);
+  font-weight: 600;
 }
 
 .q-score {
-  font-size: var(--lp-text-sm);
-  color: var(--lp-text-muted);
+  margin-left: auto;
+  color: var(--lt-label-3);
+  font: 500 var(--lt-text-footnote) / 1 var(--lt-font-rounded);
+  font-variant-numeric: tabular-nums;
 }
 
 .q-content {
-  color: var(--lp-text);
-  font-size: var(--lp-text-lg);
-  line-height: var(--lp-leading-relaxed);
-  margin-bottom: var(--lp-space-5);
-  overflow-wrap: anywhere;
+  margin-bottom: var(--lt-space-6);
+  outline: none;
 }
 
-.option-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--lp-space-3);
-  margin-bottom: var(--lp-space-5);
+.answer-options {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
 }
 
-.option-item {
-  display: flex;
-  align-items: center;
-  gap: var(--lp-space-3);
+.answer-text {
+  display: block;
   width: 100%;
-  min-height: 48px;
-  padding: var(--lp-space-3) var(--lp-space-4);
-  color: var(--lp-text);
-  text-align: left;
+  min-height: 168px;
+  padding: 14px 16px;
+  border: 0;
+  border-radius: var(--lt-radius-md);
+  background: var(--lt-fill-3);
+  box-shadow: inset 0 0 0 0.5px var(--lt-separator);
+  color: var(--lt-label);
   font: inherit;
-  background: var(--lp-surface);
-  border: 1px solid var(--lp-border-strong);
-  border-radius: var(--lp-radius-md);
-  cursor: pointer;
-  transition:
-    background-color var(--lp-duration-fast) var(--lp-ease-out),
-    border-color var(--lp-duration-fast) var(--lp-ease-out);
+  font-size: var(--lt-text-reading);
+  line-height: var(--lt-leading-reading);
+  resize: vertical;
+  transition: box-shadow var(--lt-dur-fade) var(--lt-ease-fade);
 }
 
-.option-item:hover {
-  border-color: var(--lp-primary);
-  background: var(--lp-surface-subtle);
+.answer-text::placeholder {
+  color: var(--lt-label-3);
 }
 
-.option-item:focus-within {
-  outline: var(--lp-focus-width) solid var(--lp-focus-ring);
-  outline-offset: 2px;
-  border-color: var(--lp-primary);
+.answer-text:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 1.5px var(--lt-accent);
 }
 
-.option-item.selected {
-  border-color: var(--lp-primary);
-  background: var(--lp-primary-soft);
+.answer-text:disabled {
+  opacity: 0.6;
 }
 
-.opt-label {
-  display: inline-flex;
+.submit-error {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  flex: 0 0 auto;
-  font-weight: var(--lp-weight-bold);
-  color: var(--lp-primary);
-  background: var(--lp-primary-soft);
-  border-radius: var(--lp-radius-full);
+  justify-content: space-between;
+  gap: var(--lt-space-4);
+  margin-top: var(--lt-space-5);
+  padding: var(--lt-space-3) var(--lt-space-3) var(--lt-space-3) var(--lt-space-4);
+  border-radius: var(--lt-radius-md);
+  background: var(--lt-red-soft);
+  color: var(--lt-red-text);
+  font-size: var(--lt-text-subhead);
 }
 
-.option-item.selected .opt-label {
-  color: var(--lp-on-primary);
-  background: var(--lp-primary);
-}
-
-.tf-list {
-  flex-direction: row;
-  gap: var(--lp-space-4);
-}
-
-.tf-list .option-item {
-  flex: 1;
-  justify-content: center;
-  font-size: var(--lp-text-lg);
-  font-weight: var(--lp-weight-semibold);
+.submit-error p {
+  margin: 0;
 }
 
 .nav-btns {
   display: flex;
-  justify-content: center;
-  gap: var(--lp-space-3);
-  margin-top: var(--lp-space-5);
+  justify-content: space-between;
+  gap: var(--lt-space-3);
+  margin-top: var(--lt-space-7);
+  padding-top: var(--lt-space-5);
+  border-top: 0.5px solid var(--lt-separator);
 }
 
-.answer-sheet {
-  width: 280px;
-  flex-shrink: 0;
-  padding: var(--lp-space-4);
-  background: var(--lp-surface);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-lg);
-  box-shadow: var(--lp-shadow-xs);
-  height: fit-content;
-  position: sticky;
-  top: var(--lp-space-5);
-}
-
-.sheet-heading {
-  margin: 0 0 var(--lp-space-3);
-  font-size: var(--lp-text-base);
-}
-
-.sheet-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--lp-space-2);
-}
-
-.sheet-item {
+.state {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 0;
-  min-height: 44px;
-  position: relative;
-  padding: 0 var(--lp-space-1);
-  overflow: hidden;
-  color: var(--lp-text);
-  background: var(--lp-surface);
-  border: 1px solid var(--lp-border-strong);
-  border-radius: var(--lp-radius-xs);
-  font: inherit;
-  font-size: var(--lp-text-xs);
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  cursor: pointer;
-  transition:
-    background-color var(--lp-duration-fast) var(--lp-ease-out),
-    color var(--lp-duration-fast) var(--lp-ease-out);
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--lt-space-3);
+  max-width: 560px;
+  margin: 0 auto;
+  padding: var(--lt-space-10) 0;
 }
 
-.sheet-item:hover {
-  background: var(--lp-surface-soft);
-}
-
-.sheet-item:focus-visible {
-  outline: var(--lp-focus-width) solid var(--lp-focus-ring);
-  outline-offset: 2px;
-}
-
-.sheet-item.answered {
-  background: var(--lp-primary);
-  color: var(--lp-on-primary);
-  border-color: var(--lp-primary);
-}
-
-.sheet-item.current {
-  border-color: var(--lp-primary);
-  outline: 2px solid var(--lp-primary);
-  outline-offset: 2px;
-}
-
-.countdown {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--lp-space-1);
-  font-size: var(--lp-text-lg);
-  font-weight: var(--lp-weight-semibold);
-  font-variant-numeric: tabular-nums;
-  color: var(--lp-primary);
-}
-
-.countdown-warn {
-  color: var(--lp-danger);
-}
-
-.exam-note {
-  margin: 0 0 var(--lp-space-5);
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-sm);
-  line-height: var(--lp-leading-body);
-}
-.exam-note span {
-  margin-left: var(--lp-space-2);
-  color: var(--lp-warning);
-}
-.answer-options {
+.state-title {
   margin: 0;
-  padding: 0;
-  border: 0;
-  min-width: 0;
+  font-size: var(--lt-text-title3);
 }
-.answer-options legend {
-  margin-bottom: var(--lp-space-3);
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
+
+.state-text {
+  margin: 0 0 var(--lt-space-2);
+  color: var(--lt-label-2);
 }
-.answer-options input {
-  width: 16px;
-  height: 16px;
-  margin: 0;
-  flex-shrink: 0;
-  accent-color: var(--lp-primary);
+
+.state-actions {
+  display: flex;
+  gap: var(--lt-space-3);
 }
-.answer-options:disabled .option-item {
-  cursor: default;
+
+.sheet-text {
+  margin: var(--lt-space-2) 0 0;
+  color: var(--lt-label-2);
+  line-height: 1.6;
 }
-.sheet-summary {
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
-  margin: 0 0 var(--lp-space-4);
+
+.sheet-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--lt-space-3);
+  margin-top: var(--lt-space-6);
 }
-.sheet-check {
+
+.skeleton {
+  display: block;
+  border-radius: 8px;
+  background: var(--lt-fill-2);
+  animation: pending 1.4s ease-in-out infinite alternate;
+}
+
+@keyframes pending {
+  to {
+    opacity: 0.45;
+  }
+}
+
+.sr-only {
   position: absolute;
-  bottom: 1px;
-  right: 3px;
-  font-size: 9px;
-}
-.submit-error {
-  padding: var(--lp-space-4);
-  margin-top: var(--lp-space-4);
-  color: var(--lp-danger);
-  background: var(--lp-surface-subtle);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-md);
-}
-.submit-error p {
-  margin: 0 0 var(--lp-space-3);
-}
-.q-content :deep(p:first-child) {
-  margin-top: 0;
-}
-.q-content :deep(p:last-child) {
-  margin-bottom: 0;
-}
-
-@media (max-width: 720px) {
-  .exam-take-container {
-    padding: 0;
-  }
-
-  .take-header {
-    align-items: stretch;
-    flex-direction: column;
-    gap: var(--lp-space-3);
-  }
-
-  .take-header-progress {
-    order: 2;
-  }
-
-  .take-header-right {
-    justify-content: space-between;
-  }
-
-  .take-header-right .el-button {
-    width: 100%;
-    min-height: 44px;
-  }
-
-  .question-area {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .answer-sheet {
-    position: static;
-    width: auto;
-    order: -1;
-  }
-
-  .sheet-grid {
-    grid-template-columns: repeat(5, minmax(44px, 1fr));
-  }
-
-  .tf-list {
-    gap: var(--lp-space-2);
-  }
-
-  .nav-btns {
-    justify-content: stretch;
-  }
-
-  .nav-btns .el-button {
-    flex: 1;
-    min-height: 44px;
-    margin-left: 0;
-  }
-}
-
-@media (max-width: 420px) {
-  .question-card {
-    padding: var(--lp-space-4);
-  }
-
-  .q-meta {
-    align-items: flex-start;
-    flex-wrap: wrap;
-  }
-
-  .tf-list {
-    flex-direction: column;
-  }
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 </style>

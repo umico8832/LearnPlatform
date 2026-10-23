@@ -223,7 +223,7 @@ test('考试离开确认保留作答，正式提交仅进入结果页', async ({
   await expect(examCard).toBeVisible()
   await examCard.getByRole('button', { name: '考试模式' }).click()
   await expect(page).toHaveURL(/\/exams\/take\/\d+$/)
-  await expect(page.getByRole('heading', { name: '考试进行中' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Java 基础入门测验', level: 1 })).toBeVisible()
   const takeUrl = page.url()
 
   const selectedOption = page.locator('.question-card').getByRole('radio').first()

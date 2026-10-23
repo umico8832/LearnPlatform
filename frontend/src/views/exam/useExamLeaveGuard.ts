@@ -1,6 +1,6 @@
 import { onBeforeUnmount, ref, watch, type Ref } from 'vue'
 import { onBeforeRouteLeave, onBeforeRouteUpdate } from 'vue-router'
-import { ElMessageBox } from 'element-plus'
+import { useConfirmSheet } from '@/composables/useConfirmSheet'
 
 interface ExamLeaveGuardOptions {
   hasQuestions: () => boolean
@@ -9,10 +9,14 @@ interface ExamLeaveGuardOptions {
   onLeave?: () => void
 }
 
-const leaveMessage = '离开后，本页未提交的答案会丢失，考试计时仍会继续。'
+export const leaveMessage = '离开后，本页未提交的答案会丢失，考试计时仍会继续。'
 
-/** Protects an active exam from accidental route and browser-window exits. */
+/**
+ * Protects an active exam from accidental route and browser-window exits. A route
+ * exit asks through `leaveSheet`, which the page renders as an LtSheet.
+ */
 export function useExamLeaveGuard(options: ExamLeaveGuardOptions) {
+  const leaveSheet = useConfirmSheet()
   const confirming = ref(false)
   const navigationAllowed = ref(false)
   let pendingConfirmation: Promise<boolean> | undefined
@@ -25,17 +29,12 @@ export function useExamLeaveGuard(options: ExamLeaveGuardOptions) {
     if (pendingConfirmation) return pendingConfirmation
 
     confirming.value = true
-    pendingConfirmation = ElMessageBox.confirm(leaveMessage, '离开考试', {
-      type: 'warning',
-      confirmButtonText: '离开考试',
-      cancelButtonText: '继续考试',
-      autofocus: false,
-    })
-      .then(() => {
-        options.onLeave?.()
-        return true
+    pendingConfirmation = leaveSheet
+      .ask()
+      .then((ok) => {
+        if (ok) options.onLeave?.()
+        return ok
       })
-      .catch(() => false)
       .finally(() => {
         pendingConfirmation = undefined
         confirming.value = false
@@ -48,7 +47,7 @@ export function useExamLeaveGuard(options: ExamLeaveGuardOptions) {
   }
 
   watch([options.finished, navigationAllowed], ([finished, allowed]) => {
-    if ((finished || allowed) && confirming.value) ElMessageBox.close()
+    if ((finished || allowed) && confirming.value) leaveSheet.answer(false)
   })
 
   const onBeforeUnload = (event: BeforeUnloadEvent) => {
@@ -66,5 +65,5 @@ export function useExamLeaveGuard(options: ExamLeaveGuardOptions) {
     return requestLeave()
   })
 
-  return { confirming, requestLeave, allowNavigation }
+  return { confirming, leaveSheet, requestLeave, allowNavigation }
 }

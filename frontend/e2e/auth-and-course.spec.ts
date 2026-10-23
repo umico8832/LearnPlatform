@@ -239,8 +239,8 @@ test('用户刷新后可继续限时考试，取消提交并在失败重试后�
   await expect(page).toHaveURL(/\/exams\/take\/\d+$/)
 
   const takeUrl = page.url()
-  const countdown = page.locator('.take-header .countdown')
-  await expect(page.getByRole('heading', { name: '考试进行中' })).toBeVisible()
+  const countdown = page.locator('.exam-clock .countdown')
+  await expect(page.getByRole('heading', { name: 'Java 基础入门测验', level: 1 })).toBeVisible()
   await expect(page.locator('.question-area')).toBeVisible()
   await expect(countdown).toHaveText(/\d+:\d{2}/)
   const startedSeconds = await readCountdownSeconds(countdown)
@@ -253,7 +253,7 @@ test('用户刷新后可继续限时考试，取消提交并在失败重试后�
 
   await page.reload()
   await expect(page).toHaveURL(takeUrl)
-  await expect(page.getByRole('heading', { name: '考试进行中' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Java 基础入门测验', level: 1 })).toBeVisible()
   await expect(page.locator('.question-area')).toBeVisible()
   await expect(countdown).toHaveText(/\d+:\d{2}/)
   expect(await readCountdownSeconds(countdown)).toBeLessThanOrEqual(beforeReloadSeconds)
@@ -276,7 +276,7 @@ test('用户刷新后可继续限时考试，取消提交并在失败重试后�
   await trueAnswer.check()
   await expect(trueAnswer).toBeChecked()
 
-  await page.locator('.take-header').getByRole('button', { name: '提交试卷' }).click()
+  await page.locator('.exam-clock').getByRole('button', { name: '提交试卷' }).click()
   const confirmDialog = page.getByRole('dialog', { name: '提交确认' })
   await expect(confirmDialog).toBeVisible()
   await confirmDialog.getByRole('button', { name: '继续作答' }).click()
@@ -284,7 +284,7 @@ test('用户刷新后可继续限时考试，取消提交并在失败重试后�
   await expect(trueAnswer).toBeChecked()
 
   await page.route('**/api/exam/submit', (route) => route.abort('failed'), { times: 1 })
-  await page.locator('.take-header').getByRole('button', { name: '提交试卷' }).click()
+  await page.locator('.exam-clock').getByRole('button', { name: '提交试卷' }).click()
   await confirmDialog.getByRole('button', { name: '提交试卷' }).click()
   const submitError = page.locator('.submit-error[role="alert"]')
   await expect(submitError).toBeVisible()
@@ -314,7 +314,7 @@ test('部分交卷后未答题保留零分且不会进入错题与复习', async
   await expect(card).toBeVisible()
   await card.getByRole('button', { name: '考试模式' }).click()
   await page.getByRole('radio', { name: /implements/ }).check()
-  await page.locator('.take-header').getByRole('button', { name: '提交试卷' }).click()
+  await page.locator('.exam-clock').getByRole('button', { name: '提交试卷' }).click()
   const confirm = page.getByRole('dialog', { name: '提交确认' })
   await expect(confirm).toContainText('还有 2 题未作答')
   await confirm.getByRole('button', { name: '提交试卷' }).click()
@@ -376,7 +376,7 @@ test('用户可预览确认结构化私有试卷并隔离给其他账号', async
   await privateCard.getByRole('button', { name: '考试模式' }).click()
   await expect(page).toHaveURL(/\/exams\/take\/\d+$/)
   await page.getByRole('radio', { name: /先进后出/ }).check()
-  await page.locator('.take-header').getByRole('button', { name: '提交试卷' }).click()
+  await page.locator('.exam-clock').getByRole('button', { name: '提交试卷' }).click()
   await page.getByRole('dialog', { name: '提交确认' }).getByRole('button', { name: '提交试卷' }).click()
   await expect(page).toHaveURL(/\/exams\/result\/\d+$/)
   await expect(page.locator('.score-number')).toHaveText('2')
@@ -442,7 +442,7 @@ test('无答案私有题必须经过AI建议与逐题人工复核才可启用', 
   await expect(card).toContainText('可参加')
   await card.getByRole('button', { name: '考试模式' }).click()
   await page.getByRole('radio', { name: /栈/ }).check()
-  await page.locator('.take-header').getByRole('button', { name: '提交试卷' }).click()
+  await page.locator('.exam-clock').getByRole('button', { name: '提交试卷' }).click()
   await page.getByRole('dialog', { name: '提交确认' }).getByRole('button', { name: '提交试卷' }).click()
   await expect(page.locator('.score-number')).toHaveText('2')
 })
@@ -747,7 +747,7 @@ test('用户可完成2026真题限时考试并复盘可信来源', async ({ page
       await page.getByRole('button', { name: '下一题' }).click()
     }
   }
-  await page.locator('.take-header').getByRole('button', { name: '提交试卷' }).click()
+  await page.locator('.exam-clock').getByRole('button', { name: '提交试卷' }).click()
   const confirmDialog = page.getByRole('dialog', { name: '提交确认' })
   await confirmDialog.getByRole('button', { name: '提交试卷' }).click()
 
@@ -779,7 +779,7 @@ test('2026主观题提交后由管理员按评分点批阅并固化总分', asyn
       await page.getByRole('button', { name: '下一题' }).click()
     }
   }
-  await page.locator('.take-header').getByRole('button', { name: '提交试卷' }).click()
+  await page.locator('.exam-clock').getByRole('button', { name: '提交试卷' }).click()
   await page.getByRole('dialog', { name: '提交确认' }).getByRole('button', { name: '提交试卷' }).click()
 
   await expect(page).toHaveURL(/\/exams\/result\/\d+$/)

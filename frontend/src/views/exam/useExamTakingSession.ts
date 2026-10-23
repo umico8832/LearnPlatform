@@ -1,6 +1,5 @@
 import { computed, onBeforeUnmount, ref, watch, type Ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
 import { getExamSession, getPaperDetail, submitExam, type ExamQuestionItem } from '@/api/exam'
 import { getAuthSessionVersion, onAuthSessionChange } from '@/utils/auth'
 import { useUserStore } from '@/stores/user'
@@ -9,6 +8,8 @@ import { useExamAnswers } from './useExamAnswers'
 import { clearAllExamDrafts, clearExamDraftsForRecord, loadExamDraft, saveExamDraft } from './examDraft'
 import { useExamCountdown } from './useExamCountdown'
 import { useExamLeaveGuard } from './useExamLeaveGuard'
+import { examNoticeState } from './examNotice'
+import { useConfirmSheet } from '@/composables/useConfirmSheet'
 
 export function useExamTakingSession(recordId: Readonly<Ref<number>>) {
   const router = useRouter()
@@ -25,7 +26,8 @@ export function useExamTakingSession(recordId: Readonly<Ref<number>>) {
   const answerState = useExamAnswers(() => questions.value.length)
   const currentQuestion = computed(() => questions.value[currentIndex.value] || null)
   const locked = computed(() => submitted.value || confirming.value || finished.value)
-  const { allowNavigation } = useExamLeaveGuard({
+  const submitSheet = useConfirmSheet()
+  const { allowNavigation, leaveSheet } = useExamLeaveGuard({
     hasQuestions: () => questions.value.length > 0,
     submitting: submitted,
     finished,
@@ -37,9 +39,14 @@ export function useExamTakingSession(recordId: Readonly<Ref<number>>) {
     pendingDraftRestore: { version: number; auth: number; recordId: number } | null = null
   const isCurrent = (version: number, auth: number) =>
     alive && version === generation && auth === getAuthSessionVersion()
-  const leaveForRecords = async () => {
+  // 时间到等需要说明的离开，把说明交给考试记录页显示。
+  const leaveForRecords = async (notice?: string) => {
     allowNavigation()
-    await router.replace({ name: 'ExamList', query: { tab: 'records' } })
+    await router.replace({
+      name: 'ExamList',
+      query: { tab: 'records' },
+      ...(notice ? { state: examNoticeState(notice) } : {}),
+    })
   }
   function restoreDraft(version: number, auth: number, id: number) {
     if (!isCurrent(version, auth) || !questions.value.length) return
@@ -80,9 +87,8 @@ export function useExamTakingSession(recordId: Readonly<Ref<number>>) {
     if (!alive || finished.value) return
     clearExamDraftsForRecord(recordId.value)
     finished.value = true
-    if (confirming.value) ElMessageBox.close?.()
-    ElMessage.warning(message)
-    await leaveForRecords()
+    if (confirming.value) submitSheet.answer(false)
+    await leaveForRecords(message)
   }
   const countdown = useExamCountdown({
     submitted,
@@ -91,7 +97,7 @@ export function useExamTakingSession(recordId: Readonly<Ref<number>>) {
   })
   function clearSession() {
     countdown.stop()
-    if (confirming.value) ElMessageBox.close?.()
+    if (confirming.value) submitSheet.answer(false)
     questions.value = []
     paperTitle.value = ''
     answerState.answers.value = {}
@@ -180,19 +186,11 @@ export function useExamTakingSession(recordId: Readonly<Ref<number>>) {
     if (locked.value || !questions.value.length) return
     const version = generation,
       auth = getAuthSessionVersion()
-    const unanswered = questions.value.length - answerState.answeredCount.value
     confirming.value = true
     try {
-      await ElMessageBox.confirm(
-        unanswered
-          ? `还有 ${unanswered} 题未作答。确定提交试卷？提交后不可修改。`
-          : '已完成全部作答。确定提交试卷？提交后不可修改。',
-        '提交确认',
-        { type: 'warning', confirmButtonText: '提交试卷', cancelButtonText: '继续作答', autofocus: false },
-      )
-      if (isCurrent(version, auth) && !finished.value) await doSubmit()
-    } catch {
       // 取消确认保留当前选项，不发送交卷请求。
+      const ok = await submitSheet.ask()
+      if (ok && isCurrent(version, auth) && !finished.value) await doSubmit()
     } finally {
       if (isCurrent(version, auth)) confirming.value = false
     }
@@ -217,7 +215,7 @@ export function useExamTakingSession(recordId: Readonly<Ref<number>>) {
     alive = false
     generation++
     countdown.stop()
-    if (confirming.value) ElMessageBox.close?.()
+    if (confirming.value) submitSheet.answer(false)
     unsubscribe()
   })
   return {
@@ -233,11 +231,13 @@ export function useExamTakingSession(recordId: Readonly<Ref<number>>) {
     submitted,
     confirming,
     locked,
+    submitSheet,
+    leaveSheet,
     remainSeconds: countdown.remainSeconds,
     countdownText: countdown.countdownText,
     load,
     handleSubmit,
     doSubmit,
-    leaveForRecords,
+    leaveForRecords: () => leaveForRecords(),
   }
 }

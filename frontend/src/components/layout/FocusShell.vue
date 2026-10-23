@@ -106,6 +106,8 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
 
 <style scoped>
 .focus-shell {
+  --focus-bar-height: 56px;
+
   min-height: 100vh;
   background: var(--lt-canvas);
 }
@@ -131,7 +133,7 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
   display: flex;
   align-items: center;
   gap: var(--lt-space-3);
-  height: 56px;
+  height: var(--focus-bar-height);
   padding: 0 var(--lt-space-5);
 }
 
@@ -170,15 +172,16 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
   outline: none;
 }
 
-/* 内容区仍是旧页面：保留旧外壳的宽度与内边距，迁移到新基线后去掉。 */
+/* 沉浸页只有一栏内容：默认按阅读宽度收窄，带侧栏的页面（如限时考试）用 wide。 */
 .content {
-  width: min(100%, var(--lp-container-max));
+  box-sizing: border-box;
+  width: min(100%, 1200px);
   margin: 0 auto;
-  padding: var(--lp-space-6) var(--lp-content-gutter) var(--lp-space-12);
+  padding: var(--lt-space-5) var(--lt-space-6) var(--lt-space-10);
 }
 
 .content.is-narrow {
-  width: min(100%, var(--lp-container-narrow));
+  width: min(100%, 860px);
 }
 
 .skip-link {
