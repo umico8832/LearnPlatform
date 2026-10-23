@@ -70,9 +70,16 @@
             <p class="muted">{{ answers.length }} 题 · {{ wrongAnswers.length }} 题需复习</p>
           </div>
           <nav v-if="answers.length > 1" class="answer-navigation" aria-label="答题导航">
-            <a v-for="(answer, idx) in answers" :key="answer.questionId" :href="`#answer-${answer.questionId}`">{{
-              answerLabel(answer, idx)
-            }}</a>
+            <a
+              v-for="(answer, idx) in answers"
+              :key="answer.questionId"
+              :href="`#answer-${answer.questionId}`"
+              :aria-label="`第 ${idx + 1} 题，${answerStatusLabel(answer)}`"
+            >
+              <span class="navigation-dot" :data-tone="navigationTone(answer)" aria-hidden="true" />{{
+                answerLabel(answer, idx)
+              }}
+            </a>
           </nav>
         </div>
         <article
@@ -173,6 +180,11 @@ function answerStatusLabel(answer: ExamAnswerVO) {
   if (answer.gradingStatus === 'PENDING') return '待人工批阅'
   if (answer.gradingStatus === 'UNANSWERED') return '未作答'
   return answer.isCorrect === 1 ? '正确' : '错误'
+}
+function navigationTone(answer: ExamAnswerVO) {
+  if (answer.gradingStatus === 'PENDING' || answer.gradingStatus === 'UNANSWERED' || answer.isCorrect == null)
+    return 'neutral'
+  return answer.isCorrect === 1 ? 'success' : 'warning'
 }
 function answerStatusType(answer: ExamAnswerVO) {
   if (answer.gradingStatus === 'PENDING') return 'warning'
@@ -410,14 +422,29 @@ dd {
   flex-wrap: wrap;
 }
 .answer-navigation a {
-  display: grid;
-  place-items: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--lt-space-2);
   padding: var(--lt-space-2);
   min-width: var(--lt-control-md);
   background: var(--lt-fill-2);
   border-radius: var(--lt-radius-sm);
   color: var(--lt-label);
   text-decoration: none;
+}
+.navigation-dot {
+  flex: none;
+  width: var(--lt-space-2);
+  height: var(--lt-space-2);
+  border-radius: 50%;
+  background: var(--lt-label-3);
+}
+.navigation-dot[data-tone='success'] {
+  background: var(--lt-green);
+}
+.navigation-dot[data-tone='warning'] {
+  background: var(--lt-orange);
 }
 .answer-item {
   display: grid;

@@ -116,6 +116,30 @@ describe('ExamResultView authoritative review', () => {
     expect(wrapper.find('.rate-value').text()).toBe('50%')
   })
 
+  it('题号导航以小圆点和可访问名称区分正确、错误、待批阅与未作答', async () => {
+    const response = await mockGetExamResult()
+    response.data.answers.push(
+      { ...response.data.answers[0], questionId: 24, gradingStatus: 'PENDING', isCorrect: null },
+      { ...response.data.answers[0], questionId: 25, gradingStatus: 'UNANSWERED', isCorrect: null, userAnswer: '' },
+    )
+    mockGetExamResult.mockResolvedValue(response)
+    const wrapper = mount(ExamResultView, { global: { stubs } })
+    await flushPromises()
+    const links = wrapper.findAll('.answer-navigation a')
+    expect(links.map((link) => link.attributes('aria-label'))).toEqual([
+      '第 1 题，错误',
+      '第 2 题，正确',
+      '第 3 题，待人工批阅',
+      '第 4 题，未作答',
+    ])
+    expect(links.map((link) => link.get('.navigation-dot').attributes('data-tone'))).toEqual([
+      'warning',
+      'success',
+      'neutral',
+      'neutral',
+    ])
+  })
+
   it('在课程上下文中返回课程总览，并把错题精确深链到错题本', async () => {
     const wrapper = mount(ExamResultView, {
       global: {
