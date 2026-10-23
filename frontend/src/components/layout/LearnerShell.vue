@@ -112,6 +112,8 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
 
 <style scoped>
 .learner-shell {
+  --shell-bar-height: 60px;
+
   min-height: 100vh;
   background: var(--lt-canvas);
 }
@@ -141,7 +143,7 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
   align-items: center;
   gap: var(--lt-space-6);
   max-width: 1280px;
-  height: 60px;
+  height: var(--shell-bar-height);
   margin: 0 auto;
   padding: 0 var(--lt-space-7);
 }

@@ -53,7 +53,7 @@ test('社区共建完成真实发布、回复、点赞、附件审核与题目�
   await page.reload()
   await expect(page.getByRole('heading', { name: '讨论 · 2', exact: true })).toBeVisible()
   await page.screenshot({ path: testInfo.outputPath('community-topic.png'), fullPage: true, animations: 'disabled' })
-  await page.getByRole('link', { name: '← 返回社区' }).click()
+  await page.getByRole('link', { name: '返回社区' }).click()
   await expect(page.getByRole('link', { name: topicTitle })).toBeVisible()
   await page.screenshot({ path: testInfo.outputPath('community-feed.png'), fullPage: true, animations: 'disabled' })
   await page.getByRole('button', { name: '贡献资料', exact: true }).click()

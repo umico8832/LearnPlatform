@@ -96,7 +96,7 @@ export const learnerRoutes: RouteRecordRaw[] = [
         path: 'community/:id',
         name: 'CommunityDetail',
         component: () => import('@/views/community/CommunityDetailView.vue'),
-        meta: { title: '社区详情', hidden: true },
+        meta: { title: '社区详情', hidden: true, living: true },
       },
       {
         path: 'my-courses',
