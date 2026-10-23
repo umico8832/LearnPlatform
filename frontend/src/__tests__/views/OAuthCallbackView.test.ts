@@ -44,7 +44,7 @@ describe('OAuthCallbackView', () => {
     mount(OAuthCallbackView, {
       global: {
         stubs: {
-          AuthLayout: { template: '<main><slot /></main>' },
+          AuthFrame: { template: '<main><slot /></main>' },
           'el-icon': { template: '<span><slot /></span>' },
           'el-button': { template: '<button><slot /></button>' },
         },
@@ -62,7 +62,7 @@ describe('OAuthCallbackView', () => {
     const wrapper = mount(OAuthCallbackView, {
       global: {
         stubs: {
-          AuthLayout: { template: '<main><slot /></main>' },
+          AuthFrame: { template: '<main><slot /></main>' },
           'el-icon': { template: '<span><slot /></span>' },
           'el-button': { template: '<button><slot /></button>' },
         },
@@ -72,6 +72,19 @@ describe('OAuthCallbackView', () => {
 
     expect(wrapper.text()).toContain('该邮箱已有账号，请先使用原登录方式。')
     expect(mockExchange).not.toHaveBeenCalled()
+  })
+
+  it('keeps an exchange error recoverable through the login page', async () => {
+    mockRoute.hash = '#ticket=failed-ticket'
+    mockExchange.mockRejectedValue(new Error('暂时失败'))
+    const wrapper = mount(OAuthCallbackView, {
+      global: { stubs: { AuthFrame: { template: '<main><slot /></main>' } } },
+    })
+    await flushPromises()
+    expect(wrapper.text()).toContain('暂时失败')
+    await wrapper.get('button').trigger('click')
+    expect(mockReplace).toHaveBeenCalledWith('/login')
+    expect(mockSetLoginInfo).not.toHaveBeenCalled()
   })
 
   it('does not write a late OAuth exchange after unmount', async () => {
@@ -84,7 +97,7 @@ describe('OAuthCallbackView', () => {
         }),
     )
     const wrapper = mount(OAuthCallbackView, {
-      global: { stubs: { AuthLayout: { template: '<main><slot /></main>' } } },
+      global: { stubs: { AuthFrame: { template: '<main><slot /></main>' } } },
     })
     wrapper.unmount()
     resolve({ data: { token: 'jwt', user: { id: 1, username: 'learner', role: 'USER' } } })

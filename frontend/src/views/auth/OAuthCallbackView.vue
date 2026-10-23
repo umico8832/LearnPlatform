@@ -1,32 +1,28 @@
 <template>
-  <AuthLayout class="auth-enter" :show-symbol="false">
-    <div class="status-panel oauth-result" role="status" aria-live="polite">
-      <div
-        class="status-panel__icon"
-        :class="loading ? 'status-panel__icon--loading' : 'status-panel__icon--error'"
-        aria-hidden="true"
-      >
-        <el-icon v-if="loading" class="is-loading"><Loading /></el-icon>
-        <el-icon v-else><WarningFilled /></el-icon>
-      </div>
+  <AuthFrame class="lt" data-appearance="dark">
+    <div class="oauth-result" role="status" aria-live="polite" :aria-busy="loading">
+      <LoaderCircle v-if="loading" class="status-icon" aria-hidden="true" />
+      <CircleAlert v-else class="status-icon error" aria-hidden="true" />
       <h1 id="auth-title">{{ loading ? '正在登录' : '登录未完成' }}</h1>
-      <p v-if="!loading">{{ message }}</p>
-      <el-button v-if="!loading" class="auth-secondary" @click="router.replace('/login')"> 返回登录 </el-button>
+      <p>{{ message }}</p>
+      <LtButton v-if="!loading" variant="primary" size="lg" @click="router.replace('/login')">返回登录</LtButton>
     </div>
-  </AuthLayout>
+  </AuthFrame>
 </template>
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Loading, WarningFilled } from '@element-plus/icons-vue'
+import { LoaderCircle, CircleAlert } from '@lucide/vue'
+import { LtButton } from '@/components/living'
+import { useLivingTheme } from '@/composables/useLivingTheme'
 import { exchangeOAuthTicket } from '@/api/auth'
-import AuthLayout from '@/components/auth/AuthLayout.vue'
+import AuthFrame from '@/components/auth/AuthFrame.vue'
 import { useUserStore } from '@/stores/user'
 import { getAuthPreviewState } from '@/utils/authPreview'
 import { useAuthPageGuard } from './useAuthPageGuard'
 import { errorMessage } from '@/utils/errors'
-import '@/assets/styles/auth.css'
+useLivingTheme({ dark: true })
 
 const capture = useAuthPageGuard()
 const route = useRoute()
@@ -79,6 +75,25 @@ onMounted(async () => {
 
 <style scoped>
 .oauth-result {
-  padding-bottom: var(--lp-space-1);
+  display: grid;
+  justify-items: start;
+  gap: var(--lt-space-5);
+}
+h1 {
+  margin: 0;
+  font-size: var(--lt-text-title2);
+}
+p {
+  margin: 0;
+  color: var(--lt-label-2);
+  line-height: var(--lt-leading-reading);
+}
+.status-icon {
+  width: var(--lt-space-7);
+  height: var(--lt-space-7);
+  color: var(--lt-label-2);
+}
+.error {
+  color: var(--lt-red-text);
 }
 </style>
