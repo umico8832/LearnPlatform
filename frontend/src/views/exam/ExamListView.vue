@@ -1,12 +1,10 @@
 <template>
   <div class="lt exam-library" data-appearance="dark">
-    <header class="page-heading">
-      <div>
-        <h1>考试与试卷</h1>
-        <p>选一份试卷，开始学习或限时考试。</p>
-      </div>
-      <LtButton variant="primary" @click="openImportDialog">导入私有试卷</LtButton>
-    </header>
+    <LtPageHeader title="考试与试卷" description="选一份试卷，开始学习或限时考试。"
+      ><template #actions
+        ><LtButton variant="primary" @click="openImportDialog">导入私有试卷</LtButton></template
+      ></LtPageHeader
+    >
     <p v-if="examNotice" class="notice" role="status">{{ examNotice }}</p>
     <p v-if="importNotice" class="muted" role="status">{{ importNotice }}</p>
     <div v-if="papersState === 'ready' || recordsTotal !== null" class="exam-stat-row">
@@ -127,6 +125,7 @@
 </template>
 
 <script setup lang="ts">
+import LtPageHeader from '@/components/living/LtPageHeader.vue'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { LtButton, LtSheet } from '@/components/living'

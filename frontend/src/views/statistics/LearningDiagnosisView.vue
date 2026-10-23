@@ -1,11 +1,11 @@
 <template>
   <div class="lt learning-diagnosis" data-appearance="dark">
     <div class="diagnosis-wrap">
-      <header class="diagnosis-intro">
-        <p class="diagnosis-kicker">学习记录</p>
-        <h1 id="diagnosis-heading">下一步从最需要处理的内容开始</h1>
-        <p>诊断只汇总已判分的学习事实；待判分记录会在完成批阅后更新。</p>
-      </header>
+      <LtPageHeader
+        title="下一步从最需要处理的内容开始"
+        title-id="diagnosis-heading"
+        description="诊断只汇总已判分的学习事实；待判分记录会在完成批阅后更新。"
+      />
       <div v-if="state === 'loading'" class="diagnosis-state" aria-busy="true">
         <span class="skeleton" /><span class="skeleton" /><span class="sr-only" role="status">正在整理学习记录</span>
       </div>
@@ -66,6 +66,7 @@
 </template>
 
 <script setup lang="ts">
+import LtPageHeader from '@/components/living/LtPageHeader.vue'
 import { onBeforeUnmount, ref } from 'vue'
 import { RotateCcw } from '@lucide/vue'
 import { useRouter } from 'vue-router'
@@ -330,41 +331,9 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.learning-diagnosis {
-  min-height: 100%;
-  padding: var(--lt-space-6) var(--lt-space-5) var(--lt-space-10);
-}
-.diagnosis-wrap {
-  width: 100%;
-  margin: 0 auto;
-}
 .diagnosis-content {
   display: grid;
   gap: var(--lt-space-6);
-}
-.diagnosis-intro {
-  max-width: min(100%, calc(var(--lt-space-10) * 10));
-  padding: var(--lt-space-5) 0;
-}
-.diagnosis-kicker {
-  margin: 0 0 var(--lt-space-2);
-  color: var(--lt-label-3);
-  font-size: var(--lt-text-caption);
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-.diagnosis-intro h1 {
-  margin: 0;
-  color: var(--lt-label);
-  font-size: var(--lt-text-title1);
-  letter-spacing: var(--lt-tracking-title);
-}
-.diagnosis-intro p:last-child {
-  margin: var(--lt-space-2) 0 0;
-  color: var(--lt-label-2);
-  font-size: var(--lt-text-body);
-  line-height: var(--lt-leading-ui);
 }
 .diagnosis-state {
   display: grid;

@@ -15,7 +15,7 @@ import { useOpsAlerts } from './useOpsAlerts'
 /**
  * Learner shell (Phase 28, dark only): one bar for every learner page with the
  * sections, today's learning facts, search and the account menu. Redesigned pages
- * (`meta.living`) lay themselves out on the canvas; pages not yet redesigned keep
+ * (`meta.living`) share the content frame; pages not yet redesigned keep
  * their old padding and sit on the dark bridge until they are migrated.
  */
 useLivingTheme({ dark: true, legacyBridge: true })
@@ -204,6 +204,12 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
   outline: none;
 }
 
+.main:not([data-legacy]) {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: var(--lt-space-7) var(--lt-space-7) var(--lt-space-10);
+}
+
 /* 尚未重做的页面：保留旧外壳的内边距与内容宽度，迁移到新基线后去掉。 */
 .main[data-legacy] {
   max-width: 1280px;
@@ -233,7 +239,6 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
   .bar-inner {
     grid-template-columns: auto minmax(0, 1fr) auto;
     gap: var(--lt-space-3);
-    padding: 0 var(--lt-space-4);
   }
 
   .progress {
@@ -242,6 +247,13 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
 }
 
 @media (max-width: 720px) {
+  .bar-inner {
+    padding-inline: var(--lt-space-4);
+  }
+  .main:not([data-legacy]) {
+    padding-inline: var(--lt-space-4);
+  }
+
   .search-text,
   .search-key {
     display: none;

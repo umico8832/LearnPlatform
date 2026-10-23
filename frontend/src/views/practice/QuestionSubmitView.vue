@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LtPageHeader from '@/components/living/LtPageHeader.vue'
 import { computed, onScopeDispose, ref } from 'vue'
 import { FilePlus2, RotateCcw } from '@lucide/vue'
 import { getMySubmissions, type QuestionSubmissionVO } from '@/api/submission'
@@ -68,19 +69,16 @@ onScopeDispose(
 <template>
   <div class="lt submission-page" data-appearance="dark">
     <div class="submission-wrap">
-      <LtBackLink to="/community" label="返回社区" />
-      <header class="submission-header">
-        <div>
-          <p class="eyebrow">社区题库</p>
-          <h1>题目投稿</h1>
-          <p>分享一道好题，查看它的审核与入库进度。</p>
-        </div>
-        <div role="group" aria-label="题目投稿操作">
-          <LtButton variant="primary" @click="showEditor = true"
-            ><template #icon><FilePlus2 aria-hidden="true" /></template>投稿新题目</LtButton
-          >
-        </div>
-      </header>
+      <LtPageHeader title="题目投稿" description="分享一道好题，查看它的审核与入库进度。">
+        <template #lead><LtBackLink to="/community" label="返回社区" /></template>
+        <template #actions>
+          <div role="group" aria-label="题目投稿操作">
+            <LtButton variant="primary" @click="showEditor = true"
+              ><template #icon><FilePlus2 aria-hidden="true" /></template>投稿新题目</LtButton
+            >
+          </div>
+        </template>
+      </LtPageHeader>
       <p v-if="notice" class="notice" role="status">{{ notice }}</p>
       <section class="submission-list" aria-label="我的题目投稿">
         <div class="submission-toolbar">
@@ -145,40 +143,10 @@ onScopeDispose(
 </template>
 
 <style scoped>
-.submission-page {
-  min-height: 100%;
-  padding: var(--lt-space-6) var(--lt-space-5) var(--lt-space-10);
-}
-.submission-wrap {
-  width: 100%;
-  margin: auto;
-}
-.submission-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: end;
-  gap: var(--lt-space-5);
-  margin: var(--lt-space-5) 0;
-}
-.eyebrow {
-  color: var(--lt-label-3);
-  font-size: var(--lt-text-caption);
-  margin: 0 0 var(--lt-space-2);
-}
-h1 {
-  margin: 0;
-  font-size: var(--lt-text-title1);
-  letter-spacing: var(--lt-tracking-title);
-}
-.submission-header p:not(.eyebrow),
 .notice,
 .submission-toolbar > span,
 .review {
   color: var(--lt-label-2);
-}
-.submission-header p:not(.eyebrow) {
-  margin: var(--lt-space-2) 0 0;
-  font-size: var(--lt-text-body);
 }
 .notice {
   margin: 0 0 var(--lt-space-4);
@@ -305,7 +273,6 @@ time {
   font-variant-numeric: tabular-nums;
 }
 @media (max-width: 700px) {
-  .submission-header,
   .submission-content {
     align-items: stretch;
     flex-direction: column;

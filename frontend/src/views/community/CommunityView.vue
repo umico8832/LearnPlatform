@@ -1,18 +1,15 @@
 <template>
   <div class="community-page lt" data-appearance="dark" aria-labelledby="community-title">
-    <header class="community-page-head">
-      <div>
-        <h1 id="community-title">社区共建</h1>
-      </div>
-      <div class="head-actions">
+    <LtPageHeader title="社区共建" title-id="community-title">
+      <template #actions>
         <LtButton :disabled="categoriesLoading || !!categoryError" @click="composer = 'question_bank'"
           ><template #icon><FilePlus aria-hidden="true" /></template>贡献资料</LtButton
         >
         <LtButton variant="primary" :disabled="categoriesLoading || !!categoryError" @click="composer = 'TOPIC'"
           ><template #icon><MessageSquarePlus aria-hidden="true" /></template>发起讨论</LtButton
         >
-      </div>
-    </header>
+      </template>
+    </LtPageHeader>
     <div class="community-layout">
       <aside class="filters" aria-label="社区筛选">
         <div class="filters-head">
@@ -138,6 +135,7 @@
 </template>
 
 <script setup lang="ts">
+import LtPageHeader from '@/components/living/LtPageHeader.vue'
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { FilePlus, MessageCircleQuestion, MessageSquarePlus, RotateCcw, Search } from '@lucide/vue'
@@ -258,31 +256,10 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.community-page {
-  width: min(100%, calc(var(--lt-space-10) * 18));
-  margin: 0 auto;
-  padding: var(--lt-space-8) var(--lt-space-6) var(--lt-space-10);
-}
-.community-page-head {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: var(--lt-space-6);
-  margin-bottom: var(--lt-space-8);
-}
 .result-count {
   margin: 0;
   color: var(--lt-label-2);
   font-size: var(--lt-text-subhead);
-}
-.community-page h1 {
-  margin: 0;
-  font-size: var(--lt-text-display);
-}
-.head-actions {
-  display: flex;
-  gap: var(--lt-space-3);
-  flex-wrap: wrap;
 }
 .community-layout {
   display: grid;
@@ -470,5 +447,10 @@ onUnmounted(() => {
   margin-top: var(--lt-space-6);
   color: var(--lt-label-2);
   font: var(--lt-text-footnote)/1 var(--lt-font-rounded);
+}
+@media (max-width: 720px) {
+  .community-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 </style>

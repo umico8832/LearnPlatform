@@ -1,7 +1,6 @@
 .exam-library {
   display: grid;
   gap: var(--lt-space-6);
-  padding: var(--lt-space-7);
   color: var(--lt-label);
 }
 .exam-library h1 {
@@ -19,7 +18,6 @@
 .exam-library p {
   line-height: var(--lt-leading-reading);
 }
-.exam-library .page-heading,
 .exam-library .exam-card-top,
 .exam-library .exam-card-heading,
 .exam-library .preview-summary,
@@ -31,7 +29,6 @@
   gap: var(--lt-space-3);
   flex-wrap: wrap;
 }
-.exam-library .page-heading p,
 .exam-library .muted,
 .exam-library .exam-desc,
 .exam-library .source-meta {
@@ -267,9 +264,6 @@
   accent-color: var(--lt-accent);
 }
 @media (max-width: 860px) {
-  .exam-library {
-    padding: var(--lt-space-4);
-  }
   .exam-library .import-grid {
     grid-template-columns: 1fr;
   }
@@ -291,4 +285,8 @@
 .exam-library :is(input, textarea)::placeholder {
   color: var(--lt-label-2);
   opacity: 1;
+}
+
+.exam-library > .lt-page-header {
+  margin-bottom: 0;
 }

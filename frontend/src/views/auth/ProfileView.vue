@@ -1,14 +1,12 @@
 <template>
   <div class="profile-page lt" data-appearance="dark" aria-labelledby="profile-title">
-    <header class="profile-head">
-      <div>
-        <p>账户与学习记录</p>
-        <h1 id="profile-title">个人中心</h1>
-      </div>
-      <LtLinkButton to="/practice"
-        ><template #icon><Pencil aria-hidden="true" /></template>继续刷题</LtLinkButton
+    <LtPageHeader title="个人中心" title-id="profile-title">
+      <template #actions
+        ><LtLinkButton to="/practice"
+          ><template #icon><Pencil aria-hidden="true" /></template>继续刷题</LtLinkButton
+        ></template
       >
-    </header>
+    </LtPageHeader>
     <section class="profile-layout">
       <aside class="identity">
         <LtCard
@@ -96,6 +94,7 @@
   </div>
 </template>
 <script setup lang="ts">
+import LtPageHeader from '@/components/living/LtPageHeader.vue'
 import { computed, onUnmounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { CalendarDays, ChevronRight, LockKeyhole, Pencil, Star, BookOpen, UserRound } from '@lucide/vue'
@@ -219,27 +218,6 @@ onUnmounted(() => {
 })
 </script>
 <style scoped>
-.profile-page {
-  width: min(100%, calc(var(--lt-space-10) * 18));
-  margin: 0 auto;
-  padding: var(--lt-space-8) var(--lt-space-6) var(--lt-space-10);
-}
-.profile-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: end;
-  gap: var(--lt-space-5);
-  margin-bottom: var(--lt-space-8);
-}
-.profile-head p {
-  margin: 0 0 var(--lt-space-2);
-  color: var(--lt-label-3);
-  font-size: var(--lt-text-footnote);
-}
-.profile-head h1 {
-  margin: 0;
-  font-size: var(--lt-text-display);
-}
 .profile-layout {
   display: grid;
   grid-template-columns: calc(var(--lt-space-10) * 4) minmax(0, 1fr);

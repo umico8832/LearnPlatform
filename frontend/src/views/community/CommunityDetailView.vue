@@ -220,7 +220,6 @@ function initial(name: string) {
 
   width: min(100%, calc(var(--reading) + var(--rail) + var(--lt-space-9)));
   margin: 0 auto;
-  padding: var(--lt-space-6) 0 var(--lt-space-10);
 }
 
 .layout {
