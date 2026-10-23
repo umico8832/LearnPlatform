@@ -2,13 +2,17 @@ package com.learnplatform.config;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
+import org.springframework.cache.support.NoOpCache;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
+import org.springframework.data.redis.cache.RedisCacheWriter;
+import org.springframework.data.redis.cache.BatchStrategies;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
@@ -53,7 +57,9 @@ public class RedisConfig {
                         .fromSerializer(new GenericJackson2JsonRedisSerializer()))
                 .disableCachingNullValues();
 
-        return RedisCacheManager.builder(connectionFactory)
+        return RedisCacheManager.builder(RedisCacheWriter.nonLockingRedisCacheWriter(
+                        connectionFactory, BatchStrategies.scan(1000)))
+                .transactionAware()
                 .cacheDefaults(defaultConfig)
                 .withCacheConfiguration("statistics",
                         cacheConfig(defaultConfig, cacheTtlProperties, "statistics", 5))
@@ -95,6 +101,11 @@ public class RedisConfig {
     @Bean
     @ConditionalOnProperty(name = "spring.cache.type", havingValue = "simple", matchIfMissing = true)
     public CacheManager simpleCacheManager() {
-        return new ConcurrentMapCacheManager(CACHE_NAMES);
+        return new ConcurrentMapCacheManager(CACHE_NAMES) {
+            @Override protected Cache createConcurrentMapCache(String name) {
+                // Simple caches have no TTL; global statistics must stay fresh without per-answer full clears.
+                return "adminStatistics".equals(name) ? new NoOpCache(name) : super.createConcurrentMapCache(name);
+            }
+        };
     }
 }

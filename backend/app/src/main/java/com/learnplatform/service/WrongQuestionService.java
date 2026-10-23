@@ -200,7 +200,8 @@ public class WrongQuestionService {
         }
         wq.setMasteryLevel(masteryLevel);
         wrongQuestionMapper.updateById(wq);
-        cacheEvictService.evictUserStatistics(userId);
+        Question question = questionMapper.selectById(wq.getQuestionId());
+        cacheEvictService.evictUserStatistics(userId, question == null ? null : question.getCourseId());
     }
 
     /**
@@ -214,7 +215,8 @@ public class WrongQuestionService {
             throw new BusinessException(ResultCode.NOT_FOUND, "错题记录不存在");
         }
         wrongQuestionMapper.deleteById(id);
-        cacheEvictService.evictUserStatistics(userId);
+        Question question = questionMapper.selectById(wq.getQuestionId());
+        cacheEvictService.evictUserStatistics(userId, question == null ? null : question.getCourseId());
     }
 
     /**

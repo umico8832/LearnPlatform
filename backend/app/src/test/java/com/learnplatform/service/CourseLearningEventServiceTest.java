@@ -26,12 +26,15 @@ class CourseLearningEventServiceTest {
     @Mock private UserCourseMapper userCourseMapper;
     @Mock private CourseLearningEventMapper courseLearningEventMapper;
 
+    @Mock private CacheEvictService cacheEvictService;
+
     private CourseLearningEventService service;
 
     @BeforeEach
     void setUp() {
         service = new CourseLearningEventService(userCourseMapper, courseLearningEventMapper,
-                org.mockito.Mockito.mock(com.learnplatform.service.gamification.GamificationRewardService.class));
+                org.mockito.Mockito.mock(com.learnplatform.service.gamification.GamificationRewardService.class),
+                cacheEvictService);
     }
 
     @Test
@@ -53,6 +56,7 @@ class CourseLearningEventServiceTest {
         assertEquals(1, event.getEventVersion());
         assertEquals("{\"isCorrect\":false}", event.getPayloadJson());
         assertEquals(occurredTime, event.getOccurredTime());
+        verify(cacheEvictService).evictUserStatistics(7L, 8L);
     }
 
     @Test
@@ -71,7 +75,7 @@ class CourseLearningEventServiceTest {
     void projectsOnlyInsertedCourseFactsToTheRewardLedger() {
         GamificationRewardService rewards = org.mockito.Mockito.mock(GamificationRewardService.class);
         CourseLearningEventService rewardedService = new CourseLearningEventService(
-                userCourseMapper, courseLearningEventMapper, rewards);
+                userCourseMapper, courseLearningEventMapper, rewards, cacheEvictService);
         Question question = new Question();
         question.setId(12L);
         question.setCourseId(8L);

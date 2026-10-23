@@ -25,15 +25,17 @@ public class CourseLearningEventService {
   private final UserCourseMapper userCourseMapper;
   private final CourseLearningEventMapper courseLearningEventMapper;
   private final GamificationRewardService gamificationRewardService;
+  private final CacheEvictService cacheEvictService;
 
   @Autowired
   public CourseLearningEventService(
       UserCourseMapper userCourseMapper,
       CourseLearningEventMapper courseLearningEventMapper,
-      GamificationRewardService gamificationRewardService) {
+      GamificationRewardService gamificationRewardService, CacheEvictService cacheEvictService) {
     this.userCourseMapper = userCourseMapper;
     this.courseLearningEventMapper = courseLearningEventMapper;
     this.gamificationRewardService = gamificationRewardService;
+    this.cacheEvictService = cacheEvictService;
   }
 
   @Transactional
@@ -51,6 +53,7 @@ public class CourseLearningEventService {
         || sourceRecordId == null) {
       return null;
     }
+    cacheEvictService.evictUserStatistics(userId, question.getCourseId());
     if (!hasCourseInLibrary(userId, question.getCourseId())) {
       return null;
     }
@@ -83,10 +86,11 @@ public class CourseLearningEventService {
     if (userId == null
         || courseId == null
         || knowledgePointId == null
-        || sessionId == null
-        || !hasCourseInLibrary(userId, courseId)) {
+        || sessionId == null) {
       return null;
     }
+    cacheEvictService.evictUserStatistics(userId, courseId);
+    if (!hasCourseInLibrary(userId, courseId)) { return null; }
     CourseLearningEvent event = new CourseLearningEvent();
     event.setUserId(userId);
     event.setCourseId(courseId);
@@ -108,6 +112,7 @@ public class CourseLearningEventService {
     return gamificationRewardService.reward(event, correct);
   }
 
+  @Transactional
   public void recordPaperLearningAiAssistance(
       Long userId,
       Long courseId,
@@ -121,10 +126,11 @@ public class CourseLearningEventService {
     if (userId == null
         || courseId == null
         || questionId == null
-        || interactionId == null
-        || !hasCourseInLibrary(userId, courseId)) {
+        || interactionId == null) {
       return;
     }
+    cacheEvictService.evictUserStatistics(userId, courseId);
+    if (!hasCourseInLibrary(userId, courseId)) { return; }
     CourseLearningEvent event = new CourseLearningEvent();
     event.setUserId(userId);
     event.setCourseId(courseId);
