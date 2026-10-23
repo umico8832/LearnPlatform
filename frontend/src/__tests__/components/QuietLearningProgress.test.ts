@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import ShellProgress from '@/components/layout/ShellProgress.vue'
-import AnswerRewardFeedback from '@/components/gamification/AnswerRewardFeedback.vue'
-import GamificationPracticeSummary from '@/components/gamification/GamificationPracticeSummary.vue'
 import PracticeRewardFeedback from '@/views/practice/PracticeRewardFeedback.vue'
 import PracticeSummary from '@/views/practice/PracticeSummary.vue'
 
@@ -38,7 +36,7 @@ describe('quiet learning progress', () => {
   })
 
   it('keeps answer experience feedback quiet and does not announce a combo', () => {
-    const wrapper = mount(AnswerRewardFeedback, {
+    const wrapper = mount(PracticeRewardFeedback, {
       props: {
         reward: {
           eventId: 10,
@@ -85,7 +83,7 @@ describe('quiet learning progress', () => {
   })
 
   it('summarizes answered facts without a combo metric or a large animated score ring', () => {
-    const wrapper = mount(GamificationPracticeSummary, {
+    const wrapper = mount(PracticeSummary, {
       props: {
         summary: {
           correctRate: 75,
@@ -104,7 +102,7 @@ describe('quiet learning progress', () => {
   })
 
   it('keeps an ungraded summary distinct from a zero-percent result', () => {
-    const wrapper = mount(GamificationPracticeSummary, {
+    const wrapper = mount(PracticeSummary, {
       props: { summary: { correctRate: null, xpGained: 0, answeredCount: 1, pendingCount: 1 } },
     })
 

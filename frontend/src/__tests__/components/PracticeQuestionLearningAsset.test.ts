@@ -22,10 +22,6 @@ vi.mock('@/api/ai', () => ({
   submitAssetFeedback: vi.fn(),
 }))
 
-vi.mock('@/components/MarkdownRenderer.vue', () => ({
-  default: { template: '<div class="markdown-stub" />' },
-}))
-
 vi.mock('@/views/practice/learning/QuestionVisualInteractive.vue', () => ({
   default: { template: '<div class="visual-stub" />' },
 }))

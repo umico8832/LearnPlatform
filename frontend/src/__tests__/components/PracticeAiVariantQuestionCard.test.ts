@@ -9,10 +9,6 @@ const { submitVariantAnswer } = vi.hoisted(() => ({
 
 vi.mock('@/api/ai', () => ({ submitVariantAnswer }))
 
-vi.mock('@/components/MarkdownRenderer.vue', () => ({
-  default: { props: ['content'], template: '<div class="markdown-stub">{{ content }}</div>' },
-}))
-
 import AiVariantQuestionCard from '@/views/practice/learning/AiVariantQuestionCard.vue'
 import { useGamificationStore } from '@/stores/gamification'
 enableAutoUnmount(afterEach)

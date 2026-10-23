@@ -61,7 +61,7 @@ import './course-choice.css'
 import { LtButton } from '@/components/living'
 import { useGamificationStore } from '@/stores/gamification'
 import { getAuthSessionVersion, onAuthSessionChange } from '@/utils/auth'
-import AnswerRewardFeedback from '@/components/gamification/AnswerRewardFeedback.vue'
+import AnswerRewardFeedback from '@/views/practice/PracticeRewardFeedback.vue'
 import { getTutorAgentPractice, submitTutorAgentPractice, type TutorAgentPracticeVO } from '@/api/tutor'
 import { errorMessage } from '@/utils/errors'
 
