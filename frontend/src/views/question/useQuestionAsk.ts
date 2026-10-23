@@ -13,7 +13,7 @@ export function askErrorText(error: unknown): string {
       case 1006:
         return '今天的 AI 次数用完了，明天再来。也可以继续按提示往下走。'
       case 1007:
-        return '上一个问题还在回答，等它结束再问。'
+        return error.message
       case 1010:
         return '追问暂时不可用。'
       case 1011:

@@ -27,4 +27,6 @@
 | [0013](0013-new-york-business-time.md) | Accepted | 业务时间统一纽约，考试时长使用 UTC 起点 |
 | [0014](0014-learner-dark-only.md) | Accepted | 学员端新页面只用深色 |
 
+| [0015](0015-bounded-ai-execution.md) | Accepted | AI 使用有界准入，默认固定平台线程 |
+
 ADR 采用追加式维护。决策变化时新增记录并标记替代关系，不重写旧决策的历史背景。

@@ -49,7 +49,11 @@ public class QuestionAskStateService {
     }
 
     public int count(long userId, long questionId) {
-        return db.queryForObject("SELECT COUNT(*) FROM question_ask_record WHERE user_id=? AND question_id=?",
+        // Refund only explicit capacity failures; nullable legacy errors still consume an allowance.
+        return db.queryForObject("""
+                SELECT COUNT(*) FROM question_ask_record WHERE user_id=? AND question_id=?
+                  AND NOT (status='FAILED' AND error_code <=> 1007)
+                """,
                 Integer.class, userId, questionId);
     }
 

@@ -7,6 +7,7 @@ import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.dto.QuestionAskResponse;
 import com.learnplatform.service.understanding.QuestionAskService;
+import com.learnplatform.service.ai.AiTaskExecutor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -24,15 +25,15 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @RestController
 @RequestMapping("/api/understanding/attempts/{attemptId}/ask")
 public class QuestionAskController {
     private final QuestionAskService service;
-    private final Executor executor;
+    private final AiTaskExecutor executor;
 
-    public QuestionAskController(QuestionAskService service, @Qualifier("aiTaskExecutor") Executor executor) {
+    public QuestionAskController(QuestionAskService service, @Qualifier("aiTaskExecutor") AiTaskExecutor executor) {
         this.service = service;
         this.executor = executor;
     }
@@ -52,29 +53,69 @@ public class QuestionAskController {
     @PostMapping("/stream")
     public ResponseEntity<SseEmitter> stream(@PathVariable long attemptId, @RequestBody JsonNode body,
                               @AuthenticationPrincipal CustomUserDetails user) {
-        var job = service.prepare(user.getUserId(), attemptId, body);
+        var reservation = executor.reserve();
+        QuestionAskService.Job job;
+        try { job = service.prepare(user.getUserId(), attemptId, body); }
+        catch (RuntimeException exception) {
+            reservation.close();
+            throw exception;
+        }
         var emitter = new SseEmitter(job.timeoutMillis());
+        var ended = new AtomicBoolean();
+        var executing = new AtomicBoolean();
+        var writes = new Object();
         Runnable stop = () -> {
+            if (!ended.compareAndSet(false, true)) { return; }
             job.cancellation().cancel();
-            try { service.stop(user.getUserId(), attemptId, job.requestId()); }
+            reservation.cancel();
+            try { service.cancel(job); }
             catch (RuntimeException ignored) { /* Cancellation still reaches the local upstream request. */ }
         };
         emitter.onCompletion(stop);
         emitter.onTimeout(stop);
         emitter.onError(error -> stop.run());
+        reservation.onShutdown(() -> {
+            if (!ended.compareAndSet(false, true)) { return; }
+            job.cancellation().cancel();
+            try {
+                if (executing.get()) {
+                    service.cancel(job);
+                } else {
+                    service.reject(job);
+                }
+            } finally { emitter.complete(); }
+        });
         try {
-            executor.execute(() -> {
+            reservation.execute(() -> {
+                executing.set(true);
                 try {
-                    var done = service.execute(job, text -> send(emitter, "content", Map.of("content", text)));
-                    send(emitter, "done", done);
+                    var done = service.execute(job, text -> {
+                        synchronized (writes) {
+                            if (ended.get()) { throw new BusinessException(ResultCode.ASK_CANCELLED); }
+                            send(emitter, "content", Map.of("content", text));
+                        }
+                    });
+                    synchronized (writes) {
+                        if (!ended.getAndSet(true)) { send(emitter, "done", done); }
+                    }
                 } catch (BusinessException exception) {
-                    error(emitter, exception.getCode(), exception.getMessage());
+                    synchronized (writes) {
+                        if (!ended.getAndSet(true)) { error(emitter, exception.getCode(), exception.getMessage()); }
+                    }
                 } catch (RuntimeException exception) {
-                    error(emitter, 1012, ResultCode.ASK_UPSTREAM.getMessage());
-                } finally { emitter.complete(); }
+                    synchronized (writes) {
+                        if (!ended.getAndSet(true)) { error(emitter, 1012, ResultCode.ASK_UPSTREAM.getMessage()); }
+                    }
+                } finally {
+                    ended.set(true);
+                            emitter.complete();
+                }
             });
         } catch (RuntimeException exception) {
-            stop.run();
+            ended.set(true);
+            job.cancellation().cancel();
+            reservation.close();
+            service.reject(job);
             error(emitter, 1007, ResultCode.RATE_LIMITED.getMessage());
             emitter.complete();
         }

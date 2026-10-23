@@ -6,6 +6,13 @@ import tools.jackson.databind.ObjectMapper;
 import com.learnplatform.IntegrationTestBase;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.config.AiConfig;
+import com.learnplatform.service.ai.AiTaskExecutor;
+import org.springframework.test.annotation.DirtiesContext;
+import io.micrometer.core.instrument.MeterRegistry;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.time.Duration;
+import static org.awaitility.Awaitility.await;
 import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -87,6 +94,8 @@ class QuestionAskIntegrationTest extends IntegrationTestBase {
     @Autowired JdbcTemplate db;
     @Autowired ObjectMapper json;
     @Autowired AiConfig config;
+    @Autowired AiTaskExecutor executor;
+    @Autowired MeterRegistry metrics;
     long question;
 
     @BeforeEach void setup() {
@@ -223,6 +232,51 @@ class QuestionAskIntegrationTest extends IntegrationTestBase {
         code(1006, () -> prepare(id, "另一个疑问"));
         assertEquals(1, count("question_ask_record"));
         assertEquals(2, CALLS.get());
+    }
+
+    @Test @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+    void gracefulExecutorStopCancelsRealUpstreamAndCompletesDatabaseStateBeforeResourcesClose() throws Exception {
+        delay = 2000;
+        long id = attempt("B");
+        var job = prepare(id, "疑问");
+        var completed = new CompletableFuture<Integer>();
+        var reservation = executor.reserve();
+        reservation.onShutdown(() -> ask.cancel(job));
+        reservation.execute(() -> {
+            try { ask.execute(job, text -> fail("Cancelled work must not publish content")); completed.complete(0); }
+            catch (BusinessException exception) { completed.complete(exception.getCode()); }
+            catch (RuntimeException exception) { completed.completeExceptionally(exception); }
+        });
+        await().atMost(Duration.ofSeconds(3)).until(() -> CALLS.get() > 0);
+        executor.stop();
+        assertEquals(1014, completed.get(3, TimeUnit.SECONDS));
+        assertEquals("CANCELLED", ask.status(USER, id).records().getFirst().status());
+        assertEquals(4, ask.status(USER, id).questionRemaining());
+        assertEquals(0.0, metrics.get("ai.admission.inflight").gauge().value());
+    }
+
+    @Test void nullableFailureCodeStillConsumesQuestionAllowance() throws Exception {
+        long id = attempt("B");
+        var job = prepare(id, "保留空错误码的失败记录");
+        ask.reject(job);
+        db.update("""
+                UPDATE question_ask_record SET error_code=NULL
+                WHERE user_id=? AND attempt_id=? AND request_id=?
+                """, USER, id, job.requestId());
+        assertEquals(4, ask.status(USER, id).questionRemaining());
+    }
+
+    @Test void executionRejectionPreservesAuditWithoutConsumingQuestionOrDailyAllowance() throws Exception {
+        long id = attempt("B");
+        var job = prepare(id, "疑问");
+        assertEquals(4, ask.status(USER, id).questionRemaining());
+        ask.reject(job);
+        assertEquals(5, ask.status(USER, id).questionRemaining());
+        assertEquals(50, ask.status(USER, id).dailyRemaining());
+        assertEquals("FAILED", ask.status(USER, id).records().getFirst().status());
+        assertEquals(1007, ask.status(USER, id).records().getFirst().errorCode());
+        assertEquals(0, CALLS.get());
+        assertNotNull(prepare(id, "重试"));
     }
 
     @Test void cancellationFailureAndTimeoutKeepReservationsWithoutPartialOutput() throws Exception {

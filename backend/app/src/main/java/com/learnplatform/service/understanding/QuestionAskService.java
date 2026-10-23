@@ -118,6 +118,15 @@ public class QuestionAskService {
         });
     }
 
+    public void reject(Job job) {
+        state.fail(job.attemptId(), job.requestId(), ResultCode.RATE_LIMITED.getCode());
+    }
+
+    public void cancel(Job job) {
+        job.cancellation().cancel();
+        state.fail(job.attemptId(), job.requestId(), ResultCode.ASK_CANCELLED.getCode());
+    }
+
     private void active(Job job) {
         job.cancellation().check();
         if (!state.active(job.attemptId(), job.requestId())) {
