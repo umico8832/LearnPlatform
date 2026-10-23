@@ -53,7 +53,8 @@ services:
       - ./frontend/e2e/fixtures/understanding:/e2e/understanding:ro
     environment:
       SPRING_PROFILES_ACTIVE: e2e,docker
-      CACHE_TYPE: simple
+      # E2E 默认走与生产相同的 Redis 缓存路径；simple 模式由后端测试覆盖。
+      CACHE_TYPE: redis
       # Keep the isolated E2E profile deterministic even when the developer's
       # local .env defines production Turnstile settings.
       TURNSTILE_ENABLED: "true"

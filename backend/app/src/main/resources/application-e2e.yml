@@ -7,4 +7,4 @@ spring:
   flyway:
     locations: classpath:db/migration,filesystem:/e2e/understanding
   cache:
-    type: simple
+    type: ${CACHE_TYPE:redis}

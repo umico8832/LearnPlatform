@@ -69,6 +69,6 @@ docker compose down
 `down` 保留数据卷和镜像，但下次需要重新创建容器，不能直接 `start`。
 配置和镜像均未变化时可用 `docker compose up -d` 重新创建；需要更新源码时使用 `app-up`。
 `down -v` 会删除数据库等持久化数据卷，仅在需要
-完全重置开发数据时使用并需确认。浏览器 E2E 使用隔离的 `docker-compose.e2e.yml`，
-执行方式和安全边界见[测试策略](../development/testing.md)。磁盘占用诊断与安全回收见
+完全重置开发数据时使用并需确认。浏览器 E2E 使用隔离的 `docker-compose.e2e.yml`，默认以 Redis
+缓存模式运行；E2E 的 Redis 数据由该隔离项目的 `down -v` 清理。执行方式和安全边界见[测试策略](../development/testing.md)。磁盘占用诊断与安全回收见
 [Docker 磁盘增长治理](../development/docker-disk-governance.md)。

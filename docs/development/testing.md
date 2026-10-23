@@ -99,7 +99,9 @@
 
 ## 8. 浏览器 E2E 环境
 
-浏览器测试使用独立的 Spring `e2e` Profile（`docker-compose.e2e.yml`），前端站点密钥与后端
+浏览器测试使用独立的 Spring `e2e` Profile（`docker-compose.e2e.yml`），默认以 `CACHE_TYPE=redis`
+运行，`e2e` Profile 同样默认 Redis 并遵从 `CACHE_TYPE`，避免 Profile 覆盖 Compose 的缓存选择。
+覆盖生产使用的 Redis 缓存、序列化与作答后的失效路径；`simple` 缓存模式由后端单元和集成测试覆盖。前端站点密钥与后端
 校验密钥使用 Cloudflare Turnstile 测试配置；账号密码、JWT、权限和路由守卫仍执行真实逻辑。
 测试密钥只用于隔离 E2E，不写入日常开发或生产配置；这些环境按自己的 Turnstile 配置完成验证。
 登录准备统一调用 `e2e/helpers/turnstile.ts`：只拦截浏览器端 Cloudflare SDK 请求，按
@@ -117,7 +119,7 @@ Prompt 构造、HTTP Provider、结构校验、调用审计、草稿状态和数
 模拟上游不得在开发或生产 Compose 中启用，也不能替代 AI 解析与异常分支的单元测试。
 
 `docker-compose.e2e.yml` 使用独立 Compose 项目名 `learnplatform-e2e`，E2E 拥有自己的
-容器、网络和数据卷，与开发环境隔离。`down -v` 只清理 E2E 数据，不会误删开发数据。
+容器、网络和数据卷（包括 Redis），与开发环境隔离。`down -v` 只清理 E2E 数据，不会误删开发数据。
 
 本地通过单一入口执行浏览器 E2E：
 
