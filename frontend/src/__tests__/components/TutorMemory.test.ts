@@ -150,11 +150,11 @@ describe('TutorMemory', () => {
     const wrapper = create()
     await open(wrapper)
     await wrapper.get('textarea').setValue('   ')
-    wrapper.findAllComponents(stubs['el-button'])[0].vm.$emit('click')
+    await wrapper.get('[data-testid="memory-save"]').trigger('click')
     expect(saveMemory).not.toHaveBeenCalled()
     await wrapper.get('textarea').setValue('目标')
     await wrapper.setProps({ busy: true })
-    wrapper.findAllComponents(stubs['el-button'])[0].vm.$emit('click')
+    await wrapper.get('[data-testid="memory-save"]').trigger('click')
     expect(saveMemory).not.toHaveBeenCalled()
     await wrapper.setProps({ busy: false })
     let finish!: (value: unknown) => void
@@ -165,7 +165,7 @@ describe('TutorMemory', () => {
         }),
     )
     await wrapper.get('[data-testid="memory-save"]').trigger('click')
-    wrapper.findAllComponents(stubs['el-button'])[0].vm.$emit('click')
+    await wrapper.get('[data-testid="memory-save"]').trigger('click')
     expect(saveMemory).toHaveBeenCalledTimes(1)
     wrapper.unmount()
     finish({ data: { revision: 1, explanationStyle: null, goal: '目标' } })

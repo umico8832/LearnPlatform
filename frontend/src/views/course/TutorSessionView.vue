@@ -1,15 +1,22 @@
 <template>
-  <section class="tutor" v-loading="loading" aria-label="课程教学">
-    <template v-if="failed">
-      <section class="state-panel">
-        <el-result icon="error" title="无法开始教学" sub-title="请确认已加入课程，并从可学习的知识点进入。">
-          <template #extra>
-            <el-button type="primary" @click="load()">重新尝试</el-button>
-            <el-button @click="load(true)">重新开始教学</el-button>
-            <el-button @click="router.back()">返回</el-button>
-          </template>
-        </el-result>
-      </section>
+  <section class="lt course-page tutor" data-appearance="dark" aria-label="课程教学">
+    <div>
+      <LtButton variant="quiet" @click="router.push({ name: 'CourseSpace', params: { id: courseId } })"
+        ><template #icon><ChevronLeft aria-hidden="true" /></template>返回课程空间</LtButton
+      >
+    </div>
+    <CoursePageState v-if="loading" state="loading" title="正在读取课程教学" />
+    <template v-else-if="failed">
+      <CoursePageState
+        state="error"
+        title="无法开始教学"
+        description="请确认已加入课程，并从可学习的知识点进入。"
+        retry-label="重新尝试"
+        @retry="load()"
+        ><div class="course-actions">
+          <LtButton @click="load(true)">重新开始教学</LtButton><LtButton @click="router.back()">返回</LtButton>
+        </div></CoursePageState
+      >
     </template>
 
     <template v-else-if="session">
@@ -21,7 +28,7 @@
       <details v-if="hasLearningContext" class="lesson-block evidence" aria-labelledby="learning-context-heading">
         <summary id="learning-context-heading">相关学习记录</summary>
         <div class="block-heading">
-          <LpKicker>最近相关记录</LpKicker>
+          <p class="lesson-label">最近相关记录</p>
           <h2>与本节内容相关的记录</h2>
         </div>
         <div class="evidence-grid">
@@ -60,13 +67,13 @@
         aria-labelledby="prerequisite-heading"
       >
         <summary id="prerequisite-heading">学习前提：{{ session.lesson.prerequisite.title }}</summary>
-        <LpKicker tone="warning">学习前提</LpKicker>
+        <p class="lesson-label">学习前提</p>
         <h2>{{ session.lesson.prerequisite.title }}</h2>
         <p>{{ session.lesson.prerequisite.description }}</p>
       </details>
 
       <section class="lesson-block steps" aria-labelledby="steps-heading">
-        <LpKicker>教学步骤</LpKicker>
+        <p class="lesson-label">教学步骤</p>
         <h2 id="steps-heading">按步骤理解</h2>
         <ol class="steps-list">
           <li v-for="(step, index) in session.lesson.steps" :key="step" :style="{ '--step-index': index }">
@@ -98,27 +105,31 @@
         tabindex="-1"
         data-testid="tutor-check"
       >
-        <LpKicker>理解检查</LpKicker>
+        <p class="lesson-label">理解检查</p>
         <h2 id="check-heading">确认一下理解</h2>
         <p class="check-prompt">{{ session.check.prompt }}</p>
-        <el-radio-group v-model="optionId" :disabled="!!result || submitting" class="check-options">
-          <el-radio v-for="option in session.check.options" :key="option.id" :value="option.id" class="check-option">
-            {{ option.text }}
-          </el-radio>
-        </el-radio-group>
-        <el-button type="primary" :disabled="!optionId || !!result" :loading="submitting" @click="submit">
-          提交检查
-        </el-button>
-        <el-alert v-if="checkFailure" :title="checkFailure" type="error" :closable="false" show-icon />
+        <fieldset
+          class="check-options"
+          role="radiogroup"
+          aria-labelledby="check-heading"
+          :disabled="!!result || submitting"
+        >
+          <label v-for="option in session.check.options" :key="option.id" class="check-option"
+            ><input v-model="optionId" type="radio" name="tutor-check" :value="option.id" /><span>{{
+              option.text
+            }}</span></label
+          >
+        </fieldset>
+        <LtButton variant="primary" :disabled="!optionId || !!result || submitting" @click="submit">{{
+          submitting ? '正在提交…' : '提交检查'
+        }}</LtButton>
+        <p v-if="checkFailure" class="course-error" role="alert">{{ checkFailure }}</p>
 
         <transition name="result" mode="out-in">
           <div v-if="result" class="check-result" :class="result.correct ? 'is-correct' : 'is-wrong'">
             <div class="result-heading">
               <span class="result-mark" aria-hidden="true">
-                <el-icon :size="18">
-                  <CircleCheckFilled v-if="result.correct" />
-                  <WarningFilled v-else />
-                </el-icon>
+                <CircleCheck v-if="result.correct" /><CircleAlert v-else />
               </span>
               <strong>{{ result.correct ? '回答正确' : '需要再想一步' }}</strong>
             </div>
@@ -130,18 +141,18 @@
               :class="result.guidanceType === 'PREREQUISITE' ? 'is-prerequisite' : 'is-next'"
               aria-live="polite"
             >
-              <LpKicker :tone="result.guidanceType === 'PREREQUISITE' ? 'warning' : 'success'">
+              <p class="lesson-label">
                 {{ result.guidanceType === 'PREREQUISITE' ? '建议先回看' : '建议下一步' }}
-              </LpKicker>
+              </p>
               <h3>{{ result.guidanceTitle }}</h3>
               <p>{{ result.guidanceDescription }}</p>
-              <el-button
+              <LtButton
                 v-if="result.guidanceKnowledgePointId"
-                :type="result.guidanceType === 'PREREQUISITE' ? 'default' : 'primary'"
+                :variant="result.guidanceType === 'PREREQUISITE' ? 'plain' : 'primary'"
                 @click="openGuidance(result.guidanceKnowledgePointId)"
               >
                 {{ result.guidanceType === 'PREREQUISITE' ? '复习前置内容' : '学习下一内容' }}
-              </el-button>
+              </LtButton>
             </div>
           </div>
         </transition>
@@ -155,11 +166,15 @@
         @request-check="focusCheck"
       />
     </template>
+    <CoursePageState v-else state="empty" title="暂无教学内容" description="返回课程空间，选择可学习的课节。" />
   </section>
 </template>
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { CircleCheckFilled, WarningFilled } from '@element-plus/icons-vue'
+import { ChevronLeft, CircleCheck, CircleAlert } from '@lucide/vue'
+import { LtButton } from '@/components/living'
+import CoursePageState from './CoursePageState.vue'
+import './course-baseline.css'
 import { useRoute, useRouter } from 'vue-router'
 import TutorArrayStackInsertion from '@/components/TutorArrayStackInsertion.vue'
 import TutorArrayStackResize from '@/components/TutorArrayStackResize.vue'
@@ -308,325 +323,215 @@ onBeforeUnmount(() => {
 </script>
 <style scoped>
 .tutor {
-  display: flex;
-  flex-direction: column;
-  gap: var(--lp-space-6);
-  min-height: 60vh;
+  max-width: none;
+  padding: 0;
+  gap: var(--lt-space-7);
 }
-
-.state-panel {
-  padding: var(--lp-space-6);
-  background: var(--lp-surface);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-lg);
-  box-shadow: var(--lp-shadow-xs);
-}
-
 .tutor-heading {
-  padding: var(--lp-space-2) 0 var(--lp-space-1);
+  max-width: calc(var(--lt-space-10) * 10);
 }
-
 .tutor-title {
-  margin-top: var(--lp-space-2);
-  font-family: var(--lp-font-display);
-  font-size: var(--lp-text-4xl);
-  font-weight: var(--lp-weight-bold);
-  line-height: var(--lp-leading-display);
-  color: var(--lp-text);
+  margin: 0;
+  font-size: var(--lt-text-title1);
 }
-
 .tutor-summary {
-  margin: var(--lp-space-3) 0 0;
-  max-width: 640px;
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-md);
-  line-height: var(--lp-leading-relaxed);
+  margin: var(--lt-space-4) 0 0;
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-reading);
+  line-height: var(--lt-leading-reading);
 }
-
-.lesson-block > summary {
-  cursor: pointer;
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
-  font-weight: var(--lp-weight-semibold);
-}
-.lesson-block > summary:focus-visible {
-  outline: var(--lp-space-1) solid var(--lp-primary);
-  outline-offset: var(--lp-space-1);
-}
-
 .lesson-block {
-  padding: var(--lp-space-6);
-  background: var(--lp-surface);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-lg);
-  box-shadow: var(--lp-shadow-xs);
-  animation: block-in var(--lp-duration-slow) var(--lp-ease-out) both;
+  min-width: 0;
 }
-
-@keyframes block-in {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.lesson-block > summary {
+  padding: var(--lt-space-4) 0;
+  color: var(--lt-label-2);
+  cursor: pointer;
 }
-
+.lesson-label {
+  margin: 0 0 var(--lt-space-2);
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
+}
 .block-heading h2,
 .prerequisite h2,
 .steps h2,
 .check h2 {
-  margin-top: var(--lp-space-1);
-  font-size: var(--lp-text-xl);
-  font-weight: var(--lp-weight-bold);
-  color: var(--lp-text);
+  margin: 0;
+  font-size: var(--lt-text-title3);
 }
-
-.block-heading p,
-.prerequisite p,
-.steps p,
-.check p {
-  color: var(--lp-text-secondary);
-  line-height: var(--lp-leading-body);
-}
-
-.block-heading > p {
-  margin: var(--lp-space-1) 0 0;
-  font-size: var(--lp-text-sm);
-}
-
-.prerequisite {
-  border-left: 3px solid var(--lp-warning);
-}
-
-.prerequisite h2 {
-  font-size: var(--lp-text-lg);
-}
-
 .prerequisite p {
-  margin: var(--lp-space-1) 0 0;
-  font-size: var(--lp-text-base);
+  color: var(--lt-label-2);
+  line-height: var(--lt-leading-reading);
 }
-
 .evidence-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: var(--lp-space-2);
-  margin-top: var(--lp-space-4);
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--lt-space-3);
+  margin: var(--lt-space-4) 0;
 }
-
 .evidence-item {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: var(--lp-space-3) var(--lp-space-4);
-  background: var(--lp-surface-soft);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-md);
+  display: grid;
+  align-content: start;
+  gap: var(--lt-space-2);
+  padding: var(--lt-space-4);
+  border-radius: var(--lt-radius-md);
+  background: var(--lt-fill-3);
 }
-
 .evidence-item strong {
-  color: var(--lp-primary);
-  font-size: var(--lp-text-2xl);
-  font-weight: var(--lp-weight-heavy);
+  font-family: var(--lt-font-rounded);
+  font-size: var(--lt-text-title2);
   font-variant-numeric: tabular-nums;
 }
-
-.evidence-item span {
-  color: var(--lp-text);
-  font-size: var(--lp-text-sm);
-  font-weight: var(--lp-weight-semibold);
-}
-
+.evidence-item span,
 .evidence-item small,
 .evidence-time {
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-xs);
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
 }
-
-.evidence-time {
-  display: block;
-  margin-top: var(--lp-space-3);
+.steps {
+  max-width: calc(var(--lt-space-10) * 10);
 }
-
 .steps-list {
   display: grid;
-  gap: var(--lp-space-3);
-  margin: var(--lp-space-4) 0 0;
+  margin: var(--lt-space-5) 0 0;
   padding: 0;
   list-style: none;
 }
-
 .steps-list li {
+  position: relative;
   display: flex;
-  gap: var(--lp-space-3);
-  align-items: flex-start;
+  align-items: start;
+  gap: var(--lt-space-4);
+  padding-bottom: var(--lt-space-6);
 }
-
+.steps-list li:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: var(--lt-space-7);
+  bottom: 0;
+  left: var(--lt-space-4);
+  border-left: calc(var(--lt-space-1) / 4) solid var(--lt-separator);
+}
 .step-number {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  flex: 0 0 auto;
-  border-radius: var(--lp-radius-full);
-  background: var(--lp-primary-soft);
-  color: var(--lp-primary);
-  font-size: var(--lp-text-sm);
-  font-weight: var(--lp-weight-bold);
+  display: grid;
+  place-items: center;
+  width: var(--lt-space-7);
+  height: var(--lt-space-7);
+  flex: none;
+  background: var(--lt-fill-2);
+  border-radius: var(--lt-radius-pill);
+  font-family: var(--lt-font-rounded);
+  font-variant-numeric: tabular-nums;
 }
-
 .step-text {
-  padding-top: 3px;
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-md);
-  line-height: var(--lp-leading-relaxed);
+  font-size: var(--lt-text-reading);
+  line-height: var(--lt-leading-reading);
 }
-
 .check {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--lp-space-3);
+  display: grid;
+  justify-items: start;
+  gap: var(--lt-space-4);
+  padding: var(--lt-space-6);
+  border-radius: var(--lt-radius-xl);
+  background: var(--lt-surface);
+  box-shadow: var(--lt-shadow-card);
 }
-
-.check-prompt {
+.check p {
   margin: 0;
-  font-size: var(--lp-text-lg);
-  line-height: var(--lp-leading-relaxed);
-  color: var(--lp-text);
 }
-
+.check-prompt {
+  font-size: var(--lt-text-reading);
+  line-height: var(--lt-leading-reading);
+}
 .check-options {
   display: grid;
-  gap: var(--lp-space-2);
+  gap: var(--lt-space-2);
   width: 100%;
+  padding: 0;
+  margin: 0;
+  border: 0;
 }
-
 .check-option {
-  width: 100%;
-  min-height: 44px;
-  padding: var(--lp-space-3) var(--lp-space-4);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-md);
-  background: var(--lp-surface-soft);
-  transition:
-    border-color var(--lp-duration-fast) var(--lp-ease-out),
-    background-color var(--lp-duration-fast) var(--lp-ease-out);
+  display: flex;
+  align-items: baseline;
+  gap: var(--lt-space-3);
+  padding: var(--lt-space-4);
+  border-radius: var(--lt-radius-md);
+  background: var(--lt-fill-3);
+  cursor: pointer;
+  line-height: var(--lt-leading-reading);
 }
-
 .check-option:hover {
-  border-color: var(--lp-border-strong);
-  background: var(--lp-surface);
+  background: var(--lt-fill-2);
 }
-
-.check-option.is-checked {
-  border-color: var(--lp-primary);
-  background: var(--lp-primary-soft);
+.check-option:has(:checked) {
+  background: var(--lt-accent-soft);
+  box-shadow: inset 0 0 0 calc(var(--lt-space-1) / 4) var(--lt-accent);
 }
-
+.check-option input {
+  accent-color: var(--lt-accent-fill);
+  flex: none;
+}
+.check-options:disabled .check-option {
+  cursor: default;
+}
 .check-result {
   width: 100%;
-  padding: var(--lp-space-5);
-  border-radius: var(--lp-radius-lg);
-  background: var(--lp-surface-soft);
-  border: var(--lp-border-hairline);
+  padding: var(--lt-space-5);
+  border-radius: var(--lt-radius-lg);
+  background: var(--lt-well);
 }
-
-.check-result.is-correct {
-  border-left: 3px solid var(--lp-success);
-}
-
-.check-result.is-wrong {
-  border-left: 3px solid var(--lp-warning);
-}
-
 .result-heading {
   display: flex;
   align-items: center;
-  gap: var(--lp-space-2);
-  color: var(--lp-text);
-  font-size: var(--lp-text-lg);
+  gap: var(--lt-space-2);
 }
-
 .result-mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: var(--lp-radius-full);
+  display: flex;
 }
-
+.result-mark svg {
+  width: var(--lt-space-5);
+  height: var(--lt-space-5);
+}
 .is-correct .result-mark {
-  background: var(--lp-success-soft);
-  color: var(--lp-success);
+  color: var(--lt-green-text);
 }
-
 .is-wrong .result-mark {
-  background: var(--lp-warning-soft);
-  color: var(--lp-warning);
+  color: var(--lt-orange-text);
 }
-
-.result-explanation {
-  margin: var(--lp-space-2) 0 0;
-  color: var(--lp-text-secondary);
-  line-height: var(--lp-leading-body);
+.check-result .result-explanation {
+  margin-top: var(--lt-space-3);
+  font-size: var(--lt-text-reading);
+  line-height: var(--lt-leading-reading);
 }
-
 .guidance {
-  margin-top: var(--lp-space-4);
-  padding: var(--lp-space-4);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-md);
-  background: var(--lp-surface);
+  margin-top: var(--lt-space-5);
+  padding-top: var(--lt-space-5);
+  border-top: calc(var(--lt-space-1) / 4) solid var(--lt-separator);
 }
-
 .guidance h3 {
-  margin-top: var(--lp-space-1);
-  font-size: var(--lp-text-lg);
-  color: var(--lp-text);
+  margin: var(--lt-space-2) 0;
+  font-size: var(--lt-text-headline);
 }
-
 .guidance p {
-  margin: var(--lp-space-1) 0 var(--lp-space-3);
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-base);
+  color: var(--lt-label-2);
+  line-height: var(--lt-leading-reading);
 }
-
-.guidance.is-prerequisite {
-  border-left: 3px solid var(--lp-warning);
+.guidance .lt-button {
+  margin-top: var(--lt-space-4);
 }
-
-.guidance.is-next {
-  border-left: 3px solid var(--lp-success);
-}
-
 .result-enter-active,
 .result-leave-active {
   transition:
-    opacity var(--lp-duration-normal) var(--lp-ease-out),
-    transform var(--lp-duration-normal) var(--lp-ease-out);
+    opacity var(--lt-dur-fade) var(--lt-ease-fade),
+    transform var(--lt-dur-snappy) var(--lt-ease-snappy);
 }
-
 .result-enter-from {
   opacity: 0;
-  transform: translateY(8px);
+  transform: translateY(var(--lt-space-2));
 }
-
 .result-leave-to {
   opacity: 0;
-}
-
-@media (max-width: 767px) {
-  .lesson-block {
-    padding: var(--lp-space-4);
-  }
-  .tutor-title {
-    font-size: var(--lp-text-3xl);
-  }
 }
 </style>

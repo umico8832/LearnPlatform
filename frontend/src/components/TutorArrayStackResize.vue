@@ -1,6 +1,7 @@
 <template>
   <section
-    class="courseware"
+    class="courseware lt"
+    data-appearance="dark"
     data-testid="courseware"
     tabindex="0"
     aria-label="ArrayStack 容量调整互动课件，使用左右方向键切换步骤"
@@ -32,9 +33,9 @@
       />
     </div>
     <div class="courseware-controls" role="group" aria-label="课件步骤控制">
-      <el-button data-testid="previous-step" :disabled="currentStep === 0" @click="previous">上一步</el-button>
-      <el-button data-testid="next-step" type="primary" :disabled="currentStep === states.length - 1" @click="next"
-        >下一步</el-button
+      <LtButton data-testid="previous-step" :disabled="currentStep === 0" @click="previous">上一步</LtButton>
+      <LtButton data-testid="next-step" variant="primary" :disabled="currentStep === states.length - 1" @click="next"
+        >下一步</LtButton
       >
     </div>
   </section>
@@ -42,6 +43,7 @@
 
 <script setup lang="ts">
 import { computed, defineComponent, h, ref, type PropType } from 'vue'
+import { LtButton } from '@/components/living'
 import type { ArrayStackResizeCourseware } from '@/api/course'
 
 interface ResizeState {
@@ -64,7 +66,10 @@ const ArraySnapshot = defineComponent({
         h('div', { class: 'array-meta' }, [`${props.label}：capacity = ${props.capacity}`]),
         h(
           'div',
-          { class: 'array-values', style: { gridTemplateColumns: `repeat(${props.capacity}, minmax(64px, 1fr))` } },
+          {
+            class: 'array-values',
+            style: { gridTemplateColumns: `repeat(${props.capacity}, minmax(var(--lt-control-lg), 1fr))` },
+          },
           props.values.map((value, index) =>
             h(
               'div',
@@ -130,110 +135,93 @@ function next() {
 
 <style scoped>
 .courseware {
-  padding: 20px;
-  border: 1px solid var(--lp-border);
-  border-radius: var(--lp-radius);
-  background: var(--lp-surface-soft);
+  padding: var(--lt-space-5);
+  border: calc(var(--lt-space-1) / 4) solid var(--lt-separator);
+  border-radius: var(--lt-radius-lg);
+  background: var(--lt-well);
   outline: none;
 }
 .courseware:focus-visible {
-  box-shadow: 0 0 0 3px var(--lp-primary-soft);
-  border-color: var(--lp-primary);
+  box-shadow: var(--lt-shadow-accent);
+  border-color: var(--lt-accent);
 }
 .courseware-heading,
 .courseware-controls {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--lt-space-3);
 }
 .courseware-kicker {
-  color: var(--lp-primary);
-  font-size: 12px;
+  color: var(--lt-accent);
+  font-size: var(--lt-text-caption);
   font-weight: 700;
 }
 .courseware h3 {
-  margin: 3px 0 0;
-  color: var(--lp-text);
-  font-size: 17px;
+  margin: var(--lt-space-1) 0 0;
+  color: var(--lt-label);
+  font-size: var(--lt-text-headline);
 }
 .courseware-progress {
-  color: var(--lp-text-secondary);
-  font-size: 13px;
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
 }
 .courseware-description {
-  min-height: 44px;
-  margin: 16px 0;
-  color: var(--lp-text-secondary);
-  line-height: 1.65;
+  min-height: var(--lt-control-lg);
+  margin: var(--lt-space-4) 0;
+  color: var(--lt-label-2);
+  line-height: var(--lt-leading-reading);
 }
 .arrays {
   display: grid;
-  gap: 12px;
+  gap: var(--lt-space-3);
 }
 :deep(.array-shell) {
-  padding: 16px;
+  padding: var(--lt-space-4);
   overflow-x: auto;
-  border: 1px solid var(--lp-border);
-  border-radius: var(--lp-radius);
-  background: var(--lp-surface);
+  border: calc(var(--lt-space-1) / 4) solid var(--lt-separator);
+  border-radius: var(--lt-radius-lg);
+  background: var(--lt-surface);
 }
 :deep(.array-meta) {
-  min-width: 420px;
-  margin-bottom: 10px;
-  color: var(--lp-text-secondary);
-  font-size: 13px;
+  min-width: 100%;
+  margin-bottom: var(--lt-space-2);
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
 }
 :deep(.array-values) {
   display: grid;
-  min-width: 420px;
-  gap: 8px;
+  min-width: 100%;
+  gap: var(--lt-space-2);
 }
 :deep(.array-cell) {
   display: grid;
-  min-height: 66px;
+  min-height: var(--lt-control-lg);
   place-items: center;
   align-content: center;
-  gap: 5px;
-  border: 1px solid var(--lp-border-strong);
-  border-radius: 6px;
-  color: var(--lp-text);
-  background: var(--lp-surface);
+  gap: var(--lt-space-1);
+  border: calc(var(--lt-space-1) / 4) solid var(--lt-separator);
+  border-radius: var(--lt-radius-sm);
+  color: var(--lt-label);
+  background: var(--lt-surface);
   transition:
-    background-color 180ms ease,
-    border-color 180ms ease,
-    transform 180ms ease;
+    background-color var(--lt-dur-fade) var(--lt-ease-fade),
+    border-color var(--lt-dur-fade) var(--lt-ease-fade),
+    transform var(--lt-dur-fade) var(--lt-ease-fade);
 }
 :deep(.array-cell--active) {
-  border-color: var(--lp-primary);
-  background: var(--lp-primary-soft);
-  transform: translateY(-2px);
+  border-color: var(--lt-accent);
+  background: var(--lt-accent-soft);
 }
 :deep(.array-cell--empty),
 :deep(.array-cell small) {
-  color: var(--lp-text-muted);
+  color: var(--lt-label-3);
 }
 :deep(.array-cell small) {
-  font-size: 11px;
+  font-size: var(--lt-text-caption2);
 }
 .courseware-controls {
   justify-content: flex-end;
-  margin-top: 16px;
-}
-@media (max-width: 767px) {
-  .courseware {
-    padding: 16px;
-  }
-  .courseware-heading {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-  .courseware-controls {
-    justify-content: stretch;
-  }
-  .courseware-controls .el-button {
-    flex: 1;
-    margin: 0;
-  }
+  margin-top: var(--lt-space-4);
 }
 </style>

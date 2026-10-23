@@ -4,7 +4,7 @@
     <div class="notes-body">
       <p>写下本次会话的收获或疑问，后续提问会参考最近五条可用复盘。理解检查结果另行显示，小结不代表已经掌握。</p>
       <p v-if="loadingCurrent" role="status">正在读取本次会话…</p>
-      <el-alert v-if="currentFailure" :title="currentFailure" type="error" :closable="false" show-icon />
+      <p v-if="currentFailure" class="inline-error" role="alert">{{ currentFailure }}</p>
       <template v-if="current">
         <section class="note-editor" aria-label="会话复盘编辑器">
           <div class="note-source">
@@ -18,59 +18,49 @@
             原课节已不可用，仍可查看或删除已保存复盘，不能新增或修改。
           </p>
           <label :for="`session-note-${courseId}-${current.sessionKey}`">我的复盘</label>
-          <el-input
+          <textarea
             :id="`session-note-${courseId}-${current.sessionKey}`"
             v-model="draft"
             data-testid="session-note-input"
-            type="textarea"
-            :rows="3"
             :maxlength="500"
-            show-word-limit
             :disabled="locked || !current.source.available"
             placeholder="例如：我能说明入栈和出栈如何改变栈顶。"
           />
           <div class="note-actions">
-            <el-button
-              data-testid="session-note-save"
-              type="primary"
-              :disabled="!canSave"
-              :loading="saving"
-              @click="save"
-            >
+            <LtButton data-testid="session-note-save" variant="primary" :disabled="!canSave" @click="save">
               保存复盘
-            </el-button>
-            <el-button data-testid="session-note-delete" :disabled="locked || !hasSaved" @click="remove"
-              >删除复盘</el-button
+            </LtButton>
+            <LtButton data-testid="session-note-delete" :disabled="locked || !hasSaved" @click="remove"
+              >删除复盘</LtButton
             >
           </div>
           <p v-if="notice" role="status">{{ notice }}</p>
-          <el-button
+          <LtButton
             v-if="selectedSessionKey !== sessionKey"
-            text
-            type="primary"
+            variant="quiet"
             :disabled="saving"
             @click="returnToCurrentSession"
           >
             返回本次会话
-          </el-button>
+          </LtButton>
         </section>
       </template>
-      <el-button
+      <LtButton
         v-if="syncRequired || (!current && !loadingCurrent)"
         data-testid="session-note-reload"
         :disabled="loadingCurrent || saving"
         @click="loadCurrent"
       >
         重新读取本次会话
-      </el-button>
+      </LtButton>
 
       <section class="saved-notes" aria-label="本课程已保存的会话复盘">
         <div class="saved-notes-heading">
           <h3>本课程已保存的复盘</h3>
-          <el-button text :disabled="loadingList" @click="loadList(page)">刷新列表</el-button>
+          <LtButton variant="quiet" :disabled="loadingList" @click="loadList(page)">刷新列表</LtButton>
         </div>
         <p v-if="loadingList" role="status">正在读取已保存复盘…</p>
-        <el-alert v-else-if="listFailure" :title="listFailure" type="error" :closable="false" show-icon />
+        <p v-else-if="listFailure" class="inline-error" role="alert">{{ listFailure }}</p>
         <p v-else-if="!records.length" class="saved-empty">还没有保存的会话复盘。</p>
         <div v-else class="saved-note-list">
           <article v-for="item in records" :key="item.sessionKey" class="saved-note">
@@ -81,20 +71,14 @@
               <span>保存于：{{ formatDateTime(item.updatedAt) }}</span>
               <span>理解检查：{{ checkLabel(item.source.checkStatus) }}</span>
             </template>
-            <el-button text type="primary" @click="select(item)">{{
-              item.source.available ? '编辑此复盘' : '查看或删除'
-            }}</el-button>
+            <LtButton @click="select(item)">{{ item.source.available ? '编辑此复盘' : '查看或删除' }}</LtButton>
           </article>
         </div>
-        <el-pagination
-          v-if="total > pageSize"
-          class="notes-pagination"
-          layout="prev, pager, next"
-          :current-page="page"
-          :page-size="pageSize"
-          :total="total"
-          @current-change="loadList"
-        />
+        <nav v-if="total > pageSize" class="notes-pagination" aria-label="复盘分页">
+          <LtButton :disabled="loadingList || page <= 1" @click="loadList(page - 1)">上一页</LtButton
+          ><span>第 {{ page }} 页</span
+          ><LtButton :disabled="loadingList || page * pageSize >= total" @click="loadList(page + 1)">下一页</LtButton>
+        </nav>
       </section>
     </div>
   </details>
@@ -102,6 +86,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { LtButton } from '@/components/living'
 import {
   deleteTutorSessionNote,
   getTutorSessionNote,
@@ -387,33 +372,33 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .tutor-session-notes {
-  margin-block: var(--lp-space-4);
-  border-block: var(--lp-border-hairline);
+  margin-block: var(--lt-space-4);
+  border-block: calc(var(--lt-space-1) / 4) solid var(--lt-separator);
 }
 summary {
   cursor: pointer;
-  padding-block: var(--lp-space-3);
-  font-weight: var(--lp-weight-semibold);
+  padding-block: var(--lt-space-3);
+  font-weight: 600;
 }
 summary span {
-  margin-left: var(--lp-space-2);
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
-  font-weight: normal;
+  margin-left: var(--lt-space-2);
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
+  font-weight: 400;
 }
 summary:focus-visible {
-  outline: var(--lp-space-1) solid var(--lp-primary);
-  outline-offset: var(--lp-space-1);
+  outline: var(--lt-space-1) solid var(--lt-accent);
+  outline-offset: var(--lt-space-1);
 }
 .notes-body,
 .note-editor,
 .saved-notes,
 .saved-note-list {
   display: grid;
-  gap: var(--lp-space-3);
+  gap: var(--lt-space-3);
 }
 .notes-body {
-  padding-block: var(--lp-space-2) var(--lp-space-4);
+  padding-block: var(--lt-space-2) var(--lt-space-4);
 }
 .notes-body > p,
 .note-editor > p,
@@ -421,33 +406,33 @@ summary:focus-visible {
 .saved-empty,
 .note-source span {
   margin: 0;
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
-  line-height: 1.6;
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
+  line-height: var(--lt-leading-reading);
 }
 .note-editor,
 .saved-notes {
-  padding-top: var(--lp-space-3);
-  border-top: var(--lp-border-hairline);
+  padding-top: var(--lt-space-3);
+  border-top: calc(var(--lt-space-1) / 4) solid var(--lt-separator);
 }
 .note-source {
   display: grid;
-  gap: var(--lp-space-1);
+  gap: var(--lt-space-1);
 }
 .note-editor label {
-  font-size: var(--lp-text-sm);
-  font-weight: var(--lp-weight-semibold);
+  font-size: var(--lt-text-footnote);
+  font-weight: 600;
 }
 .source-unavailable {
-  color: var(--lp-danger);
+  color: var(--lt-red-text);
 }
 .note-actions,
 .saved-notes-heading {
   display: flex;
-  gap: var(--lp-space-2);
+  gap: var(--lt-space-2);
   align-items: center;
 }
-.note-actions .el-button + .el-button {
+.note-actions .lt-button + .lt-button {
   margin-left: 0;
 }
 .saved-notes-heading {
@@ -455,22 +440,43 @@ summary:focus-visible {
 }
 .saved-notes h3 {
   margin: 0;
-  color: var(--lp-text);
-  font-size: var(--lp-text-base);
+  color: var(--lt-label);
+  font-size: var(--lt-text-body);
 }
 .saved-note {
   display: grid;
-  gap: var(--lp-space-2);
-  padding: var(--lp-space-3);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-md);
-  background: var(--lp-surface-soft);
+  gap: var(--lt-space-2);
+  padding: var(--lt-space-3);
+  border: calc(var(--lt-space-1) / 4) solid var(--lt-separator);
+  border-radius: var(--lt-radius-md);
+  background: var(--lt-fill-3);
 }
-.saved-note .el-button {
+.saved-note .lt-button {
   justify-self: start;
   margin: 0;
 }
 .notes-pagination {
   justify-self: center;
+}
+</style>
+
+<style scoped>
+.inline-error {
+  margin: 0;
+  padding: var(--lt-space-3);
+  border-radius: var(--lt-radius-sm);
+  background: var(--lt-red-soft);
+  color: var(--lt-red-text);
+}
+textarea {
+  width: 100%;
+  min-height: calc(var(--lt-control-lg) * 2);
+  padding: var(--lt-space-2);
+  border: calc(var(--lt-space-1) / 4) solid var(--lt-separator);
+  border-radius: var(--lt-radius-sm);
+  background: var(--lt-fill-2);
+  color: var(--lt-label);
+  font: inherit;
+  resize: vertical;
 }
 </style>

@@ -1,52 +1,48 @@
 <template>
   <section class="agent-practice" :aria-labelledby="opened ? headingId : undefined">
-    <el-button v-if="!opened" data-testid="practice-open" :loading="loading" :disabled="loading" @click="load">
+    <LtButton v-if="!opened" data-testid="practice-open" :disabled="loading" @click="load">
       {{ failure ? '重试加载练习' : '开始变式练习' }}
-    </el-button>
+    </LtButton>
     <template v-else-if="practice">
       <h3 :id="headingId">变式练习</h3>
       <p class="practice-content">{{ practice.question.content }}</p>
-      <el-radio-group
-        v-model="answer"
-        class="practice-options"
-        aria-label="选择变式练习答案"
-        :disabled="!!practice.result || submitting || loading || syncRequired"
-      >
-        <el-radio v-for="option in practice.question.options" :key="option.label" :value="option.label">
-          {{ option.label }}. {{ option.content }}
-        </el-radio>
-      </el-radio-group>
-      <el-button
+      <fieldset class="practice-options" :disabled="!!practice.result || submitting || loading || syncRequired">
+        <legend class="lt-sr-only">选择变式练习答案</legend>
+        <label v-for="option in practice.question.options" :key="option.label" class="practice-option"
+          ><input v-model="answer" type="radio" name="practice-answer" :value="option.label" /><span
+            >{{ option.label }}. {{ option.content }}</span
+          ></label
+        >
+      </fieldset>
+      <LtButton
         data-testid="practice-submit"
-        type="primary"
-        :loading="submitting"
+        variant="primary"
         :disabled="!answer || !!practice.result || submitting || loading || syncRequired"
         @click="submit"
-        >提交作答</el-button
+        >提交作答</LtButton
       >
       <div v-if="practice.result" class="practice-result" role="status">
         <AnswerRewardFeedback v-if="practice.result.reward" :reward="practice.result.reward" />
         <strong>{{ practice.result.correct ? '回答正确' : '回答不正确' }}</strong>
         <p>你的选择：{{ practice.result.userAnswer }} · 参考答案：{{ practice.result.correctAnswer }}</p>
         <p v-if="practice.result.analysis" class="practice-content">{{ practice.result.analysis }}</p>
-        <el-button
+        <LtButton
           v-if="allowFollowUp"
           data-testid="practice-follow-up"
           :disabled="busy || loading || submitting"
           @click="continuePractice"
-          >请 Tutor 根据这次练习继续指导</el-button
+          >请 Tutor 根据这次练习继续指导</LtButton
         >
       </div>
     </template>
-    <el-alert v-if="failure" :title="failure" type="error" :closable="false" show-icon />
-    <el-button v-if="syncRequired" data-testid="practice-sync" :loading="loading" @click="load">
-      重新同步作答
-    </el-button>
+    <p v-if="failure" class="practice-error" role="alert">{{ failure }}</p>
+    <LtButton v-if="syncRequired" data-testid="practice-sync" @click="load"> 重新同步作答 </LtButton>
   </section>
 </template>
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { LtButton } from '@/components/living'
 import { useGamificationStore } from '@/stores/gamification'
 import { getAuthSessionVersion, onAuthSessionChange } from '@/utils/auth'
 import AnswerRewardFeedback from '@/components/gamification/AnswerRewardFeedback.vue'
@@ -185,42 +181,55 @@ onBeforeUnmount(() => {
 <style scoped>
 .agent-practice {
   display: grid;
-  gap: var(--lp-space-3);
+  gap: var(--lt-space-3);
   justify-items: start;
-  margin-top: var(--lp-space-3);
+  margin-top: var(--lt-space-3);
 }
 .agent-practice:has(h3) {
-  padding: var(--lp-space-4);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-md);
-  background: var(--lp-surface);
+  padding: var(--lt-space-4);
+  border: calc(var(--lt-space-1) / 4) solid var(--lt-separator);
+  border-radius: var(--lt-radius-md);
+  background: var(--lt-surface-raised);
 }
 h3,
 p {
   margin: 0;
 }
 h3 {
-  font-size: var(--lp-text-base);
+  font-size: var(--lt-text-body);
 }
 .practice-options,
 .practice-result {
   display: grid;
-  gap: var(--lp-space-2);
+  gap: var(--lt-space-2);
   width: 100%;
 }
-.practice-options :deep(.el-radio) {
-  height: auto;
-  min-height: 36px;
-  margin-right: 0;
-  white-space: normal;
+.practice-options {
+  border: 0;
+  padding: 0;
 }
-.practice-options :deep(.el-radio__label),
+.practice-option {
+  display: flex;
+  gap: var(--lt-space-2);
+  color: var(--lt-label);
+}
+.practice-option input {
+  accent-color: var(--lt-accent);
+}
+.practice-error {
+  margin: 0;
+  padding: var(--lt-space-3);
+  border-radius: var(--lt-radius-sm);
+  background: var(--lt-red-soft);
+  color: var(--lt-red-text);
+}
+
 .practice-content {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 .practice-result {
-  padding-top: var(--lp-space-3);
-  border-top: var(--lp-border-hairline);
+  padding-top: var(--lt-space-3);
+  border-top: calc(var(--lt-space-1) / 4) solid var(--lt-separator);
 }
 </style>

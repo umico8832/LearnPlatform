@@ -1,6 +1,7 @@
 <template>
   <section
-    class="courseware"
+    class="courseware lt"
+    data-appearance="dark"
     tabindex="0"
     aria-label="顺序表连续存储互动课件，使用左右方向键切换步骤"
     @keydown.left.prevent="previous"
@@ -30,15 +31,16 @@
       {{ visualization.elementWidth }} = {{ addressAt(visualization.accessIndex) }}
     </p>
     <div class="controls">
-      <el-button data-testid="previous-step" :disabled="currentStep === 0" @click="previous">上一步</el-button
-      ><el-button data-testid="next-step" type="primary" :disabled="currentStep === states.length - 1" @click="next"
-        >下一步</el-button
+      <LtButton data-testid="previous-step" :disabled="currentStep === 0" @click="previous">上一步</LtButton
+      ><LtButton data-testid="next-step" variant="primary" :disabled="currentStep === states.length - 1" @click="next"
+        >下一步</LtButton
       >
     </div>
   </section>
 </template>
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { LtButton } from '@/components/living'
 import type { SequentialListStorageCourseware } from '@/api/course'
 const props = defineProps<{ visualization: SequentialListStorageCourseware }>()
 const currentStep = ref(0)
@@ -64,80 +66,64 @@ function next() {
 </script>
 <style scoped>
 .courseware {
-  padding: 20px;
-  border: 1px solid var(--lp-border);
-  border-radius: var(--lp-radius);
-  background: var(--lp-surface-soft);
-  color: var(--lp-text-secondary);
-  line-height: 1.65;
+  padding: var(--lt-space-5);
+  border: calc(var(--lt-space-1) / 4) solid var(--lt-separator);
+  border-radius: var(--lt-radius-lg);
+  background: var(--lt-well);
+  color: var(--lt-label-2);
+  line-height: var(--lt-leading-reading);
   outline: none;
 }
 .courseware:focus-visible {
-  box-shadow: 0 0 0 3px var(--lp-primary-soft);
-  border-color: var(--lp-primary);
+  box-shadow: var(--lt-shadow-accent);
+  border-color: var(--lt-accent);
 }
 .heading,
 .controls {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--lt-space-3);
 }
 .heading span {
-  color: var(--lp-primary);
-  font-size: 12px;
+  color: var(--lt-accent);
+  font-size: var(--lt-text-caption);
   font-weight: 700;
 }
 .heading h3 {
-  margin: 3px 0 0;
-  color: var(--lp-text);
-  font-size: 17px;
+  margin: var(--lt-space-1) 0 0;
+  color: var(--lt-label);
+  font-size: var(--lt-text-headline);
 }
 .cells {
   display: grid;
-  grid-template-columns: repeat(v-bind('visualization.elements.length'), minmax(110px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(v-bind('visualization.elements.length'), minmax(calc(var(--lt-control-lg) * 2), 1fr));
+  gap: var(--lt-space-2);
   overflow-x: auto;
 }
 .cell {
-  min-width: 110px;
-  padding: 12px;
-  border: 1px solid var(--lp-border);
-  border-radius: 6px;
-  background: var(--lp-surface);
+  min-width: calc(var(--lt-control-lg) * 2);
+  padding: var(--lt-space-3);
+  border: calc(var(--lt-space-1) / 4) solid var(--lt-separator);
+  border-radius: var(--lt-radius-sm);
+  background: var(--lt-surface);
 }
 .cell strong {
   display: block;
-  color: var(--lp-text);
+  color: var(--lt-label);
 }
 .cell small {
-  color: var(--lp-text-muted);
+  color: var(--lt-label-3);
 }
 .cell.active {
-  border-color: var(--lp-primary);
-  background: var(--lp-primary-soft);
+  border-color: var(--lt-accent);
+  background: var(--lt-accent-soft);
 }
 .formula {
   font-weight: 600;
 }
 .controls {
   justify-content: flex-end;
-  margin-top: 16px;
-}
-@media (max-width: 767px) {
-  .courseware {
-    padding: 16px;
-  }
-  .heading {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-  .controls {
-    justify-content: stretch;
-  }
-  .controls .el-button {
-    flex: 1;
-    margin: 0;
-  }
+  margin-top: var(--lt-space-4);
 }
 </style>

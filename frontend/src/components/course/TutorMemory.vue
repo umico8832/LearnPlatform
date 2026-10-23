@@ -4,7 +4,7 @@
     <div class="memory-editor">
       <p>仅记住你主动保存的设置，供本课程后续提问使用。目标和偏好不代表学习完成。</p>
       <p v-if="loading" role="status">正在读取记忆…</p>
-      <el-alert v-if="failure" :title="failure" type="error" :closable="false" show-icon />
+      <p v-if="failure" class="inline-error" role="alert">{{ failure }}</p>
       <template v-if="loaded">
         <label :for="`memory-style-${courseId}`">希望怎样讲解</label>
         <select :id="`memory-style-${courseId}`" v-model="style" data-testid="memory-style" :disabled="locked">
@@ -14,32 +14,27 @@
           <option value="EXAMPLES">多用例子解释</option>
         </select>
         <label :for="`memory-goal-${courseId}`">当前学习目标</label>
-        <el-input
+        <textarea
           :id="`memory-goal-${courseId}`"
           v-model="goal"
           data-testid="memory-goal"
-          type="textarea"
-          :rows="2"
           :maxlength="500"
-          show-word-limit
           :disabled="locked"
           placeholder="例如：理解栈与队列的区别"
         />
         <p class="memory-note">删除会清除这里的设置；已有对话和真实学习记录仍会保留。</p>
         <div class="memory-actions">
-          <el-button data-testid="memory-save" type="primary" :disabled="!canSave" :loading="saving" @click="save">
-            保存记忆
-          </el-button>
-          <el-button data-testid="memory-delete" :disabled="locked || !hasSaved" @click="remove"> 删除记忆 </el-button>
+          <LtButton data-testid="memory-save" variant="primary" :disabled="!canSave" @click="save"> 保存记忆 </LtButton>
+          <LtButton data-testid="memory-delete" :disabled="locked || !hasSaved" @click="remove"> 删除记忆 </LtButton>
         </div>
         <p v-if="notice" role="status">{{ notice }}</p>
       </template>
-      <el-button
+      <LtButton
         v-if="syncRequired || (!loaded && !loading)"
         data-testid="memory-reload"
         :disabled="loading || saving"
         @click="load"
-        >重新读取已保存内容</el-button
+        >重新读取已保存内容</LtButton
       >
     </div>
   </details>
@@ -47,6 +42,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { LtButton } from '@/components/living'
 import {
   deleteTutorMemory,
   getTutorMemory,
@@ -178,48 +174,49 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .tutor-memory {
-  margin-block: var(--lp-space-4);
-  border-block: var(--lp-border-hairline);
+  margin-block: var(--lt-space-4);
+  border-block: calc(var(--lt-space-1) / 4) solid var(--lt-separator);
 }
 summary {
   cursor: pointer;
-  padding-block: var(--lp-space-3);
-  font-weight: var(--lp-weight-semibold);
+  padding-block: var(--lt-space-3);
+  font-weight: 600;
 }
 summary span {
-  margin-left: var(--lp-space-2);
-  color: var(--lp-text-secondary);
-  font-weight: normal;
-  font-size: var(--lp-text-sm);
+  margin-left: var(--lt-space-2);
+  color: var(--lt-label-2);
+  font-weight: 400;
+  font-size: var(--lt-text-footnote);
 }
 .memory-editor {
   display: grid;
-  gap: var(--lp-space-3);
-  padding-block: var(--lp-space-2) var(--lp-space-4);
+  gap: var(--lt-space-3);
+  padding-block: var(--lt-space-2) var(--lt-space-4);
 }
 .memory-editor p {
   margin: 0;
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
-  line-height: 1.6;
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
+  line-height: var(--lt-leading-reading);
 }
 .memory-editor label {
-  font-size: var(--lp-text-sm);
-  font-weight: var(--lp-weight-semibold);
+  font-size: var(--lt-text-footnote);
+  font-weight: 600;
 }
 select {
   width: 100%;
-  color: var(--lp-text-primary);
-  background: var(--lp-surface);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-sm);
-  padding: var(--lp-space-2);
+  min-height: var(--lt-control-lg);
+  color: var(--lt-label);
+  background: var(--lt-surface-raised);
+  border: calc(var(--lt-space-1) / 4) solid var(--lt-separator);
+  border-radius: var(--lt-radius-pill);
+  padding: var(--lt-space-2);
   font: inherit;
 }
 select:focus-visible,
 summary:focus-visible {
-  outline: var(--lp-space-1) solid var(--lp-primary);
-  outline-offset: var(--lp-space-1);
+  outline: var(--lt-space-1) solid var(--lt-accent);
+  outline-offset: var(--lt-space-1);
 }
 select:disabled {
   opacity: 0.6;
@@ -227,9 +224,30 @@ select:disabled {
 }
 .memory-actions {
   display: flex;
-  gap: var(--lp-space-2);
+  gap: var(--lt-space-2);
 }
-.memory-actions .el-button + .el-button {
+.memory-actions .lt-button + .lt-button {
   margin-left: 0;
+}
+</style>
+
+<style scoped>
+.inline-error {
+  margin: 0;
+  padding: var(--lt-space-3);
+  border-radius: var(--lt-radius-sm);
+  background: var(--lt-red-soft);
+  color: var(--lt-red-text);
+}
+textarea {
+  width: 100%;
+  min-height: calc(var(--lt-control-lg) * 2);
+  padding: var(--lt-space-2);
+  border: calc(var(--lt-space-1) / 4) solid var(--lt-separator);
+  border-radius: var(--lt-radius-sm);
+  background: var(--lt-fill-2);
+  color: var(--lt-label);
+  font: inherit;
+  resize: vertical;
 }
 </style>

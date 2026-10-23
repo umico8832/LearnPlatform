@@ -1,6 +1,7 @@
 <template>
   <section
-    class="courseware"
+    class="courseware lt"
+    data-appearance="dark"
     data-testid="courseware"
     tabindex="0"
     aria-label="DualArrayDeque 再平衡互动课件，使用左右方向键切换步骤"
@@ -27,9 +28,9 @@
     </div>
     <p v-if="currentStep > 0" class="logical-order">逻辑 List 顺序始终保持：{{ logicalElements.join(' → ') }}</p>
     <div class="courseware-controls" role="group" aria-label="课件步骤控制">
-      <el-button data-testid="previous-step" :disabled="currentStep === 0" @click="previous">上一步</el-button>
-      <el-button data-testid="next-step" type="primary" :disabled="currentStep === states.length - 1" @click="next"
-        >下一步</el-button
+      <LtButton data-testid="previous-step" :disabled="currentStep === 0" @click="previous">上一步</LtButton>
+      <LtButton data-testid="next-step" variant="primary" :disabled="currentStep === states.length - 1" @click="next"
+        >下一步</LtButton
       >
     </div>
   </section>
@@ -37,6 +38,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { LtButton } from '@/components/living'
 import type { DualArrayDequeBalanceCourseware } from '@/api/course'
 
 const props = defineProps<{ visualization: DualArrayDequeBalanceCourseware }>()
@@ -72,89 +74,70 @@ function next() {
 
 <style scoped>
 .courseware {
-  padding: 20px;
-  border: 1px solid var(--lp-border);
-  border-radius: var(--lp-radius);
-  background: var(--lp-surface-soft);
+  padding: var(--lt-space-5);
+  border: calc(var(--lt-space-1) / 4) solid var(--lt-separator);
+  border-radius: var(--lt-radius-lg);
+  background: var(--lt-well);
   outline: none;
 }
 .courseware:focus-visible {
-  box-shadow: 0 0 0 3px var(--lp-primary-soft);
-  border-color: var(--lp-primary);
+  box-shadow: var(--lt-shadow-accent);
+  border-color: var(--lt-accent);
 }
 .courseware-heading,
 .courseware-controls {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--lt-space-3);
 }
 .courseware-kicker {
-  color: var(--lp-primary);
-  font-size: 12px;
+  color: var(--lt-accent);
+  font-size: var(--lt-text-caption);
   font-weight: 700;
 }
 .courseware h3 {
-  margin: 3px 0 0;
-  color: var(--lp-text);
-  font-size: 17px;
+  margin: var(--lt-space-1) 0 0;
+  color: var(--lt-label);
+  font-size: var(--lt-text-headline);
 }
 .courseware-progress {
-  color: var(--lp-text-secondary);
-  font-size: 13px;
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
 }
 .courseware-description {
-  min-height: 44px;
-  margin: 16px 0;
-  color: var(--lp-text-secondary);
-  line-height: 1.65;
+  min-height: var(--lt-control-lg);
+  margin: var(--lt-space-4) 0;
+  color: var(--lt-label-2);
+  line-height: var(--lt-leading-reading);
 }
 .stacks {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  gap: var(--lt-space-3);
 }
 .stack {
-  padding: 16px;
-  border: 1px solid var(--lp-border);
-  border-radius: var(--lp-radius);
-  background: var(--lp-surface);
-  color: var(--lp-text-secondary);
-  font-size: 13px;
+  padding: var(--lt-space-4);
+  border: calc(var(--lt-space-1) / 4) solid var(--lt-separator);
+  border-radius: var(--lt-radius-lg);
+  background: var(--lt-surface);
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
 }
 .values {
-  margin-top: 10px;
-  color: var(--lp-text);
+  margin-top: var(--lt-space-2);
+  color: var(--lt-label);
   font-weight: 700;
-  line-height: 1.65;
+  line-height: var(--lt-leading-reading);
   word-break: break-word;
 }
 .logical-order {
-  margin: 14px 0 0;
-  color: var(--lp-text-secondary);
+  margin: var(--lt-space-3) 0 0;
+  color: var(--lt-label-2);
   font-weight: 600;
 }
 .courseware-controls {
   justify-content: flex-end;
-  margin-top: 16px;
-}
-@media (max-width: 767px) {
-  .courseware {
-    padding: 16px;
-  }
-  .courseware-heading {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-  .stacks {
-    grid-template-columns: 1fr;
-  }
-  .courseware-controls {
-    justify-content: stretch;
-  }
-  .courseware-controls .el-button {
-    flex: 1;
-    margin: 0;
-  }
+  margin-top: var(--lt-space-4);
 }
 </style>

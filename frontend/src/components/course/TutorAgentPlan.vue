@@ -14,39 +14,32 @@
           <strong>{{ step.title }}</strong>
           <p>{{ step.reason }}</p>
         </div>
-        <el-button v-if="plan.confirmed" data-testid="plan-open-step" :disabled="!canOpenStep" @click="openStep(step)">
+        <LtButton v-if="plan.confirmed" data-testid="plan-open-step" :disabled="!canOpenStep" @click="openStep(step)">
           开始这一步
-        </el-button>
+        </LtButton>
       </li>
     </ol>
 
     <p v-if="plan.confirmedAt" class="plan-confirmed-at">确认时间：{{ plan.confirmedAt }}</p>
     <p v-if="!plan.available" class="plan-unavailable" role="status">目标已有变化，可请求新建议。</p>
-    <el-alert v-if="failure" :title="failure" type="error" :closable="false" show-icon />
+    <p v-if="failure" class="plan-error" role="alert">{{ failure }}</p>
     <div class="plan-actions">
-      <el-button
-        data-testid="plan-confirm"
-        type="primary"
-        :loading="confirming"
-        :disabled="!canConfirm"
-        @click="confirmPlan"
-      >
+      <LtButton data-testid="plan-confirm" variant="primary" :disabled="!canConfirm" @click="confirmPlan">
         {{ plan.confirmed ? '已确认这份安排' : '确认这份安排' }}
-      </el-button>
-      <el-button v-if="syncRequired" data-testid="plan-sync" :loading="loading" :disabled="loading" @click="load">
-        重新同步安排
-      </el-button>
+      </LtButton>
+      <LtButton v-if="syncRequired" data-testid="plan-sync" :disabled="loading" @click="load"> 重新同步安排 </LtButton>
     </div>
   </section>
   <p v-else-if="loading" class="plan-loading" role="status">正在恢复建议安排…</p>
   <div v-else-if="failure" class="plan-retry">
-    <el-alert :title="failure" type="error" :closable="false" show-icon />
-    <el-button data-testid="plan-retry" :loading="loading" :disabled="loading" @click="load"> 重试恢复安排 </el-button>
+    <p class="plan-error" role="alert">{{ failure }}</p>
+    <LtButton data-testid="plan-retry" :disabled="loading" @click="load"> 重试恢复安排 </LtButton>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { LtButton } from '@/components/living'
 import { useRouter } from 'vue-router'
 import {
   confirmTutorAgentPlan,
@@ -200,18 +193,18 @@ onBeforeUnmount(() => {
 <style scoped>
 .agent-plan {
   display: grid;
-  gap: var(--lp-space-3);
-  margin-top: var(--lp-space-3);
-  padding: var(--lp-space-4);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-md);
-  background: var(--lp-surface);
+  gap: var(--lt-space-3);
+  margin-top: var(--lt-space-3);
+  padding: var(--lt-space-4);
+  border: calc(var(--lt-space-1) / 4) solid var(--lt-separator);
+  border-radius: var(--lt-radius-md);
+  background: var(--lt-surface-raised);
 }
 .plan-heading,
 .plan-step,
 .plan-actions {
   display: flex;
-  gap: var(--lp-space-3);
+  gap: var(--lt-space-3);
   align-items: center;
   justify-content: space-between;
 }
@@ -221,40 +214,47 @@ ol {
   margin: 0;
 }
 h3 {
-  font-size: var(--lp-text-base);
+  font-size: var(--lt-text-body);
 }
 .plan-heading p,
 .plan-confirmed-at {
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
 }
 .plan-status {
-  color: var(--lp-success);
-  font-size: var(--lp-text-sm);
+  color: var(--lt-green-text);
+  font-size: var(--lt-text-footnote);
 }
 .plan-steps {
   display: grid;
-  gap: var(--lp-space-3);
-  padding-left: var(--lp-space-5);
+  gap: var(--lt-space-3);
+  padding-left: var(--lt-space-5);
 }
 .plan-step p,
 .plan-unavailable {
-  color: var(--lp-text-secondary);
-  line-height: 1.6;
+  color: var(--lt-label-2);
+  line-height: var(--lt-leading-reading);
   overflow-wrap: anywhere;
 }
 .plan-step > div {
   display: grid;
-  gap: var(--lp-space-1);
+  gap: var(--lt-space-1);
 }
 .plan-loading {
-  color: var(--lp-text-secondary);
-  margin-top: var(--lp-space-3);
+  color: var(--lt-label-2);
+  margin-top: var(--lt-space-3);
+}
+.plan-error {
+  margin: 0;
+  padding: var(--lt-space-3);
+  border-radius: var(--lt-radius-sm);
+  background: var(--lt-red-soft);
+  color: var(--lt-red-text);
 }
 .plan-retry {
   display: grid;
-  gap: var(--lp-space-3);
+  gap: var(--lt-space-3);
   justify-items: start;
-  margin-top: var(--lp-space-3);
+  margin-top: var(--lt-space-3);
 }
 </style>

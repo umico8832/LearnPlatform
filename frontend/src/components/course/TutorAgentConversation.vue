@@ -1,8 +1,8 @@
 <template>
-  <section class="agent-panel" aria-labelledby="tutor-agent-heading">
+  <LtCard as="section" radius="xl" class="lt agent-panel" data-appearance="dark" aria-labelledby="tutor-agent-heading">
     <header class="agent-heading">
       <div>
-        <LpKicker>按需追问</LpKicker>
+        <p class="agent-eyebrow">按需追问</p>
         <h2 id="tutor-agent-heading">继续问 Tutor</h2>
       </div>
       <span v-if="statusLabel" class="agent-status" role="status" aria-atomic="true">{{ statusLabel }}</span>
@@ -17,7 +17,7 @@
         :class="item.role === 'USER' ? 'is-user' : 'is-tutor'"
       >
         <span>{{ item.role === 'USER' ? '你' : 'Tutor' }}</span>
-        <MarkdownRenderer v-if="item.role === 'ASSISTANT'" class="agent-message-content" :content="item.content" />
+        <QuestionProse v-if="item.role === 'ASSISTANT'" class="agent-message-content" :content="item.content" />
         <p v-else>{{ item.content }}</p>
         <span
           v-for="action in (item.role === 'ASSISTANT' ? (item.actions ?? []) : []).filter(
@@ -28,14 +28,14 @@
         >
           第 {{ action.level }} 级提示
         </span>
-        <el-button
+        <LtButton
           v-if="item.role === 'ASSISTANT' && (item.actions ?? []).some((action) => action.type === 'CHECK')"
           data-testid="agent-request-check"
           class="agent-check-action"
           @click="emit('request-check')"
         >
           {{ checkResult ? '查看检查结果' : '开始理解检查' }}
-        </el-button>
+        </LtButton>
         <TutorAgentPractice
           v-for="action in (item.actions ?? []).filter(
             (candidate) => item.role === 'ASSISTANT' && candidate.type === 'PRACTICE',
@@ -63,70 +63,63 @@
       </article>
     </div>
 
+    <p v-if="!restoring && !failure && !run?.messages.length" class="agent-empty">
+      还没有追问记录，可以从一个问题开始。
+    </p>
     <p v-if="submitting" class="agent-thinking" role="status">Tutor 正在生成完整回复…</p>
-    <el-alert v-if="failure" :title="failure" type="error" :closable="false" show-icon />
+    <p v-if="failure" class="agent-error" role="alert">{{ failure }}</p>
 
-    <el-button
+    <LtButton
       v-if="run?.status === 'RUNNING' || restoreFailed"
       data-testid="agent-refresh"
-      :loading="restoring"
       :disabled="restoring || submitting"
       @click="restore()"
     >
       {{ restoreFailed ? '重试恢复对话' : '刷新状态' }}
-    </el-button>
+    </LtButton>
 
     <p v-if="run?.status === 'FAILED'" class="agent-thinking">上次回答未完成，可重新发送问题；历史对话已保留。</p>
 
     <div class="agent-quick-actions">
-      <el-button data-testid="agent-request-plan" :disabled="!canContinueFromCheck" @click="requestPlan"
-        >建议学习安排</el-button
+      <LtButton data-testid="agent-request-plan" :disabled="!canContinueFromCheck" @click="requestPlan"
+        >建议学习安排</LtButton
       >
-      <el-button data-testid="agent-request-practice" :disabled="!canContinueFromCheck" @click="requestPractice"
-        >练一道变式题</el-button
+      <LtButton data-testid="agent-request-practice" :disabled="!canContinueFromCheck" @click="requestPractice"
+        >练一道变式题</LtButton
       >
 
-      <el-button
-        v-if="!checkResult"
-        data-testid="agent-request-hint"
-        :loading="submitting"
-        :disabled="!canRequestHint"
-        @click="requestHint"
-      >
+      <LtButton v-if="!checkResult" data-testid="agent-request-hint" :disabled="!canRequestHint" @click="requestHint">
         {{ hintLevel ? '再提示一步' : '给我一点提示' }}
-      </el-button>
+      </LtButton>
 
-      <el-button
+      <LtButton
         v-if="checkResult"
         data-testid="agent-follow-up-check"
-        :loading="submitting"
         :disabled="!canContinueFromCheck"
         @click="continueFromCheck"
       >
         请 Tutor 根据作答继续指导
-      </el-button>
+      </LtButton>
     </div>
 
     <div class="agent-composer">
       <label for="tutor-agent-question">你的问题</label>
-      <el-input
+      <textarea
         id="tutor-agent-question"
         v-model="question"
         data-testid="agent-input"
-        type="textarea"
-        :rows="3"
-        :maxlength="2000"
-        show-word-limit
+        rows="3"
+        maxlength="2000"
         :disabled="submitting"
         placeholder="例如：为什么移动方向不能反过来？"
         @keydown.meta.enter="send"
         @keydown.ctrl.enter="send"
-      />
+      ></textarea>
       <div class="composer-actions">
-        <small>按 Ctrl / ⌘ + Enter 发送</small>
-        <el-button data-testid="agent-submit" type="primary" :loading="submitting" :disabled="!canSend" @click="send">
+        <small>按 Ctrl / ⌘ + Enter 发送 · {{ question.length }} / 2000</small>
+        <LtButton data-testid="agent-submit" variant="primary" :disabled="!canSend" @click="send">
           {{ run ? '继续提问' : '开始提问' }}
-        </el-button>
+        </LtButton>
       </div>
     </div>
 
@@ -140,9 +133,8 @@
         :busy="!canContinueFromCheck"
       />
     </details>
-  </section>
+  </LtCard>
 </template>
-
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import {
@@ -154,7 +146,8 @@ import {
 } from '@/api/tutor'
 import { errorMessage } from '@/utils/errors'
 import { getAuthSessionVersion, onAuthSessionChange } from '@/utils/auth'
-import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
+import { LtButton, LtCard } from '@/components/living'
+import QuestionProse from '@/views/question/QuestionProse.vue'
 import TutorAgentPractice from './TutorAgentPractice.vue'
 import TutorAgentPlan from './TutorAgentPlan.vue'
 import TutorMemory from './TutorMemory.vue'
@@ -353,182 +346,156 @@ onBeforeUnmount(() => {
   unsubscribeAuth()
 })
 </script>
-
 <style scoped>
 .agent-panel {
-  padding: var(--lp-space-6);
-  background: var(--lp-surface);
-  border: var(--lp-border-hairline);
-  border-left: 3px solid var(--lp-primary);
-  border-radius: var(--lp-radius-lg);
-  box-shadow: var(--lp-shadow-xs);
+  min-width: 0;
 }
-
 .agent-heading {
   display: flex;
-  gap: var(--lp-space-4);
-  align-items: flex-start;
+  align-items: start;
   justify-content: space-between;
+  gap: var(--lt-space-4);
 }
-
 .agent-heading h2 {
-  margin-top: var(--lp-space-1);
-  color: var(--lp-text);
-  font-size: var(--lp-text-xl);
+  margin: var(--lt-space-1) 0 0;
+  font-size: var(--lt-text-title3);
 }
-
+.agent-eyebrow {
+  margin: 0;
+  font-size: var(--lt-text-footnote);
+  color: var(--lt-label-2);
+}
 .agent-status {
-  flex: 0 0 auto;
-  padding: var(--lp-space-1) var(--lp-space-2);
-  color: var(--lp-primary);
-  background: var(--lp-primary-soft);
-  border-radius: var(--lp-radius-full);
-  font-size: var(--lp-text-xs);
-  font-weight: var(--lp-weight-semibold);
+  padding: var(--lt-space-1) var(--lt-space-2);
+  border-radius: var(--lt-radius-pill);
+  background: var(--lt-fill-2);
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
 }
-
-.agent-intro {
-  margin: var(--lp-space-2) 0 0;
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
-  line-height: var(--lp-leading-body);
+.agent-intro,
+.agent-thinking,
+.agent-empty {
+  color: var(--lt-label-2);
+  line-height: var(--lt-leading-reading);
 }
-
+.agent-error {
+  color: var(--lt-red-text);
+  line-height: var(--lt-leading-reading);
+}
 .agent-messages {
   display: grid;
-  gap: var(--lp-space-3);
-  margin-top: var(--lp-space-5);
-  padding-top: var(--lp-space-5);
-  border-top: var(--lp-border-hairline);
+  gap: var(--lt-space-5);
+  margin-top: var(--lt-space-5);
+  padding-top: var(--lt-space-5);
+  border-top: calc(var(--lt-space-1) / 4) solid var(--lt-separator);
 }
-
 .agent-message {
-  max-width: min(88%, 680px);
-  animation: tutor-message-arrive var(--lp-duration-normal) var(--lp-ease-out);
+  min-width: 0;
+  width: min(100%, calc(var(--lt-space-10) * 10));
+  animation: tutor-message-arrive var(--lt-dur-fade) var(--lt-ease-fade);
 }
 @keyframes tutor-message-arrive {
   from {
     opacity: 0;
-    transform: translateY(4px);
+    transform: translateY(var(--lt-space-1));
   }
   to {
     opacity: 1;
     transform: none;
   }
 }
-
 .agent-message > span {
   display: block;
-  margin-bottom: var(--lp-space-1);
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-xs);
-  font-weight: var(--lp-weight-semibold);
+  margin-bottom: var(--lt-space-2);
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
 }
-
 .agent-message p,
 .agent-message-content {
   margin: 0;
-  padding: var(--lp-space-3) var(--lp-space-4);
-  color: var(--lp-text);
-  background: var(--lp-surface-soft);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-md);
-  font-size: var(--lp-text-base);
-  line-height: var(--lp-leading-relaxed);
-  white-space: pre-wrap;
+  padding: var(--lt-space-4);
+  background: var(--lt-well);
+  border-radius: var(--lt-radius-md);
+  line-height: var(--lt-leading-reading);
+  overflow-wrap: anywhere;
 }
-
 .agent-message.is-user {
   justify-self: end;
 }
-
 .agent-message.is-user > span {
-  text-align: right;
+  text-align: end;
 }
-
 .agent-message.is-user p {
-  background: var(--lp-primary-soft);
-  border-color: var(--lp-primary-softer);
+  background: var(--lt-accent-soft);
+  white-space: pre-wrap;
 }
-
-.agent-check-action {
-  margin-top: var(--lp-space-2);
-}
-
+.agent-check-action,
 .agent-action-marker {
-  display: inline-block;
-  margin-top: var(--lp-space-2);
-  color: var(--lp-primary);
-  font-size: var(--lp-text-xs);
-  font-weight: var(--lp-weight-semibold);
+  margin-top: var(--lt-space-3);
 }
-
-.agent-thinking {
-  margin: var(--lp-space-3) 0 0;
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
+.agent-message-content :deep(table) {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  margin-top: var(--lt-space-3);
 }
-
+.agent-message-content :deep(th),
+.agent-message-content :deep(td) {
+  padding: var(--lt-space-2) var(--lt-space-3);
+  border: calc(var(--lt-space-1) / 4) solid var(--lt-separator);
+  text-align: start;
+}
+.agent-message-content :deep(:is(h1, h2, h3, h4)) {
+  font-size: var(--lt-text-headline);
+  margin: var(--lt-space-4) 0 var(--lt-space-2);
+}
 .agent-quick-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--lp-space-2);
-  margin-top: var(--lp-space-3);
+  gap: var(--lt-space-2);
+  margin-top: var(--lt-space-4);
 }
-
-.agent-quick-actions :deep(.el-button) {
-  margin: 0;
-}
-
 .agent-composer {
   display: grid;
-  gap: var(--lp-space-2);
-  margin-top: var(--lp-space-5);
+  gap: var(--lt-space-2);
+  margin-top: var(--lt-space-5);
 }
-
 .agent-composer label {
-  color: var(--lp-text);
-  font-size: var(--lp-text-sm);
-  font-weight: var(--lp-weight-semibold);
+  font-size: var(--lt-text-body);
 }
-
-.agent-records {
-  margin-top: var(--lp-space-5);
-  border-top: var(--lp-border-hairline);
+.agent-composer textarea {
+  width: 100%;
+  padding: var(--lt-space-4);
+  border: calc(var(--lt-space-1) / 4) solid var(--lt-separator);
+  border-radius: var(--lt-radius-md);
+  background: var(--lt-well);
+  color: var(--lt-label);
+  resize: vertical;
+  font: inherit;
+  line-height: var(--lt-leading-reading);
 }
-
-.agent-records > summary {
-  padding-top: var(--lp-space-3);
-  color: var(--lp-text-secondary);
-  cursor: pointer;
-  font-size: var(--lp-text-sm);
-  font-weight: var(--lp-weight-semibold);
+.agent-composer textarea::placeholder {
+  color: var(--lt-label-2);
+  opacity: 1;
 }
-
-.agent-records > summary:focus-visible {
-  outline: var(--lp-space-1) solid var(--lp-primary);
-  outline-offset: var(--lp-space-1);
-}
-
 .composer-actions {
   display: flex;
-  gap: var(--lp-space-4);
   align-items: center;
   justify-content: space-between;
+  gap: var(--lt-space-4);
 }
-
 .composer-actions small {
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-xs);
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
 }
-
-@media (max-width: 767px) {
-  .agent-panel {
-    padding: var(--lp-space-4);
-  }
-
-  .agent-message {
-    max-width: 100%;
-  }
+.agent-records {
+  margin-top: var(--lt-space-6);
+  padding-top: var(--lt-space-4);
+  border-top: calc(var(--lt-space-1) / 4) solid var(--lt-separator);
+}
+.agent-records > summary {
+  color: var(--lt-label-2);
+  cursor: pointer;
 }
 </style>

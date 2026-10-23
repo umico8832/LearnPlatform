@@ -1,6 +1,7 @@
 <template>
   <section
-    class="courseware"
+    class="courseware lt"
+    data-appearance="dark"
     tabindex="0"
     aria-label="RootishArrayStack 递增块布局互动课件，使用左右方向键切换步骤"
     @keydown.left.prevent="previous"
@@ -22,15 +23,16 @@
     </div>
     <p v-if="currentStep > 0" class="order">逻辑顺序：{{ elements.join(' → ') }}</p>
     <div class="controls">
-      <el-button data-testid="previous-step" :disabled="currentStep === 0" @click="previous">上一步</el-button
-      ><el-button data-testid="next-step" type="primary" :disabled="currentStep === states.length - 1" @click="next"
-        >下一步</el-button
+      <LtButton data-testid="previous-step" :disabled="currentStep === 0" @click="previous">上一步</LtButton
+      ><LtButton data-testid="next-step" variant="primary" :disabled="currentStep === states.length - 1" @click="next"
+        >下一步</LtButton
       >
     </div>
   </section>
 </template>
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { LtButton } from '@/components/living'
 import type { RootishArrayStackLayoutCourseware } from '@/api/course'
 const props = defineProps<{ visualization: RootishArrayStackLayoutCourseware }>()
 const currentStep = ref(0)
@@ -51,71 +53,55 @@ function next() {
 </script>
 <style scoped>
 .courseware {
-  padding: 20px;
-  border: 1px solid var(--lp-border);
-  border-radius: var(--lp-radius);
-  background: var(--lp-surface-soft);
+  padding: var(--lt-space-5);
+  border: calc(var(--lt-space-1) / 4) solid var(--lt-separator);
+  border-radius: var(--lt-radius-lg);
+  background: var(--lt-well);
   outline: none;
-  color: var(--lp-text-secondary);
-  line-height: 1.65;
+  color: var(--lt-label-2);
+  line-height: var(--lt-leading-reading);
 }
 .courseware:focus-visible {
-  box-shadow: 0 0 0 3px var(--lp-primary-soft);
-  border-color: var(--lp-primary);
+  box-shadow: var(--lt-shadow-accent);
+  border-color: var(--lt-accent);
 }
 .heading,
 .controls {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  gap: var(--lt-space-3);
 }
 .heading span {
-  color: var(--lp-primary);
-  font-size: 12px;
+  color: var(--lt-accent);
+  font-size: var(--lt-text-caption);
   font-weight: 700;
 }
 .heading h3 {
-  margin: 3px 0 0;
-  color: var(--lp-text);
-  font-size: 17px;
+  margin: var(--lt-space-1) 0 0;
+  color: var(--lt-label);
+  font-size: var(--lt-text-headline);
 }
 .blocks {
   display: grid;
-  gap: 10px;
+  gap: var(--lt-space-2);
 }
 .block {
-  padding: 12px 16px;
-  border: 1px solid var(--lp-border);
-  border-radius: var(--lp-radius);
-  background: var(--lp-surface);
+  padding: var(--lt-space-3) var(--lt-space-4);
+  border: calc(var(--lt-space-1) / 4) solid var(--lt-separator);
+  border-radius: var(--lt-radius-lg);
+  background: var(--lt-surface);
 }
 .block b {
   display: block;
-  color: var(--lp-text);
-  margin-bottom: 6px;
+  color: var(--lt-label);
+  margin-bottom: var(--lt-space-1);
 }
 .order {
   font-weight: 600;
 }
 .controls {
   justify-content: flex-end;
-  margin-top: 16px;
-}
-@media (max-width: 767px) {
-  .courseware {
-    padding: 16px;
-  }
-  .heading {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-  .controls {
-    justify-content: stretch;
-  }
-  .controls .el-button {
-    flex: 1;
-    margin: 0;
-  }
+  margin-top: var(--lt-space-4);
 }
 </style>

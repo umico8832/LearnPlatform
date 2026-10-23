@@ -1,6 +1,7 @@
 <template>
   <section
-    class="courseware"
+    class="courseware lt"
+    data-appearance="dark"
     tabindex="0"
     aria-label="单链表逆置互动课件，使用左右方向键切换步骤"
     @keydown.left.prevent="previous"
@@ -26,15 +27,16 @@
       本轮先保存 next = {{ visualization.elements[currentStep] ?? 'null' }}，再令 cur.next = prev。
     </p>
     <div class="controls">
-      <el-button data-testid="previous-step" :disabled="currentStep === 0" @click="previous">上一步</el-button
-      ><el-button data-testid="next-step" type="primary" :disabled="currentStep === states.length - 1" @click="next"
-        >下一步</el-button
+      <LtButton data-testid="previous-step" :disabled="currentStep === 0" @click="previous">上一步</LtButton
+      ><LtButton data-testid="next-step" variant="primary" :disabled="currentStep === states.length - 1" @click="next"
+        >下一步</LtButton
       >
     </div>
   </section>
 </template>
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { LtButton } from '@/components/living'
 import type { LinkedListReversalCourseware } from '@/api/course'
 const props = defineProps<{ visualization: LinkedListReversalCourseware }>()
 const currentStep = ref(0)
@@ -65,81 +67,62 @@ function next() {
 </script>
 <style scoped>
 .courseware {
-  padding: 20px;
-  border: 1px solid var(--lp-border);
-  border-radius: var(--lp-radius);
-  background: var(--lp-surface-soft);
-  color: var(--lp-text-secondary);
-  line-height: 1.65;
+  padding: var(--lt-space-5);
+  border: calc(var(--lt-space-1) / 4) solid var(--lt-separator);
+  border-radius: var(--lt-radius-lg);
+  background: var(--lt-well);
+  color: var(--lt-label-2);
+  line-height: var(--lt-leading-reading);
   outline: none;
 }
 .courseware:focus-visible {
-  box-shadow: 0 0 0 3px var(--lp-primary-soft);
-  border-color: var(--lp-primary);
+  box-shadow: var(--lt-shadow-accent);
+  border-color: var(--lt-accent);
 }
 .heading,
 .controls {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--lt-space-3);
 }
 .heading span {
-  color: var(--lp-primary);
-  font-size: 12px;
+  color: var(--lt-accent);
+  font-size: var(--lt-text-caption);
   font-weight: 700;
 }
 .heading h3 {
-  margin: 3px 0 0;
-  color: var(--lp-text);
-  font-size: 17px;
+  margin: var(--lt-space-1) 0 0;
+  color: var(--lt-label);
+  font-size: var(--lt-text-headline);
 }
 .lists {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: var(--lt-space-2);
 }
 .list {
   min-width: 0;
-  padding: 12px;
-  border: 1px solid var(--lp-border);
-  border-radius: 6px;
-  background: var(--lp-surface);
+  padding: var(--lt-space-3);
+  border: calc(var(--lt-space-1) / 4) solid var(--lt-separator);
+  border-radius: var(--lt-radius-sm);
+  background: var(--lt-surface);
 }
 .list small {
   display: block;
-  color: var(--lp-text-muted);
+  color: var(--lt-label-3);
 }
 .list strong {
   display: block;
-  margin-top: 4px;
+  margin-top: var(--lt-space-1);
   overflow-wrap: anywhere;
-  color: var(--lp-text);
+  color: var(--lt-label);
 }
 .pointer {
   font-weight: 600;
 }
 .controls {
   justify-content: flex-end;
-  margin-top: 16px;
-}
-@media (max-width: 767px) {
-  .courseware {
-    padding: 16px;
-  }
-  .heading {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-  .lists {
-    grid-template-columns: 1fr;
-  }
-  .controls {
-    justify-content: stretch;
-  }
-  .controls .el-button {
-    flex: 1;
-    margin: 0;
-  }
+  margin-top: var(--lt-space-4);
 }
 </style>
