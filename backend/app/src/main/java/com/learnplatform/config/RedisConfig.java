@@ -14,11 +14,15 @@ import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.cache.RedisCacheWriter;
 import org.springframework.data.redis.cache.BatchStrategies;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.GenericJacksonJsonRedisSerializer;
+import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 
 import java.time.Duration;
+import java.util.regex.Pattern;
 
 /**
  * 缓存配置
@@ -51,10 +55,11 @@ public class RedisConfig {
                                           CacheTtlProperties cacheTtlProperties) {
         RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(cacheTtlProperties.getDefaultTtl())
+                .prefixCacheNameWith("v2::")
                 .serializeKeysWith(RedisSerializationContext.SerializationPair
                         .fromSerializer(new StringRedisSerializer()))
                 .serializeValuesWith(RedisSerializationContext.SerializationPair
-                        .fromSerializer(new GenericJackson2JsonRedisSerializer()))
+                        .fromSerializer(cacheValueSerializer()))
                 .disableCachingNullValues();
 
         return RedisCacheManager.builder(RedisCacheWriter.nonLockingRedisCacheWriter(
@@ -87,6 +92,26 @@ public class RedisConfig {
                         cacheConfig(defaultConfig, cacheTtlProperties, "questionReviewSuggestion", 30))
                 .withCacheConfiguration("globalSearch",
                         cacheConfig(defaultConfig, cacheTtlProperties, "globalSearch", 5))
+                .build();
+    }
+
+    static RedisSerializer<Object> cacheValueSerializer() {
+        var validator = BasicPolymorphicTypeValidator.builder()
+                .allowIfSubType("com.learnplatform.")
+                .allowIfSubType(Pattern.compile(
+                        "java\\.lang\\.(String|Boolean|Byte|Short|Integer|Long|Float|Double|Character)"))
+                .allowIfSubType(Pattern.compile("java\\.math\\.(BigDecimal|BigInteger)"))
+                .allowIfSubType(Pattern.compile("java\\.time\\.(LocalDate|LocalDateTime)"))
+                .allowIfSubType(Pattern.compile("java\\.util\\.(ArrayList|LinkedList|HashMap|LinkedHashMap"
+                        + "|HashSet|LinkedHashSet|TreeMap|TreeSet"
+                        + "|Arrays\\$ArrayList|Collections\\$(EmptyList|EmptyMap|EmptySet|SingletonList|SingletonMap|SingletonSet"
+                        + "|UnmodifiableCollection|UnmodifiableList|UnmodifiableRandomAccessList|UnmodifiableMap|UnmodifiableSet)"
+                        + "|ImmutableCollections\\$(List12|ListN|Map1|MapN|Set12|SetN))"))
+                .build();
+        return GenericJacksonJsonRedisSerializer.builder(JsonMapper::builderWithJackson2Defaults)
+                .enableDefaultTyping(validator)
+                // Resolve the root as Object so its untrusted type hint also goes through the validator.
+                .reader((mapper, source, type) -> mapper.readValue(source, Object.class))
                 .build();
     }
 

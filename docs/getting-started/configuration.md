@@ -60,6 +60,9 @@ test -f .env || cp .env.example .env
 
 `REDIS_HOST`、`REDIS_PORT` 和 `REDIS_PASSWORD` 用于后端连接。Compose 将 Redis 宿主端口限制到 `127.0.0.1`，容器间仍通过内部网络访问。
 
+`CACHE_TYPE` 的应用默认值为 `simple`（本地内存）；生产 Compose 与隔离 E2E 默认使用 `redis`。
+Redis 缓存的 Jackson 3 序列化、类型白名单和升级键前缀见[后端架构](../architecture/backend.md#缓存序列化与失效)。
+
 ## AI
 
 | 变量 | 用途 |
