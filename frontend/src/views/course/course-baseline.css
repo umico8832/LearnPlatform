@@ -1,0 +1,98 @@
+.course-page {
+  width: 100%;
+  max-width: calc(var(--lt-space-10) * 16);
+  margin: 0 auto;
+  padding: var(--lt-space-7) var(--lt-space-7) var(--lt-space-10);
+  display: grid;
+  gap: var(--lt-space-6);
+}
+.course-head h1 {
+  margin: var(--lt-space-4) 0 var(--lt-space-2);
+  font-size: var(--lt-text-title1);
+}
+.course-head p,
+.course-muted {
+  color: var(--lt-label-2);
+  line-height: var(--lt-leading-reading);
+}
+.course-head p {
+  margin: 0;
+}
+.course-toolbar,
+.course-pager,
+.course-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--lt-space-3);
+}
+.course-pager {
+  justify-content: center;
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
+}
+.course-search {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  gap: var(--lt-space-2);
+  padding: 0 var(--lt-space-4);
+  background: var(--lt-fill-2);
+  border-radius: var(--lt-radius-pill);
+}
+.course-search svg {
+  width: var(--lt-space-4);
+  height: var(--lt-space-4);
+  color: var(--lt-label-2);
+}
+.course-search input {
+  width: 100%;
+  min-width: 0;
+  height: var(--lt-control-lg);
+  border: 0;
+  background: transparent;
+  color: var(--lt-label);
+  font: inherit;
+}
+.course-search input::placeholder,
+.course-page textarea::placeholder {
+  color: var(--lt-label-2);
+  opacity: 1;
+}
+.course-select-label {
+  display: flex;
+  align-items: center;
+  gap: var(--lt-space-2);
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
+}
+.course-page select {
+  height: var(--lt-control-lg);
+  padding: 0 var(--lt-space-4);
+  border: 0;
+  border-radius: var(--lt-radius-pill);
+  background: var(--lt-fill-2);
+  color: var(--lt-label);
+  font: inherit;
+}
+.course-page option {
+  background: var(--lt-surface);
+  color: var(--lt-label);
+}
+.course-symbol {
+  width: var(--lt-space-6);
+  height: var(--lt-space-6);
+  color: var(--lt-label-2);
+}
+.course-error {
+  color: var(--lt-red-text);
+}
+.course-page h2 {
+  font-size: var(--lt-text-title3);
+}
+.course-page h3 {
+  font-size: var(--lt-text-headline);
+}
+.course-page a {
+  color: var(--lt-accent);
+}

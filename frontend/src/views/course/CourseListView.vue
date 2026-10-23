@@ -1,78 +1,72 @@
 <template>
-  <div class="course-list page-container">
-    <LpPageHeader title="课程库" description="选择一门课程，查看目录后加入自己的学习空间。">
-      <template #actions>
-        <el-input v-model="keyword" class="course-search" :prefix-icon="Search" placeholder="搜索课程" clearable />
-      </template>
-    </LpPageHeader>
-
-    <LpStatePanel v-if="loading" state="loading" loading-label="正在读取课程库" />
-    <LpStatePanel
+  <div class="lt course-page" data-appearance="dark">
+    <header class="course-head">
+      <LtIconButton label="返回我的课程" @click="router.push('/my-courses')"
+        ><ChevronLeft aria-hidden="true"
+      /></LtIconButton>
+      <h1>课程库</h1>
+      <p>选择一门课程，查看目录后加入自己的学习空间。</p>
+    </header>
+    <form class="course-toolbar" role="search" @submit.prevent="search">
+      <label class="course-search"
+        ><Search aria-hidden="true" /><input
+          v-model="keyword"
+          type="search"
+          placeholder="搜索课程"
+          aria-label="搜索课程"
+      /></label>
+      <LtButton type="submit">搜索</LtButton>
+      <label class="course-select-label"
+        >每页显示<select v-model="pageSize" @change="changePageSize">
+          <option :value="12">12 门</option>
+          <option :value="24">24 门</option>
+          <option :value="48">48 门</option>
+        </select></label
+      >
+    </form>
+    <CoursePageState v-if="loading" state="loading" title="正在读取课程库" />
+    <CoursePageState
       v-else-if="loadFailed"
       state="error"
       title="暂时无法读取课程库"
       description="课程列表尚未加载，请重试。"
       @retry="fetchCourses"
     />
-
+    <CoursePageState
+      v-else-if="!courses.length"
+      state="empty"
+      title="没有匹配的课程"
+      description="换一个关键词，或清空搜索后查看全部课程。"
+    >
+      <LtButton @click="clearSearch">清空搜索</LtButton>
+    </CoursePageState>
     <template v-else>
-      <section v-if="filtered408.length" class="category-section" aria-labelledby="cs408-heading">
-        <LpSectionHeading
-          heading-id="cs408-heading"
-          title="408 计算机学科专业基础"
-          :description="`${filtered408.length} 门与 408 范围相关的公开课程`"
-        />
-        <div :class="['category-grid', { 'category-grid--featured': filtered408.length === 1 }]">
-          <article v-for="course in filtered408" :key="course.id" class="course-card">
-            <span class="course-icon" aria-hidden="true"
-              ><el-icon :size="20"><Reading /></el-icon
-            ></span>
-            <div class="course-copy">
-              <h2 class="course-name">{{ course.name }}</h2>
-              <p class="course-desc">{{ course.description || '暂无课程描述' }}</p>
-            </div>
-            <el-button type="primary" :icon="ArrowRight" @click="goToDetail(course.id)">查看课程</el-button>
-          </article>
-        </div>
+      <p class="course-muted" role="status">共 {{ total }} 门课程</p>
+      <section class="catalog-grid" aria-label="课程列表">
+        <LtCard v-for="course in courses" :key="course.id" as="article" radius="xl" class="catalog-card course-card">
+          <BookOpen class="course-symbol" aria-hidden="true" />
+          <h2>{{ course.name }}</h2>
+          <p class="course-muted">{{ course.description || '暂无课程描述' }}</p>
+          <LtButton @click="goToDetail(course.id)"
+            >查看课程<template #trailing><ArrowRight aria-hidden="true" /></template
+          ></LtButton>
+        </LtCard>
       </section>
-
-      <section v-if="filteredOthers.length" class="category-section" aria-labelledby="other-courses-heading">
-        <LpSectionHeading
-          heading-id="other-courses-heading"
-          title="更多课程"
-          :description="`${filteredOthers.length} 门公开课程`"
-        />
-        <div class="category-grid">
-          <article v-for="course in filteredOthers" :key="course.id" class="course-card">
-            <span class="course-icon" aria-hidden="true"
-              ><el-icon :size="20"><Reading /></el-icon
-            ></span>
-            <div class="course-copy">
-              <h2 class="course-name">{{ course.name }}</h2>
-              <p class="course-desc">{{ course.description || '暂无课程描述' }}</p>
-            </div>
-            <el-button type="primary" :icon="ArrowRight" @click="goToDetail(course.id)">查看课程</el-button>
-          </article>
-        </div>
-      </section>
-
-      <LpStatePanel
-        v-if="!filtered408.length && !filteredOthers.length"
-        state="empty"
-        title="没有匹配的课程"
-        description="换一个关键词，或清空搜索后查看全部课程。"
-      >
-        <template #actions><el-button type="primary" @click="keyword = ''">清空搜索</el-button></template>
-      </LpStatePanel>
+      <nav v-if="pages > 1" class="course-pager" aria-label="课程翻页">
+        <LtButton :disabled="page <= 1" @click="page--">上一页</LtButton><span>第 {{ page }} / {{ pages }} 页</span
+        ><LtButton :disabled="page >= pages" @click="page++">下一页</LtButton>
+      </nav>
     </template>
   </div>
 </template>
-
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowRight, Reading, Search } from '@element-plus/icons-vue'
-import { getAllCourses, type CourseVO } from '@/api/course'
+import { ArrowRight, BookOpen, ChevronLeft, Search } from '@lucide/vue'
+import { LtButton, LtCard, LtIconButton } from '@/components/living'
+import CoursePageState from './CoursePageState.vue'
+import './course-baseline.css'
+import { getCoursePage, type CourseVO } from '@/api/course'
 import { getAuthSessionVersion, isAuthenticated, onAuthSessionChange } from '@/utils/auth'
 
 const router = useRouter()
@@ -83,18 +77,24 @@ const keyword = ref('')
 let alive = true
 let generation = 0
 
-const is408Course = (course: CourseVO) => course.name.includes('408') || (course.contentKey || '').startsWith('cs408-')
-const filterByKeyword = (list: CourseVO[]) => {
-  const query = keyword.value.trim().toLowerCase()
-  if (!query) return list
-  return list.filter((course) => `${course.name} ${course.description || ''}`.toLowerCase().includes(query))
+const query = ref('')
+const page = ref(1)
+const pageSize = ref(12)
+const pages = ref(0)
+const total = ref(0)
+function clearSearch() {
+  keyword.value = ''
+  search()
 }
-const sortedCourses = (predicate: (course: CourseVO) => boolean) =>
-  computed(() =>
-    filterByKeyword([...courses.value.filter(predicate)].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))),
-  )
-const filtered408 = sortedCourses(is408Course)
-const filteredOthers = sortedCourses((course) => !is408Course(course))
+function search() {
+  query.value = keyword.value.trim()
+  if (page.value !== 1) page.value = 1
+  else void fetchCourses()
+}
+watch([page, pageSize], () => void fetchCourses())
+function changePageSize() {
+  if (page.value !== 1) page.value = 1
+}
 
 function isCurrent(requestGeneration: number, session: number) {
   return alive && requestGeneration === generation && session === getAuthSessionVersion()
@@ -106,8 +106,15 @@ async function fetchCourses() {
   loading.value = true
   loadFailed.value = false
   try {
-    const response = await getAllCourses({ errorDisplay: 'inline' })
-    if (isCurrent(requestGeneration, session)) courses.value = response.data || []
+    const response = await getCoursePage(
+      { pageNum: page.value, pageSize: pageSize.value, keyword: query.value || undefined },
+      { errorDisplay: 'inline' },
+    )
+    if (isCurrent(requestGeneration, session)) {
+      courses.value = response.data.records
+      pages.value = response.data.pages
+      total.value = response.data.total
+    }
   } catch {
     if (isCurrent(requestGeneration, session)) loadFailed.value = true
   } finally {
@@ -134,92 +141,24 @@ onUnmounted(() => {
   unsubscribeSession()
 })
 </script>
-
 <style scoped>
-.course-list {
+.catalog-grid {
   display: grid;
-  gap: var(--lp-space-8);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, calc(var(--lt-space-10) * 4)), 1fr));
+  gap: var(--lt-space-5);
 }
-.course-search {
-  width: 280px;
-}
-.category-section {
-  display: grid;
-  gap: var(--lp-space-4);
-}
-.category-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: var(--lp-space-3);
-}
-.category-grid--featured {
-  grid-template-columns: minmax(0, 1fr);
-}
-.category-grid--featured .course-card {
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  grid-template-rows: auto;
-  align-items: center;
-}
-.category-grid--featured .course-card > .el-button {
-  grid-column: 3;
-  grid-row: 1;
-  align-self: center;
-  justify-self: end;
-}
-.course-card {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  grid-template-rows: minmax(0, 1fr) auto;
-  gap: var(--lp-space-3) var(--lp-space-4);
+.catalog-card {
+  display: flex;
+  flex-direction: column;
   align-items: start;
-  padding: var(--lp-space-5);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-lg);
-  background: var(--lp-surface);
-  box-shadow: var(--lp-shadow-xs);
+  gap: var(--lt-space-4);
 }
-.course-card > .el-button {
-  grid-column: 2;
-  align-self: end;
-  justify-self: start;
-}
-.course-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  color: var(--lp-primary);
-  background: var(--lp-primary-soft);
-  border-radius: var(--lp-radius-md);
-}
-.course-copy {
-  min-width: 0;
-}
-.course-name {
+.catalog-card h2 {
   margin: 0;
-  color: var(--lp-text);
-  font-size: var(--lp-text-lg);
-  line-height: var(--lp-leading-snug);
+  font-size: var(--lt-text-title3);
 }
-.course-desc {
-  margin: var(--lp-space-2) 0 0;
-  color: var(--lp-text-secondary);
-  line-height: var(--lp-leading-body);
-}
-@media (max-width: 767px) {
-  .course-search {
-    width: 100%;
-  }
-  .category-grid--featured .course-card {
-    grid-template-columns: auto minmax(0, 1fr);
-    align-items: start;
-  }
-  .category-grid--featured .course-card > .el-button {
-    grid-column: 2;
-    grid-row: 2;
-    align-self: end;
-    justify-self: start;
-  }
+.catalog-card p {
+  flex: 1;
+  margin: 0;
 }
 </style>

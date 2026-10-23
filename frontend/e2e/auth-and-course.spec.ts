@@ -99,7 +99,7 @@ test('用户可通过真实登录流程访问课程库', async ({ page }) => {
 
   await page.getByRole('navigation', { name: '主导航' }).getByRole('link', { name: '课程库' }).click()
   await expect(page).toHaveURL(/\/courses$/)
-  await expect(page.getByRole('main').getByRole('heading', { name: '课程库' })).toBeVisible()
+  await expect(page.getByRole('main').getByRole('heading', { name: '课程库', exact: true })).toBeVisible()
   await expect(page.locator('.course-card').first()).toBeVisible()
 })
 
