@@ -1,302 +1,245 @@
-import { afterEach, describe, it, expect, vi, beforeEach } from 'vitest'
-import { mount, flushPromises } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { flushPromises, mount } from '@vue/test-utils'
 import { reactive } from 'vue'
 import { removeToken, setToken } from '@/utils/auth'
 
-const { mockUpdateProfile, mockUpdatePassword, mockPush, mockReplace, mockClearLoginInfo } = vi.hoisted(() => ({
-  mockUpdateProfile: vi.fn(),
-  mockUpdatePassword: vi.fn(),
-  mockPush: vi.fn(),
-  mockReplace: vi.fn(),
-  mockClearLoginInfo: vi.fn(),
+const { updateProfile, updatePassword, replace, clearLoginInfo } = vi.hoisted(() => ({
+  updateProfile: vi.fn(),
+  updatePassword: vi.fn(),
+  replace: vi.fn(),
+  clearLoginInfo: vi.fn(),
 }))
-
-let mockValidateResult: boolean | Promise<boolean> = true
-const mockProfileValidate = vi.fn().mockResolvedValue(true)
-const mockPasswordValidate = vi.fn().mockResolvedValue(true)
-
-vi.mock('@/api/user', () => ({
-  updateProfile: (...args: unknown[]) => mockUpdateProfile(...args),
-  updatePassword: (...args: unknown[]) => mockUpdatePassword(...args),
-}))
-
-vi.mock('vue-router', () => ({
-  useRouter: () => ({ push: mockPush, replace: mockReplace }),
-  RouterLink: { template: '<a><slot /></a>' },
-}))
-
-const mockUserInfo = reactive({
+vi.mock('@/api/user', () => ({ updateProfile, updatePassword }))
+vi.mock('vue-router', () => ({ useRouter: () => ({ replace }) }))
+const user = reactive({
   id: 1,
   username: 'testuser',
   nickname: 'TestNick',
   role: 'USER',
   createTime: '2025-01-15T10:00:00',
 })
-
-vi.mock('@/stores/user', () => ({
-  useUserStore: () => ({ userInfo: mockUserInfo, clearLoginInfo: mockClearLoginInfo }),
-}))
-
-const globalStubs = {
-  'el-row': { template: '<div class="row"><slot /></div>', props: ['gutter'] },
-  'el-col': { template: '<div class="col"><slot /></div>', props: ['xs', 'sm'] },
-  'el-card': { template: '<div class="card"><slot name="header" /><slot /></div>', props: ['shadow'] },
-  'el-avatar': { template: '<div class="avatar"><slot /></div>', props: ['size'] },
-  'el-tag': { template: '<span class="tag"><slot /></span>', props: ['size'] },
-  'el-icon': { template: '<span class="icon"><slot /></span>' },
-  'el-form': {
-    template: '<form @submit.prevent><slot /></form>',
-    props: ['model', 'rules', 'labelWidth', 'labelPosition'],
-    methods: {
-      validate: () => Promise.resolve(mockValidateResult),
-      resetFields: vi.fn(),
-    },
-  },
-  'el-form-item': { template: '<div class="form-item"><slot /></div>', props: ['label', 'prop'] },
-  'el-input': {
-    template:
-      '<input :value="modelValue" :placeholder="placeholder" :disabled="disabled" @input="$emit(\'update:modelValue\', $event.target.value)" />',
-    props: ['modelValue', 'type', 'placeholder', 'disabled', 'showPassword', 'showWordLimit', 'maxlength'],
-    emits: ['update:modelValue'],
-  },
-  'el-button': {
-    template: '<button :disabled="loading || disabled" :class="type" @click="$emit(\'click\')"><slot /></button>',
-    props: ['type', 'loading', 'disabled', 'plain', 'icon'],
-    emits: ['click'],
-  },
-  User: { template: '<span />' },
-  Clock: { template: '<span />' },
-}
-
+vi.mock('@/stores/user', () => ({ useUserStore: () => ({ userInfo: user, clearLoginInfo }) }))
 import ProfileView from '@/views/auth/ProfileView.vue'
 
-describe('ProfileView', () => {
-  const mountedWrappers: Array<{ unmount: () => void }> = []
+function page() {
+  return mount(ProfileView, {
+    global: {
+      stubs: {
+        ProfileGamification: true,
+        RouterLink: { template: '<a><slot/></a>' },
+        LtLinkButton: { template: '<a><slot/></a>' },
+        LtCard: { template: '<section><slot name="title"/><slot/></section>' },
+        LtButton: {
+          props: ['disabled', 'type'],
+          template: '<button :disabled="disabled" :type="type"><slot/></button>',
+        },
+      },
+    },
+  })
+}
+function profileForm(wrapper: ReturnType<typeof page>) {
+  return wrapper.findAll('form')[0]!
+}
+function passwordForm(wrapper: ReturnType<typeof page>) {
+  return wrapper.findAll('form')[1]!
+}
+function vm(wrapper: ReturnType<typeof page>) {
+  return wrapper.vm as unknown as {
+    profileForm: { nickname: string }
+    passwordForm: { oldPassword: string; newPassword: string; confirmPassword: string }
+    handleUpdateProfile: () => Promise<void>
+    handleUpdatePassword: () => Promise<void>
+  }
+}
 
+describe('ProfileView', () => {
+  const wrappers: ReturnType<typeof page>[] = []
   beforeEach(() => {
     vi.clearAllMocks()
     setToken('profile-test-session')
-    mockValidateResult = true
-    mockProfileValidate.mockResolvedValue(true)
-    mockPasswordValidate.mockResolvedValue(true)
-    mockUserInfo.nickname = 'TestNick'
-    mockUserInfo.username = 'testuser'
-    mockUserInfo.role = 'USER'
-    mockUserInfo.createTime = '2025-01-15T10:00:00'
+    user.nickname = 'TestNick'
+    user.username = 'testuser'
+    user.role = 'USER'
+    user.createTime = '2025-01-15T10:00:00'
   })
-
   afterEach(() => {
-    mountedWrappers.splice(0).forEach((wrapper) => wrapper.unmount())
+    wrappers.splice(0).forEach((wrapper) => wrapper.unmount())
     removeToken()
   })
-
   function mountProfile() {
-    const wrapper = mount(ProfileView, {
-      global: {
-        stubs: { ...globalStubs, ProfileGamification: true },
-        mocks: { $router: { push: mockPush } },
-      },
-    })
-    mountedWrappers.push(wrapper)
+    const wrapper = page()
+    wrappers.push(wrapper)
     return wrapper
   }
 
-  function findButtonByText(wrapper: ReturnType<typeof mountProfile>, text: string) {
-    const button = wrapper.findAll('button').find((item) => item.text().includes(text))
-    expect(button, `button with text ${text}`).toBeTruthy()
-    return button!
-  }
-
-  it('should render user avatar with first character of name', () => {
+  it('renders avatar from the first character of the display name', () =>
+    expect(mountProfile().get('.avatar').text()).toBe('T'))
+  it('renders nickname', () => expect(mountProfile().get('.user-name').text()).toBe('TestNick'))
+  it('falls back to username when nickname is empty', () => {
+    user.nickname = ''
+    expect(mountProfile().get('.user-name').text()).toBe('testuser')
+  })
+  it('renders the normal-user role', () => expect(mountProfile().get('.tag').text()).toBe('普通用户'))
+  it('renders the administrator role', () => {
+    user.role = 'ADMIN'
+    expect(mountProfile().get('.tag').text()).toBe('管理员')
+  })
+  it('renders registration date', () => {
     const wrapper = mountProfile()
-    const avatar = wrapper.find('.avatar')
-    expect(avatar.text()).toBe('T')
+    expect(wrapper.text()).toContain('注册时间')
+    expect(wrapper.text()).toContain('2025-01-15')
+  })
+  it('renders both profile sections', () => {
+    const wrapper = mountProfile()
+    expect(wrapper.text()).toContain('个人信息')
+    expect(wrapper.text()).toContain('修改密码')
+  })
+  it('renders username as a disabled field', () => {
+    const input = mountProfile().get<HTMLInputElement>('input[disabled]')
+    expect(input.element.value).toBe('testuser')
+  })
+  it('keeps each password field revealable with an accessible toggle', async () => {
+    const wrapper = mountProfile()
+    const toggles = wrapper.findAll('button').filter((button) => button.attributes('aria-label') === '显示密码')
+    expect(toggles).toHaveLength(3)
+    const password = wrapper.get<HTMLInputElement>('input[autocomplete="current-password"]')
+    expect(password.attributes('type')).toBe('password')
+    await toggles[0]!.trigger('click')
+    expect(password.attributes('type')).toBe('text')
+    expect(toggles[0]!.attributes('aria-label')).toBe('隐藏密码')
   })
 
-  it('should render user nickname', () => {
+  it('saves profile through the existing API', async () => {
+    updateProfile.mockResolvedValue({ data: { nickname: 'NewNick' } })
     const wrapper = mountProfile()
-    const name = wrapper.find('.user-name')
-    expect(name.text()).toBe('TestNick')
-  })
-
-  it('should render username as fallback when nickname is null', () => {
-    mockUserInfo.nickname = ''
-    const wrapper = mountProfile()
-    const name = wrapper.find('.user-name')
-    expect(name.text()).toBe('testuser')
-  })
-
-  it('should render role tag for normal user', () => {
-    const wrapper = mountProfile()
-    const tag = wrapper.find('.tag')
-    expect(tag.text()).toBe('普通用户')
-  })
-
-  it('should render admin tag for admin user', () => {
-    mockUserInfo.role = 'ADMIN'
-    const wrapper = mountProfile()
-    const tag = wrapper.find('.tag')
-    expect(tag.text()).toBe('管理员')
-  })
-
-  it('should render registration date', () => {
-    const wrapper = mountProfile()
-    expect(wrapper.html()).toContain('注册时间')
-    expect(wrapper.html()).toContain('2025-01-15')
-  })
-
-  it('should render profile section title', () => {
-    const wrapper = mountProfile()
-    expect(wrapper.html()).toContain('个人信息')
-    expect(wrapper.html()).toContain('修改密码')
-  })
-
-  it('should render disabled username field', () => {
-    const wrapper = mountProfile()
-    const disabledInput = wrapper.find('input[disabled]')
-    expect(disabledInput.exists()).toBe(true)
-    expect((disabledInput.element as HTMLInputElement).value).toBe('testuser')
-  })
-
-  it('should call updateProfile API on profile form submission', async () => {
-    mockUpdateProfile.mockResolvedValue({ data: { nickname: 'NewNick' } })
-    const wrapper = mountProfile()
-    const saveBtn = findButtonByText(wrapper, '保存修改')
-    await saveBtn.trigger('click')
+    await profileForm(wrapper).trigger('submit')
     await flushPromises()
-    expect(mockUpdateProfile).toHaveBeenCalledWith({ nickname: 'TestNick' }, { errorDisplay: 'inline' })
-    expect(mockUserInfo.nickname).toBe('NewNick')
+    expect(updateProfile).toHaveBeenCalledWith({ nickname: 'TestNick' }, { errorDisplay: 'inline' })
+    expect(user.nickname).toBe('NewNick')
   })
-
-  it('should call updatePassword API on password form submission', async () => {
-    mockUpdatePassword.mockResolvedValue({ data: null })
+  it('changes password and returns to login', async () => {
+    updatePassword.mockResolvedValue({ data: null })
     const wrapper = mountProfile()
-    // Use the vm to set password form values directly (avoiding stub v-model quirks)
-    const vm = wrapper.vm as unknown as Record<string, unknown>
-    const passwordForm = vm.passwordForm as { oldPassword: string; newPassword: string; confirmPassword: string }
-    passwordForm.oldPassword = 'oldpass'
-    passwordForm.newPassword = 'newpass123'
-    passwordForm.confirmPassword = 'newpass123'
-    await wrapper.vm.$nextTick()
-    const changePwdBtn = findButtonByText(wrapper, '修改密码')
-    await changePwdBtn.trigger('click')
+    Object.assign(vm(wrapper).passwordForm, {
+      oldPassword: 'oldpass',
+      newPassword: 'newpass123',
+      confirmPassword: 'newpass123',
+    })
+    await passwordForm(wrapper).trigger('submit')
     await flushPromises()
-    expect(mockUpdatePassword).toHaveBeenCalledWith(
+    expect(updatePassword).toHaveBeenCalledWith(
       { oldPassword: 'oldpass', newPassword: 'newpass123' },
       { errorDisplay: 'inline' },
     )
-    expect(mockClearLoginInfo).toHaveBeenCalledOnce()
-    expect(mockReplace).toHaveBeenCalledWith('/login')
+    expect(clearLoginInfo).toHaveBeenCalledOnce()
+    expect(replace).toHaveBeenCalledWith('/login')
   })
-
-  it('should handle updateProfile API error gracefully', async () => {
-    mockUpdateProfile.mockRejectedValue(new Error('error'))
+  it('keeps profile API failures visible with retry', async () => {
+    updateProfile.mockRejectedValue(new Error('error'))
     const wrapper = mountProfile()
-    const saveBtn = findButtonByText(wrapper, '保存修改')
-    await saveBtn.trigger('click')
+    await profileForm(wrapper).trigger('submit')
     await flushPromises()
     expect(wrapper.get('[role="alert"]').text()).toContain('error')
     expect(wrapper.get('[role="alert"] button').text()).toBe('重试')
   })
-
-  it('should handle updatePassword API error gracefully', async () => {
-    mockUpdatePassword.mockRejectedValue(new Error('error'))
+  it('keeps password API failures visible', async () => {
+    updatePassword.mockRejectedValue(new Error('error'))
     const wrapper = mountProfile()
-    const changePwdBtn = findButtonByText(wrapper, '修改密码')
-    await changePwdBtn.trigger('click')
+    Object.assign(vm(wrapper).passwordForm, {
+      oldPassword: 'oldpass',
+      newPassword: 'newpass123',
+      confirmPassword: 'newpass123',
+    })
+    await passwordForm(wrapper).trigger('submit')
     await flushPromises()
     expect(wrapper.get('[role="alert"]').text()).toContain('error')
   })
+  it('keeps native nickname and password validation visible without sending requests', async () => {
+    const wrapper = mountProfile()
+    vm(wrapper).profileForm.nickname = ''
+    await profileForm(wrapper).trigger('submit')
+    await flushPromises()
+    expect(updateProfile).not.toHaveBeenCalled()
+    expect(wrapper.get('[role="alert"]').text()).toContain('请输入昵称')
+    Object.assign(vm(wrapper).passwordForm, {
+      oldPassword: 'oldpass',
+      newPassword: 'short',
+      confirmPassword: 'different',
+    })
+    await passwordForm(wrapper).trigger('submit')
+    await flushPromises()
+    expect(updatePassword).not.toHaveBeenCalled()
+    expect(wrapper.findAll('[role="alert"]').at(-1)!.text()).toMatch(/密码长度|两次输入/)
+  })
 
   it('does not apply a late profile response after unmount', async () => {
+    let resolve!: (value: { data: { nickname: string } }) => void
+    updateProfile.mockImplementationOnce(
+      () =>
+        new Promise((yes) => {
+          resolve = yes
+        }),
+    )
+    const wrapper = mountProfile()
+    const pending = vm(wrapper).handleUpdateProfile()
+    await flushPromises()
+    wrapper.unmount()
+    resolve({ data: { nickname: '迟到昵称' } })
+    await pending
+    expect(user.nickname).toBe('TestNick')
+  })
+  it('locks both forms during native validation and allows only the first submit', async () => {
     let resolveProfile!: (value: { data: { nickname: string } }) => void
-    mockUpdateProfile.mockImplementationOnce(
+    updateProfile.mockImplementationOnce(
       () =>
         new Promise((resolve) => {
           resolveProfile = resolve
         }),
     )
     const wrapper = mountProfile()
-    const saveBtn = findButtonByText(wrapper, '保存修改')
-    await saveBtn.trigger('click')
-    wrapper.unmount()
-    resolveProfile({ data: { nickname: '迟到昵称' } })
-    await flushPromises()
-
-    expect(mockUserInfo.nickname).toBe('TestNick')
-  })
-
-  it('locks both forms before deferred validation resolves, so duplicate and parallel submits do not send requests', async () => {
-    let resolveValidation!: (value: boolean) => void
-    mockValidateResult = new Promise<boolean>((resolve) => {
-      resolveValidation = resolve
-    })
-    mockUpdateProfile.mockResolvedValue({ data: { nickname: 'NewNick' } })
-    const wrapper = mountProfile()
-    const vm = wrapper.vm as unknown as {
-      handleUpdateProfile: () => Promise<void>
-      handleUpdatePassword: () => Promise<void>
-    }
-
-    void vm.handleUpdateProfile()
-    void vm.handleUpdateProfile()
-    void vm.handleUpdatePassword()
+    void vm(wrapper).handleUpdateProfile()
+    void vm(wrapper).handleUpdateProfile()
+    void vm(wrapper).handleUpdatePassword()
     await wrapper.vm.$nextTick()
-
-    expect(findButtonByText(wrapper, '保存修改').attributes('disabled')).toBeDefined()
-    expect(findButtonByText(wrapper, '修改密码').attributes('disabled')).toBeDefined()
-
-    resolveValidation(true)
+    expect(
+      wrapper
+        .findAll('button')
+        .filter((button) => ['保存修改', '修改密码'].includes(button.text()))
+        .every((button) => button.attributes('disabled') !== undefined),
+    ).toBe(true)
+    resolveProfile({ data: { nickname: 'NewNick' } })
     await flushPromises()
-
-    expect(mockUpdateProfile).toHaveBeenCalledTimes(1)
-    expect(mockUpdatePassword).not.toHaveBeenCalled()
+    expect(updateProfile).toHaveBeenCalledTimes(1)
+    expect(updatePassword).not.toHaveBeenCalled()
   })
-
-  it('does not send a profile request when the component unmounts during validation', async () => {
-    let resolveValidation!: (value: boolean) => void
-    mockValidateResult = new Promise<boolean>((resolve) => {
-      resolveValidation = resolve
-    })
+  it('does not send a profile request when unmounted during native validation', async () => {
     const wrapper = mountProfile()
-    const vm = wrapper.vm as unknown as { handleUpdateProfile: () => Promise<void> }
-
-    void vm.handleUpdateProfile()
+    const pending = vm(wrapper).handleUpdateProfile()
     wrapper.unmount()
-    resolveValidation(true)
-    await flushPromises()
-
-    expect(mockUpdateProfile).not.toHaveBeenCalled()
+    await pending
+    expect(updateProfile).not.toHaveBeenCalled()
   })
-
-  it('does not send a password request when the auth session changes during validation', async () => {
-    let resolveValidation!: (value: boolean) => void
-    mockValidateResult = new Promise<boolean>((resolve) => {
-      resolveValidation = resolve
+  it('does not send a password request when session changes during native validation', async () => {
+    const wrapper = mountProfile()
+    Object.assign(vm(wrapper).passwordForm, {
+      oldPassword: 'oldpass',
+      newPassword: 'newpass123',
+      confirmPassword: 'newpass123',
     })
-    const wrapper = mountProfile()
-    const vm = wrapper.vm as unknown as { handleUpdatePassword: () => Promise<void> }
-
-    void vm.handleUpdatePassword()
+    const pending = vm(wrapper).handleUpdatePassword()
     setToken('profile-next-session')
-    resolveValidation(true)
-    await flushPromises()
-
-    expect(mockUpdatePassword).not.toHaveBeenCalled()
+    await pending
+    expect(updatePassword).not.toHaveBeenCalled()
   })
-
-  it('clears password fields when the auth session changes', async () => {
+  it('clears password fields on auth session change', async () => {
     const wrapper = mountProfile()
-    const vm = wrapper.vm as unknown as {
-      passwordForm: { oldPassword: string; newPassword: string; confirmPassword: string }
-    }
-    vm.passwordForm.oldPassword = 'oldpass'
-    vm.passwordForm.newPassword = 'newpass123'
-    vm.passwordForm.confirmPassword = 'newpass123'
-
+    Object.assign(vm(wrapper).passwordForm, {
+      oldPassword: 'oldpass',
+      newPassword: 'newpass123',
+      confirmPassword: 'newpass123',
+    })
     setToken('profile-cleared-session')
     await wrapper.vm.$nextTick()
-
-    expect(vm.passwordForm).toEqual({ oldPassword: '', newPassword: '', confirmPassword: '' })
+    expect(vm(wrapper).passwordForm).toEqual({ oldPassword: '', newPassword: '', confirmPassword: '' })
   })
 })

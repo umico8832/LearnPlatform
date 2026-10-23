@@ -162,7 +162,7 @@ export const learnerRoutes: RouteRecordRaw[] = [
         path: 'profile',
         name: 'Profile',
         component: () => import('@/views/auth/ProfileView.vue'),
-        meta: { title: '个人中心' },
+        meta: { title: '个人中心', living: true },
       },
       {
         path: 'learning-diagnosis',

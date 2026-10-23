@@ -4,7 +4,6 @@ import { getAchievements, getLearningHeatmap, type Achievement, type HeatmapDay 
 import { useGamificationStore } from '@/stores/gamification'
 import { calendarDays, calendarRange, learningDate } from '@/utils/learningCalendar'
 import { getAuthSessionVersion, isAuthenticated, onAuthSessionChange } from '@/utils/auth'
-
 const store = useGamificationStore()
 const achievements = ref<Achievement[]>([])
 const heatmap = ref<HeatmapDay[]>([])
@@ -18,8 +17,7 @@ const selectedDay = ref<HeatmapDay>()
 const unlockedCount = computed(() => achievements.value.filter((item) => item.unlocked).length)
 let alive = true
 let requestGeneration = 0
-
-const resetForSession = () => {
+function reset() {
   achievements.value = []
   heatmap.value = []
   selectedDay.value = undefined
@@ -30,17 +28,9 @@ const resetForSession = () => {
   saving.value = false
   loading.value = false
 }
-const unsubscribe = onAuthSessionChange(() => {
-  requestGeneration++
-  resetForSession()
-  if (isAuthenticated()) void load()
-})
-
-onUnmounted(() => {
-  alive = false
-  unsubscribe()
-})
-
+function current(generation: number, session: number) {
+  return alive && generation === requestGeneration && session === getAuthSessionVersion() && isAuthenticated()
+}
 async function load() {
   if (loading.value) return
   const generation = ++requestGeneration
@@ -56,13 +46,13 @@ async function load() {
   goal.value = store.summary.dailyGoal
   const range = calendarRange(learningDate(new Date(), store.summary.zoneId))
   try {
-    const [achievementResponse, heatmapResponse] = await Promise.all([
+    const [a, h] = await Promise.all([
       getAchievements({ errorDisplay: 'inline' }),
       getLearningHeatmap(range.from, range.to, { errorDisplay: 'inline' }),
     ])
     if (!current(generation, session)) return
-    achievements.value = achievementResponse.data
-    heatmap.value = calendarDays(range.from, range.to, heatmapResponse.data)
+    achievements.value = a.data
+    heatmap.value = calendarDays(range.from, range.to, h.data)
     loaded.value = true
   } catch {
     if (current(generation, session)) detailError.value = '学习日历与成就暂时无法加载'
@@ -70,7 +60,6 @@ async function load() {
     if (current(generation, session)) loading.value = false
   }
 }
-
 async function saveGoal() {
   if (!Number.isInteger(goal.value) || goal.value < 1 || goal.value > 200 || saving.value) return
   const generation = requestGeneration
@@ -85,18 +74,22 @@ async function saveGoal() {
     if (current(generation, session)) saving.value = false
   }
 }
-
-function current(generation: number, session: number) {
-  return alive && generation === requestGeneration && session === getAuthSessionVersion() && isAuthenticated()
-}
-
+const unsubscribe = onAuthSessionChange(() => {
+  requestGeneration++
+  reset()
+  if (isAuthenticated()) void load()
+})
 onMounted(() => void load())
+onUnmounted(() => {
+  alive = false
+  unsubscribe()
+})
 </script>
-
 <template>
   <section
     id="learning"
-    class="profile-gamification"
+    class="profile-gamification lt"
+    data-appearance="dark"
     data-testid="gamification-profile"
     aria-labelledby="learning-title"
   >
@@ -107,58 +100,49 @@ onMounted(() => void load())
       </div>
       <span v-if="store.summary">累计 {{ store.summary.totalXp }} 经验</span>
     </header>
-
-    <LpStatePanel
-      v-if="!store.summary && (detailError || store.error)"
-      state="error"
-      title="学习记录暂时无法加载"
-      :description="detailError || store.error"
-      retry-label="重新加载"
-      :retrying="loading"
-      @retry="load"
-    />
-    <LpStatePanel v-else-if="loading && !store.summary" state="loading" loading-label="正在读取学习记录" />
-    <template v-if="store.summary">
-      <p v-if="store.error" class="profile-gamification__partial" role="alert">
+    <div v-if="!store.summary && (detailError || store.error)" class="state error" role="alert">
+      <h3>学习记录暂时无法加载</h3>
+      <p>{{ detailError || store.error }}</p>
+      <button type="button" :disabled="loading" @click="load">重新加载</button>
+    </div>
+    <div v-else-if="loading && !store.summary" class="state" role="status">正在读取学习记录…</div>
+    <template v-if="store.summary"
+      ><p v-if="store.error" class="partial" role="alert">
         概览正在显示最近一次成功读取的数据。{{ store.error }}
         <button type="button" :disabled="loading" @click="load">重新加载</button>
       </p>
-      <div class="profile-gamification__overview">
+      <div class="overview">
         <div>
-          <strong>Lv.{{ store.summary.level }}</strong>
-          <span>{{ store.summary.levelTitle }}</span>
+          <strong>Lv.{{ store.summary.level }}</strong
+          ><span>{{ store.summary.levelTitle }}</span>
         </div>
         <div>
-          <strong>{{ store.summary.streakDays }}</strong>
-          <span>连续学习天</span>
+          <strong>{{ store.summary.streakDays }}</strong
+          ><span>连续学习天</span>
         </div>
         <div>
-          <strong>{{ store.summary.todayAnsweredCount }}/{{ store.summary.dailyGoal }}</strong>
-          <span>今日已作答</span>
+          <strong>{{ store.summary.todayAnsweredCount }}/{{ store.summary.dailyGoal }}</strong
+          ><span>今日已作答</span>
         </div>
       </div>
-
       <form data-testid="gamification-daily-goal" @submit.prevent="saveGoal">
-        <label>
-          每日目标
-          <input v-model.number="goal" type="number" min="1" max="200" :disabled="saving || loading" />
-        </label>
-        <button type="submit" :disabled="saving || loading">保存目标</button>
+        <label
+          >每日目标 <input v-model.number="goal" type="number" min="1" max="200" :disabled="saving || loading" /></label
+        ><button type="submit" :disabled="saving || loading">保存目标</button>
       </form>
       <p v-if="goalError" class="goal-error" role="alert">
-        {{ goalError }}
-        <button type="button" :disabled="saving || loading" @click="saveGoal">重试</button>
+        {{ goalError }} <button type="button" :disabled="saving || loading" @click="saveGoal">重试</button>
       </p>
-
-      <LpSkeleton v-if="loading" :rows="3" label="正在读取学习日历" />
-      <p v-else-if="detailError" class="profile-gamification__partial" role="alert">
-        {{ detailError }}
-        <button type="button" @click="load">重新加载</button>
+      <div v-if="loading" class="calendar-skeleton" aria-busy="true">
+        <span v-for="n in 21" :key="n" /><span class="lt-sr-only" role="status">正在读取学习日历</span>
+      </div>
+      <p v-else-if="detailError" class="partial" role="alert">
+        {{ detailError }} <button type="button" @click="load">重新加载</button>
       </p>
-      <template v-else-if="loaded">
-        <section data-testid="gamification-heatmap">
+      <template v-else-if="loaded"
+        ><section data-testid="gamification-heatmap">
           <h3>学习日历</h3>
-          <div class="profile-gamification__heatmap" aria-label="学习热力日历">
+          <div class="heatmap" aria-label="学习热力日历">
             <button
               v-for="day in heatmap"
               :key="day.date"
@@ -170,120 +154,128 @@ onMounted(() => void load())
               @click="selectedDay = day"
             />
           </div>
-          <p class="calendar-caption">
+          <p class="caption">
             {{ heatmap[0]?.date }} — {{ heatmap.at(-1)?.date }} · 按 {{ store.summary.zoneId }} 自然日记录
           </p>
-          <p v-if="selectedDay" class="calendar-caption" role="status">
+          <p v-if="selectedDay" class="caption" role="status">
             {{ selectedDay.date }} · {{ selectedDay.answeredCount }} 题 · +{{ selectedDay.earnedXp }} 经验
           </p>
-          <p v-else-if="!heatmap.some((day) => day.answeredCount > 0)" class="calendar-caption">
+          <p v-else-if="!heatmap.some((day) => day.answeredCount > 0)" class="caption">
             完成一次作答，点亮第一个学习日。
           </p>
         </section>
-
-        <details data-testid="gamification-achievements" class="profile-gamification__achievements">
+        <details data-testid="gamification-achievements" class="achievements">
           <summary>成就 · 已解锁 {{ unlockedCount }} / {{ achievements.length }}</summary>
           <ul>
             <li v-for="item in achievements" :key="item.code" :class="{ locked: !item.unlocked }">
-              <strong>{{ item.name }}</strong>
-              <span>{{ item.description }}</span>
-              <small>{{ item.unlocked ? '已解锁' : `${item.progress} / ${item.target}` }}</small>
-              <progress :value="item.progress" :max="item.target" :aria-label="`${item.name}进度`" />
+              <strong>{{ item.name }}</strong
+              ><span>{{ item.description }}</span
+              ><small>{{ item.unlocked ? '已解锁' : `${item.progress} / ${item.target}` }}</small
+              ><progress :value="item.progress" :max="item.target" :aria-label="`${item.name}进度`" />
             </li>
-          </ul>
-        </details>
-      </template>
-    </template>
+          </ul></details></template
+    ></template>
   </section>
 </template>
-
 <style scoped>
 .profile-gamification {
   display: grid;
-  gap: var(--lp-space-4);
-  padding: var(--lp-space-6);
-  background: var(--lp-surface);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-lg);
+  gap: var(--lt-space-4);
+  padding: var(--lt-space-6);
+  border-radius: var(--lt-radius-xl);
+  background: var(--lt-surface);
+  box-shadow: var(--lt-shadow-card);
 }
 header {
   display: flex;
   justify-content: space-between;
-  gap: var(--lp-space-4);
+  gap: var(--lt-space-4);
 }
 p,
 h2,
 h3 {
   margin: 0;
 }
-header p {
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
+header p,
+header > span,
+.caption,
+.overview span,
+.achievements li span,
+.achievements li small {
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
 }
 h2 {
-  font-size: var(--lp-text-2xl);
+  font-size: var(--lt-text-title2);
 }
-header > span {
-  color: var(--lp-text-secondary);
+header > span,
+.overview strong {
   font-variant-numeric: tabular-nums;
 }
-.profile-gamification__overview {
+.state,
+.partial,
+.goal-error {
+  color: var(--lt-red-text);
+}
+.state {
+  padding: var(--lt-space-5);
+  border-radius: var(--lt-radius-lg);
+  background: var(--lt-fill-2);
+  color: var(--lt-label-2);
+}
+.state.error {
+  background: var(--lt-red-soft);
+  color: var(--lt-red-text);
+}
+.state h3 {
+  margin-bottom: var(--lt-space-2);
+  color: var(--lt-label);
+  font-size: var(--lt-text-headline);
+}
+.state p {
+  margin-bottom: var(--lt-space-3);
+}
+.partial,
+.goal-error {
+  font-size: var(--lt-text-footnote);
+}
+.overview {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: var(--lp-space-3);
+  gap: var(--lt-space-3);
 }
-.profile-gamification__partial {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: var(--lp-space-2);
-  margin: 0;
-  color: var(--lp-danger);
-  font-size: var(--lp-text-sm);
-}
-
-.profile-gamification__partial button {
-  padding: 0;
-  border: 0;
-  color: var(--lp-primary);
-  background: transparent;
-  font: inherit;
-  text-decoration: underline;
-  cursor: pointer;
-}
-.profile-gamification__overview div {
+.overview div,
+.achievements li {
   display: grid;
-  gap: var(--lp-space-1);
-  padding: var(--lp-space-3);
-  background: var(--lp-surface-soft);
-  border-radius: var(--lp-radius-md);
+  gap: var(--lt-space-1);
+  padding: var(--lt-space-3);
+  border-radius: var(--lt-radius-md);
+  background: var(--lt-fill-2);
 }
-.profile-gamification__overview strong {
-  font-size: var(--lp-text-xl);
-  font-variant-numeric: tabular-nums;
-}
-.profile-gamification__overview span,
-.profile-gamification li span {
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-xs);
+.overview strong {
+  font-size: var(--lt-text-title3);
 }
 form {
   display: flex;
   align-items: center;
-  gap: var(--lp-space-3);
+  gap: var(--lt-space-3);
 }
 input {
-  width: 72px;
-  padding: var(--lp-space-2);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-sm);
+  width: calc(var(--lt-space-10) + var(--lt-space-6));
+  padding: var(--lt-space-2);
+  border: 0;
+  border-radius: var(--lt-radius-sm);
+  background: var(--lt-fill-3);
+  box-shadow: inset 0 0 0 1px var(--lt-separator);
+  color: var(--lt-label);
 }
 button {
-  padding: var(--lp-space-2) var(--lp-space-3);
-  color: var(--lp-on-primary);
-  background: var(--lp-primary);
+  padding: var(--lt-space-2) var(--lt-space-3);
   border: 0;
-  border-radius: var(--lp-radius-sm);
+  border-radius: var(--lt-radius-pill);
+  background: var(--lt-accent-fill);
+  color: var(--lt-on-accent);
+  font: inherit;
   cursor: pointer;
 }
 button:disabled,
@@ -291,82 +283,73 @@ input:disabled {
   cursor: not-allowed;
   opacity: 0.65;
 }
-.profile-gamification__heatmap {
-  display: grid;
-  grid-template-rows: repeat(7, var(--lp-space-4));
-  grid-auto-flow: column;
-  grid-auto-columns: var(--lp-space-4);
-  gap: var(--lp-space-1);
-  justify-content: start;
-  margin-top: var(--lp-space-3);
-}
-.profile-gamification__heatmap button {
-  width: var(--lp-space-4);
-  height: var(--lp-space-4);
-  padding: 0;
-  background: var(--lp-surface-inset);
-  border-radius: var(--lp-radius-xs);
-}
-.profile-gamification__heatmap button[data-active='true'] {
-  background: var(--lp-primary);
-}
-.profile-gamification__heatmap button[aria-pressed='true'] {
-  box-shadow: var(--lp-shadow-focus);
-}
-.calendar-caption {
-  margin-top: var(--lp-space-3);
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-xs);
-}
-.goal-error {
-  margin: calc(var(--lp-space-2) * -1) 0 0;
-  color: var(--lp-danger);
-  font-size: var(--lp-text-sm);
-}
+.partial button,
 .goal-error button {
-  margin-left: var(--lp-space-2);
   padding: 0;
+  background: none;
   color: inherit;
-  font: inherit;
   text-decoration: underline;
-  background: transparent;
 }
-.profile-gamification__achievements summary {
-  color: var(--lp-text);
-  font-size: var(--lp-text-sm);
-  font-weight: var(--lp-weight-semibold);
+.heatmap {
+  display: grid;
+  grid-template-rows: repeat(7, var(--lt-space-4));
+  grid-auto-flow: column;
+  grid-auto-columns: var(--lt-space-4);
+  gap: var(--lt-space-1);
+  justify-content: start;
+  margin-top: var(--lt-space-3);
+}
+.heatmap button {
+  width: var(--lt-space-4);
+  height: var(--lt-space-4);
+  padding: 0;
+  border-radius: var(--lt-radius-sm);
+  background: var(--lt-fill-2);
+}
+.heatmap button[data-active='true'] {
+  background: var(--lt-accent);
+}
+.heatmap button[aria-pressed='true'] {
+  outline: 2px solid var(--lt-accent);
+  outline-offset: 2px;
+}
+.caption {
+  margin-top: var(--lt-space-3);
+}
+.achievements summary {
+  color: var(--lt-label);
+  font-size: var(--lt-text-footnote);
+  font-weight: 600;
   cursor: pointer;
 }
-.profile-gamification__achievements ul {
+.achievements ul {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--lp-space-2);
+  gap: var(--lt-space-2);
   padding: 0;
-  margin: var(--lp-space-3) 0 0;
+  margin: var(--lt-space-3) 0 0;
   list-style: none;
 }
-.profile-gamification__achievements li {
-  display: grid;
-  gap: var(--lp-space-1);
-  padding: var(--lp-space-3);
-  background: var(--lp-surface-soft);
-  border-radius: var(--lp-radius-sm);
+.achievements li:not(.locked) {
+  background: var(--lt-accent-soft);
 }
-.profile-gamification__achievements li:not(.locked) {
-  background: var(--lp-primary-soft);
-}
-.profile-gamification li small {
-  color: var(--lp-text-secondary);
-}
-.profile-gamification progress {
+progress {
   width: 100%;
-  height: 5px;
-  accent-color: var(--lp-primary);
+  height: var(--lt-space-1);
+  accent-color: var(--lt-accent);
 }
-.profile-gamification button:focus-visible,
-.profile-gamification input:focus-visible,
-.profile-gamification summary:focus-visible {
-  outline: var(--lp-focus-width) solid var(--lp-focus-ring);
-  outline-offset: var(--lp-focus-offset);
+.calendar-skeleton {
+  display: grid;
+  grid-template-columns: repeat(7, var(--lt-space-4));
+  gap: var(--lt-space-2);
+}
+.calendar-skeleton span:not(.lt-sr-only) {
+  height: var(--lt-space-4);
+  border-radius: var(--lt-radius-sm);
+  background: var(--lt-fill-2);
+}
+.profile-gamification :focus-visible {
+  outline: 2px solid var(--lt-accent);
+  outline-offset: 2px;
 }
 </style>
