@@ -175,7 +175,7 @@ test('搜索错误重试、迟到响应和空结果不会混淆状态', async ({
   await maybeScreenshot(page, 'navigation-search-empty')
 })
 
-test('课程空间返回恢复滚动位置和面包屑', async ({ page, browser }) => {
+test('课程空间返回恢复滚动位置，页面自带返回课程入口', async ({ page, browser }) => {
   await page.evaluate(() => localStorage.clear())
   await createLearnerAndLogin(browser, page, 'navigation-course')
   await page.setViewportSize({ width: 1440, height: 600 })
@@ -195,17 +195,20 @@ test('课程空间返回恢复滚动位置和面包屑', async ({ page, browser 
   const maxScroll = () => page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight)
   await expect.poll(maxScroll).toBeGreaterThan(800)
   const target = Math.min(1500, Math.floor((await maxScroll()) / 2))
-  const courseBreadcrumb = page.locator('.route-context').getByRole('link', { name: '课程', exact: true })
-  await expect(courseBreadcrumb).toBeVisible()
-  await expect(courseBreadcrumb).toHaveAttribute('href', new URL(courseUrl).pathname)
   await page.evaluate((y) => window.scrollTo(0, y), target)
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(target)
 
-  await courseBreadcrumb.click()
-  await expect(page).toHaveURL(courseUrl)
+  // 顶栏吸顶，滚到页面中部也能直接点；返回时恢复原来的滚动位置。
+  const myCourses = page.getByRole('navigation', { name: '主导航' }).getByRole('link', { name: '我的课程' })
+  await expect(myCourses).toHaveAttribute('aria-current', 'page')
+  await myCourses.click()
+  await expect(page).toHaveURL(/\/my-courses$/)
   await page.goBack()
   await expect(page).toHaveURL(`${courseUrl}/space`)
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(target)
+
+  await page.getByRole('button', { name: '返回课程', exact: true }).click()
+  await expect(page).toHaveURL(courseUrl)
 })
 
 test('考试离开确认保留作答，正式提交仅进入结果页', async ({ page, browser }) => {

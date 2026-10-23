@@ -1,0 +1,162 @@
+/* 旧基线深色桥接（Phase 28 过渡用）
+ * 学员端外框固定深色后，尚未重做的旧页面仍用 `--lp-` 令牌与 Element Plus。外框挂载期间给 <html>
+ * 加上 `lp-dark`，把旧令牌换成深色取值，旧页面与弹出层不再出现整块白底。
+ * 只换颜色与阴影，不动尺寸和排版；页面里写死的颜色不在此处理，随页面迁移到新基线时一并去掉。
+ * 22 个旧页面全部迁完后删除本文件。 */
+
+html.lp-dark {
+  /* 原始色板：ink 是文字（900 最强），paper 是表面（0 是卡片）。 */
+  --lp-ink-900: #f5f5f7;
+  --lp-ink-800: #e8e8ed;
+  --lp-ink-700: #d2d2d7;
+  --lp-ink-600: #b4b4bb;
+  --lp-ink-500: #98989f;
+  --lp-ink-400: #7c7c83;
+  --lp-ink-300: #5c5c62;
+  --lp-ink-200: #45454a;
+  --lp-ink-100: #303033;
+
+  --lp-paper-0: #1c1c1e;
+  --lp-paper-50: #18181a;
+  --lp-paper-100: #0b0b0d;
+  --lp-paper-200: #242426;
+  --lp-paper-300: #333336;
+  --lp-paper-400: #48484c;
+
+  --lp-blue-950: #0a4a99;
+  --lp-blue-900: #0a58b4;
+  --lp-blue-800: #0a62c8;
+  --lp-blue-700: #0a6ee0;
+  --lp-blue-600: #1a78e6;
+  --lp-blue-500: #2f80ea;
+  --lp-blue-400: #4d8fe8;
+  --lp-blue-300: rgba(10, 132, 255, 0.48);
+  --lp-blue-200: rgba(10, 132, 255, 0.32);
+  --lp-blue-100: rgba(10, 132, 255, 0.22);
+  --lp-blue-50: rgba(10, 132, 255, 0.14);
+
+  --lp-green-700: #48d16b;
+  --lp-green-600: #34c35a;
+  --lp-green-500: #2aa94b;
+  --lp-green-100: rgba(48, 209, 88, 0.2);
+  --lp-green-50: rgba(48, 209, 88, 0.12);
+
+  --lp-amber-700: #ffbe55;
+  --lp-amber-600: #f5a524;
+  --lp-amber-500: #d98e1a;
+  --lp-amber-100: rgba(255, 159, 10, 0.2);
+  --lp-amber-50: rgba(255, 159, 10, 0.12);
+
+  --lp-red-700: #ff7b72;
+  --lp-red-600: #ff5c52;
+  --lp-red-500: #e5483e;
+  --lp-red-100: rgba(255, 69, 58, 0.2);
+  --lp-red-50: rgba(255, 69, 58, 0.12);
+
+  --lp-slate-700: #b6c0cc;
+  --lp-slate-600: #9aa6b4;
+  --lp-slate-500: #7f8b99;
+  --lp-slate-100: rgba(142, 154, 168, 0.2);
+  --lp-slate-50: rgba(142, 154, 168, 0.12);
+
+  --lp-gold-600: #d9ad4a;
+  --lp-gold-100: rgba(217, 173, 74, 0.2);
+  --lp-gold-50: rgba(217, 173, 74, 0.12);
+
+  /* 语义值里深浅方向与浅色相反、或写死了浅色数值的几项。 */
+  --lp-surface-soft: #161618;
+  --lp-surface-hover: #242426;
+  --lp-surface-glass: rgba(28, 28, 30, 0.72);
+  --lp-loading-surface: rgba(11, 11, 13, 0.6);
+  --lp-overlay-scrim: rgba(0, 0, 0, 0.5);
+  --lp-on-primary: #ffffff;
+  --lp-link: #4da3ff;
+  --lp-link-hover: #7ab8ff;
+  --lp-focus-ring: #0a84ff;
+  --lp-skeleton-base: #242426;
+  --lp-skeleton-highlight: #2c2c2e;
+
+  --lp-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --lp-shadow-sm: 0 0 0 0.5px rgba(255, 255, 255, 0.06), 0 1px 3px rgba(0, 0, 0, 0.3);
+  --lp-shadow-md: 0 0 0 0.5px rgba(255, 255, 255, 0.06), 0 12px 28px rgba(0, 0, 0, 0.4);
+  --lp-shadow-lg: 0 0 0 0.5px rgba(255, 255, 255, 0.08), 0 24px 64px rgba(0, 0, 0, 0.55);
+
+  /* Element Plus 自带的 :root 变量在本项目映射之后加载，同等优先级下会盖回浅色默认值；
+   * 这里用 html.lp-dark 的更高优先级把同一套映射再声明一次。 */
+  --el-color-primary: var(--lp-primary);
+  --el-color-primary-light-3: color-mix(in srgb, var(--lp-primary) 70%, var(--lp-surface));
+  --el-color-primary-light-5: color-mix(in srgb, var(--lp-primary) 50%, var(--lp-surface));
+  --el-color-primary-light-7: color-mix(in srgb, var(--lp-primary) 30%, var(--lp-surface));
+  --el-color-primary-light-8: color-mix(in srgb, var(--lp-primary) 20%, var(--lp-surface));
+  --el-color-primary-light-9: color-mix(in srgb, var(--lp-primary) 10%, var(--lp-surface));
+  --el-color-primary-dark-2: color-mix(in srgb, var(--lp-primary) 80%, var(--lp-ink-900));
+  --el-color-success: var(--lp-success);
+  --el-color-success-light-3: color-mix(in srgb, var(--lp-success) 70%, var(--lp-surface));
+  --el-color-success-light-5: color-mix(in srgb, var(--lp-success) 50%, var(--lp-surface));
+  --el-color-success-light-7: color-mix(in srgb, var(--lp-success) 30%, var(--lp-surface));
+  --el-color-success-light-8: color-mix(in srgb, var(--lp-success) 20%, var(--lp-surface));
+  --el-color-success-light-9: color-mix(in srgb, var(--lp-success) 10%, var(--lp-surface));
+  --el-color-success-dark-2: color-mix(in srgb, var(--lp-success) 80%, var(--lp-ink-900));
+  --el-color-warning: var(--lp-warning);
+  --el-color-warning-light-3: color-mix(in srgb, var(--lp-warning) 70%, var(--lp-surface));
+  --el-color-warning-light-5: color-mix(in srgb, var(--lp-warning) 50%, var(--lp-surface));
+  --el-color-warning-light-7: color-mix(in srgb, var(--lp-warning) 30%, var(--lp-surface));
+  --el-color-warning-light-8: color-mix(in srgb, var(--lp-warning) 20%, var(--lp-surface));
+  --el-color-warning-light-9: color-mix(in srgb, var(--lp-warning) 10%, var(--lp-surface));
+  --el-color-warning-dark-2: color-mix(in srgb, var(--lp-warning) 80%, var(--lp-ink-900));
+  --el-color-danger: var(--lp-danger);
+  --el-color-danger-light-3: color-mix(in srgb, var(--lp-danger) 70%, var(--lp-surface));
+  --el-color-danger-light-5: color-mix(in srgb, var(--lp-danger) 50%, var(--lp-surface));
+  --el-color-danger-light-7: color-mix(in srgb, var(--lp-danger) 30%, var(--lp-surface));
+  --el-color-danger-light-8: color-mix(in srgb, var(--lp-danger) 20%, var(--lp-surface));
+  --el-color-danger-light-9: color-mix(in srgb, var(--lp-danger) 10%, var(--lp-surface));
+  --el-color-danger-dark-2: color-mix(in srgb, var(--lp-danger) 80%, var(--lp-ink-900));
+  --el-color-error: var(--lp-danger);
+  --el-color-error-light-3: color-mix(in srgb, var(--lp-danger) 70%, var(--lp-surface));
+  --el-color-error-light-5: color-mix(in srgb, var(--lp-danger) 50%, var(--lp-surface));
+  --el-color-error-light-7: color-mix(in srgb, var(--lp-danger) 30%, var(--lp-surface));
+  --el-color-error-light-8: color-mix(in srgb, var(--lp-danger) 20%, var(--lp-surface));
+  --el-color-error-light-9: color-mix(in srgb, var(--lp-danger) 10%, var(--lp-surface));
+  --el-color-error-dark-2: color-mix(in srgb, var(--lp-danger) 80%, var(--lp-ink-900));
+  --el-color-info: var(--lp-info);
+  --el-color-info-light-3: color-mix(in srgb, var(--lp-info) 70%, var(--lp-surface));
+  --el-color-info-light-5: color-mix(in srgb, var(--lp-info) 50%, var(--lp-surface));
+  --el-color-info-light-7: color-mix(in srgb, var(--lp-info) 30%, var(--lp-surface));
+  --el-color-info-light-8: color-mix(in srgb, var(--lp-info) 20%, var(--lp-surface));
+  --el-color-info-light-9: color-mix(in srgb, var(--lp-info) 10%, var(--lp-surface));
+  --el-color-info-dark-2: color-mix(in srgb, var(--lp-info) 80%, var(--lp-ink-900));
+  --el-text-color-primary: var(--lp-text);
+  --el-text-color-regular: var(--lp-ink-700);
+  --el-text-color-secondary: var(--lp-text-secondary);
+  --el-text-color-placeholder: var(--lp-text-muted);
+  --el-text-color-disabled: var(--lp-ink-300);
+  --el-border-color: var(--lp-border);
+  --el-border-color-light: var(--lp-paper-200);
+  --el-border-color-lighter: var(--lp-paper-100);
+  --el-border-color-extra-light: var(--lp-paper-50);
+  --el-border-color-dark: var(--lp-border-strong);
+  --el-border-color-hover: var(--lp-border-strong);
+  --el-fill-color: var(--lp-surface-soft);
+  --el-fill-color-light: var(--lp-surface-subtle);
+  --el-fill-color-lighter: var(--lp-paper-50);
+  --el-fill-color-blank: var(--lp-surface);
+  --el-bg-color: var(--lp-surface);
+  --el-bg-color-page: var(--lp-bg);
+  --el-bg-color-overlay: var(--lp-surface);
+
+  /* Element Plus 中没有映射到旧令牌、默认是浅色的几项。 */
+  --el-disabled-bg-color: #242426;
+  --el-disabled-text-color: #5c5c62;
+  --el-disabled-border-color: #333336;
+  --el-mask-color: rgba(11, 11, 13, 0.7);
+  --el-mask-color-extra-light: rgba(11, 11, 13, 0.3);
+  --el-overlay-color: rgba(0, 0, 0, 0.8);
+  --el-overlay-color-light: rgba(0, 0, 0, 0.7);
+  --el-overlay-color-lighter: rgba(0, 0, 0, 0.5);
+  --el-box-shadow: 0 12px 32px 4px rgba(0, 0, 0, 0.36), 0 8px 20px rgba(0, 0, 0, 0.72);
+  --el-box-shadow-light: 0 0 12px rgba(0, 0, 0, 0.72);
+  --el-box-shadow-lighter: 0 0 6px rgba(0, 0, 0, 0.72);
+  --el-box-shadow-dark: 0 16px 48px 16px rgba(0, 0, 0, 0.72), 0 12px 32px #000000, 0 8px 16px -8px #000000;
+
+  color-scheme: dark;
+}

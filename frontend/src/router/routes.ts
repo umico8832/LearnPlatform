@@ -38,24 +38,6 @@ export const learnerRoutes: RouteRecordRaw[] = [
     meta: { requiresAuth: true, title: '一道题' },
   },
   {
-    path: '/my-courses/:id(\\d+)',
-    name: 'CourseOverview',
-    component: () => import('@/views/course/home/CourseHomeView.vue'),
-    meta: { requiresAuth: true, title: '课程' },
-  },
-  {
-    path: '/review',
-    name: 'Review',
-    component: () => import('@/views/review/ReviewView.vue'),
-    meta: { requiresAuth: true, title: '复习' },
-  },
-  {
-    path: '/wrong-questions',
-    name: 'WrongQuestions',
-    component: () => import('@/views/wrong/WrongQuestionsView.vue'),
-    meta: { requiresAuth: true, title: '错题' },
-  },
-  {
     path: '/viz/:scene',
     name: 'Visualization',
     component: () => import('@/views/viz/VizView.vue'),
@@ -82,9 +64,28 @@ export const learnerRoutes: RouteRecordRaw[] = [
   })),
   {
     path: '/',
-    component: () => import('@/components/layout/AppLayout.vue'),
+    component: () => import('@/components/layout/LearnerShell.vue'),
     meta: { requiresAuth: true },
     children: [
+      // 已按新基线重做的页面（meta.living）自己排版；其余旧页面由外框补旧内边距并套深色桥接。
+      {
+        path: 'my-courses/:id(\\d+)',
+        name: 'CourseOverview',
+        component: () => import('@/views/course/home/CourseHomeView.vue'),
+        meta: { title: '课程', living: true },
+      },
+      {
+        path: 'review',
+        name: 'Review',
+        component: () => import('@/views/review/ReviewView.vue'),
+        meta: { title: '复习', living: true },
+      },
+      {
+        path: 'wrong-questions',
+        name: 'WrongQuestions',
+        component: () => import('@/views/wrong/WrongQuestionsView.vue'),
+        meta: { title: '错题', living: true },
+      },
       {
         path: 'community',
         name: 'Community',
@@ -185,7 +186,7 @@ export const learnerRoutes: RouteRecordRaw[] = [
   },
   {
     path: '/',
-    component: () => import('@/components/layout/FocusLayout.vue'),
+    component: () => import('@/components/layout/FocusShell.vue'),
     meta: { requiresAuth: true },
     children: [
       {

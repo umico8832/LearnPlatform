@@ -9,6 +9,7 @@ import { setAuthRedirectHandler } from './utils/authNavigation'
 import { registerUiComponents } from './components/ui'
 import './assets/styles/global.css'
 import './assets/styles/living.css'
+import './assets/styles/legacy-dark.css'
 
 const app = createApp(App)
 

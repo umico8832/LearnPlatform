@@ -5,7 +5,7 @@ test('匿名未知地址可通过404返回首页，学习入口仍要求登录',
   await page.goto('/unknown-learning-page')
   await expect(page).toHaveURL(/\/unknown-learning-page$/)
   await expect(page).toHaveTitle('页面不存在 · LearnPlatform')
-  await expect(page.getByRole('heading', { name: '404' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: '这个地址不存在' })).toBeVisible()
   const home = page.getByRole('link', { name: '返回首页' })
   await home.focus()
   await page.keyboard.press('Enter')

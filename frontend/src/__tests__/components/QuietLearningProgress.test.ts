@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
-import LearningProgressHeader from '@/components/gamification/LearningProgressHeader.vue'
+import ShellProgress from '@/components/layout/ShellProgress.vue'
 import AnswerRewardFeedback from '@/components/gamification/AnswerRewardFeedback.vue'
 import GamificationPracticeSummary from '@/components/gamification/GamificationPracticeSummary.vue'
 
@@ -26,7 +26,7 @@ const summary = {
 
 describe('quiet learning progress', () => {
   it('names the header link with the level and today facts instead of exposing a decorative XP meter', () => {
-    const wrapper = mount(LearningProgressHeader, { props: { summary } })
+    const wrapper = mount(ShellProgress, { props: { summary } })
     const link = wrapper.get('[data-testid="gamification-summary"]')
 
     expect(link.attributes('aria-label')).toContain('等级 2')

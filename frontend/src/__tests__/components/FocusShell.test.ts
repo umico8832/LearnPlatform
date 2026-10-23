@@ -3,7 +3,7 @@ import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { createPinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import ElementPlus from 'element-plus'
-import FocusLayout from '@/components/layout/FocusLayout.vue'
+import FocusShell from '@/components/layout/FocusShell.vue'
 
 let wrapper: VueWrapper | undefined
 
@@ -26,12 +26,12 @@ function createTestRouter() {
   })
 }
 
-describe('FocusLayout navigation', () => {
+describe('FocusShell navigation', () => {
   it('returns Tutor sessions to their course space when no internal history entry exists', async () => {
     const router = createTestRouter()
     await router.push('/my-courses/17/tutor')
     await router.isReady()
-    wrapper = mount(FocusLayout, { global: { plugins: [createPinia(), router, ElementPlus] } })
+    wrapper = mount(FocusShell, { global: { plugins: [createPinia(), router, ElementPlus] } })
 
     await wrapper.get('.focus-back').trigger('click')
     await flushPromises()
@@ -45,7 +45,7 @@ describe('FocusLayout navigation', () => {
     await router.push('/exams/result/41')
     await router.isReady()
     window.history.replaceState({ back: '/my-courses' }, '')
-    wrapper = mount(FocusLayout, { global: { plugins: [createPinia(), router, ElementPlus] } })
+    wrapper = mount(FocusShell, { global: { plugins: [createPinia(), router, ElementPlus] } })
 
     await wrapper.get('.focus-back').trigger('click')
     await flushPromises()
@@ -57,7 +57,7 @@ describe('FocusLayout navigation', () => {
     const router = createTestRouter()
     await router.push('/exams')
     await router.isReady()
-    wrapper = mount(FocusLayout, {
+    wrapper = mount(FocusShell, {
       attachTo: document.body,
       global: { plugins: [createPinia(), router, ElementPlus] },
     })

@@ -2,9 +2,9 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { createPinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
-import ElementPlus, { ElDropdown } from 'element-plus'
+import ElementPlus from 'element-plus'
 import App from '@/App.vue'
-import AppLayout from '@/components/layout/AppLayout.vue'
+import LearnerShell from '@/components/layout/LearnerShell.vue'
 
 let wrapper: VueWrapper | undefined
 
@@ -21,7 +21,7 @@ describe('application route transitions', () => {
         { path: '/login', component: { template: '<main data-testid="login">登录</main>' } },
         {
           path: '/',
-          component: AppLayout,
+          component: LearnerShell,
           children: [
             { path: 'my-courses', component: { template: '<h1>我的课程</h1>' } },
             { path: 'courses', component: { template: '<h1>课程库</h1>' } },
@@ -45,17 +45,19 @@ describe('application route transitions', () => {
     await flushPromises()
 
     for (let cycle = 0; cycle < 2; cycle++) {
-      expect(wrapper.find('.app-layout').exists()).toBe(true)
-      wrapper.findComponent(ElDropdown).vm.$emit('command', 'logout')
+      expect(wrapper.find('.learner-shell').exists()).toBe(true)
+      await wrapper.get('button[aria-label="用户菜单"]').trigger('click')
+      const logout = wrapper.findAll('.entry').find((entry) => entry.text() === '退出登录')
+      await logout!.trigger('click')
       await flushPromises()
       expect(router.currentRoute.value.path).toBe('/login')
       await expect.poll(() => wrapper!.find('[data-testid="login"]').exists()).toBe(true)
-      expect(wrapper.find('.app-layout').exists()).toBe(false)
+      expect(wrapper.find('.learner-shell').exists()).toBe(false)
       expect(wrapper.find('[data-testid="search-dialog"]').exists()).toBe(false)
 
       await router.push('/my-courses')
       await flushPromises()
-      await expect.poll(() => wrapper!.find('.app-layout').exists()).toBe(true)
+      await expect.poll(() => wrapper!.find('.learner-shell').exists()).toBe(true)
     }
   })
 })
@@ -71,7 +73,7 @@ it('keeps community and course navigation highlights independent', async () => {
   })
   await router.push('/community/7')
   await router.isReady()
-  wrapper = mount(AppLayout, {
+  wrapper = mount(LearnerShell, {
     global: { plugins: [createPinia(), router, ElementPlus], stubs: { GlobalSearchDialog: true } },
   })
   await flushPromises()
@@ -97,7 +99,7 @@ it('moves focus to main on the first path navigation but not on a query-only upd
   })
   await router.push('/my-courses')
   await router.isReady()
-  wrapper = mount(AppLayout, {
+  wrapper = mount(LearnerShell, {
     attachTo: document.body,
     global: { plugins: [createPinia(), router, ElementPlus], stubs: { GlobalSearchDialog: true } },
   })
@@ -113,4 +115,46 @@ it('moves focus to main on the first path navigation but not on a query-only upd
   await router.push({ path: '/courses', query: { filter: 'active' } })
   await flushPromises()
   expect(document.activeElement).toBe(outside)
+})
+
+it('treats wrong questions as part of review and leaves no section current on the profile', async () => {
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [
+      { path: '/review', component: { template: '<h1>复习</h1>' } },
+      { path: '/wrong-questions', component: { template: '<h1>错题</h1>' } },
+      { path: '/profile', component: { template: '<h1>个人中心</h1>' } },
+    ],
+  })
+  await router.push('/wrong-questions')
+  await router.isReady()
+  wrapper = mount(LearnerShell, {
+    global: { plugins: [createPinia(), router, ElementPlus], stubs: { GlobalSearchDialog: true } },
+  })
+  await flushPromises()
+  expect(wrapper.get('a[href="/review"]').attributes('aria-current')).toBe('page')
+  await router.push('/profile')
+  await flushPromises()
+  expect(wrapper.find('nav[aria-label="主导航"] [aria-current="page"]').exists()).toBe(false)
+})
+
+it('closes the account menu with Escape and returns focus to the avatar', async () => {
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [{ path: '/my-courses', component: { template: '<h1>我的课程</h1>' } }],
+  })
+  await router.push('/my-courses')
+  await router.isReady()
+  wrapper = mount(LearnerShell, {
+    attachTo: document.body,
+    global: { plugins: [createPinia(), router, ElementPlus], stubs: { GlobalSearchDialog: true } },
+  })
+  await flushPromises()
+  const avatar = wrapper.get('button[aria-label="用户菜单"]')
+  await avatar.trigger('click')
+  expect(avatar.attributes('aria-expanded')).toBe('true')
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+  await flushPromises()
+  expect(avatar.attributes('aria-expanded')).toBe('false')
+  expect(document.activeElement).toBe(avatar.element)
 })
