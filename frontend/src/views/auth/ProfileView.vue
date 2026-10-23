@@ -33,17 +33,17 @@
         ></LtCard>
       </aside>
       <section class="settings" aria-label="账户设置">
-        <LtCard radius="xl"
-          ><template #title>个人信息</template>
+        <LtCard radius="xl" as="section" aria-labelledby="profile-info-title"
+          ><h2 id="profile-info-title" class="section-title">个人信息</h2>
           <form @submit.prevent="handleUpdateProfile">
-            <label>用户名<input :value="userStore.userInfo?.username" disabled /></label
-            ><label
-              >昵称<input
-                v-model="profileForm.nickname"
-                maxlength="30"
-                :disabled="isSubmitting"
-                placeholder="请输入昵称"
-            /></label>
+            <LtTextField :model-value="userStore.userInfo?.username ?? ''" label="用户名" disabled />
+            <LtTextField
+              v-model="profileForm.nickname"
+              label="昵称"
+              :maxlength="30"
+              :disabled="isSubmitting"
+              placeholder="请输入昵称"
+            />
             <p v-if="profileError" class="form-error" role="alert">
               {{ profileError }}
               <button type="button" :disabled="isSubmitting" @click="handleUpdateProfile">重试</button>
@@ -52,8 +52,8 @@
               profileLoading ? '保存中…' : '保存修改'
             }}</LtButton>
           </form></LtCard
-        ><LtCard radius="xl"
-          ><template #title>修改密码</template>
+        ><LtCard radius="xl" as="section" aria-labelledby="profile-password-title"
+          ><h2 id="profile-password-title" class="section-title">修改密码</h2>
           <form @submit.prevent="handleUpdatePassword">
             <LtTextField
               v-model="passwordForm.oldPassword"
@@ -301,26 +301,10 @@ form {
   display: grid;
   gap: var(--lt-space-4);
 }
-form label {
-  display: grid;
-  gap: var(--lt-space-2);
-  color: var(--lt-label-2);
-  font-size: var(--lt-text-footnote);
-}
-form input {
-  height: var(--lt-control-lg);
-  box-sizing: border-box;
-  padding: 0 var(--lt-space-3);
-  border: 0;
-  border-radius: var(--lt-radius-md);
-  outline: 0;
-  background: var(--lt-fill-3);
-  box-shadow: inset 0 0 0 1px var(--lt-separator);
-  color: var(--lt-label);
-  font: var(--lt-text-body)/1 var(--lt-font);
-}
-form input:focus-visible {
-  box-shadow: inset 0 0 0 2px var(--lt-accent);
+.section-title {
+  margin: 0 0 var(--lt-space-5);
+  font-size: var(--lt-text-headline);
+  font-weight: 600;
 }
 .form-error {
   margin: 0;
@@ -344,10 +328,6 @@ form input:focus-visible {
   margin: 0;
   color: var(--lt-label-3);
   font-size: var(--lt-text-footnote);
-}
-.profile-page :deep(input::placeholder) {
-  color: var(--lt-label-2);
-  opacity: 1;
 }
 @media (max-width: 720px) {
   .profile-layout {
