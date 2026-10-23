@@ -1,17 +1,18 @@
 <script setup lang="ts">
+import LtButton from '@/components/living/LtButton.vue'
+import LtSheet from '@/components/living/LtSheet.vue'
 import type { QuestionSubmissionVO } from '@/api/submission'
+import QuestionProse from '@/views/question/QuestionProse.vue'
 import { questionTypeLabel, difficultyLabel, recordTime } from './practiceLibraryPresentation'
 import { submissionOptions, submissionStatus } from './questionSubmissionForm'
-
 defineProps<{ detail: QuestionSubmissionVO | null }>()
 const open = defineModel<boolean>({ default: false })
 </script>
-
 <template>
-  <el-dialog v-model="open" title="投稿详情" width="720px">
+  <LtSheet v-model:open="open" title="投稿详情" :width="720">
     <article v-if="detail" class="submission-detail">
       <div class="detail-meta">
-        <el-tag type="info">{{ submissionStatus(detail.status) }}</el-tag
+        <span class="status" :data-status="detail.status">{{ submissionStatus(detail.status) }}</span
         ><span>{{ detail.courseName }}</span
         ><span>{{ questionTypeLabel(detail.questionType) }}</span
         ><span>{{ difficultyLabel(detail.difficulty) }}</span>
@@ -27,10 +28,14 @@ const open = defineModel<boolean>({ default: false })
       </section>
       <section>
         <h3>题干</h3>
-        <p class="reading-content">{{ detail.content }}</p>
+        <QuestionProse class="reading-content" :content="detail.content" />
       </section>
       <ul v-if="submissionOptions(detail.optionsJson).length" class="detail-options">
-        <li v-for="(option, index) in submissionOptions(detail.optionsJson)" :key="index">
+        <li
+          v-for="(option, index) in submissionOptions(detail.optionsJson)"
+          :key="index"
+          :data-correct="option.isCorrect"
+        >
           <strong>{{ option.label }}</strong
           ><span>{{ option.content }}</span
           ><small v-if="option.isCorrect">正确答案</small>
@@ -38,11 +43,11 @@ const open = defineModel<boolean>({ default: false })
       </ul>
       <section v-if="detail.correctAnswer">
         <h3>参考答案</h3>
-        <p class="reading-content">{{ detail.correctAnswer }}</p>
+        <QuestionProse class="reading-content" :content="detail.correctAnswer" />
       </section>
       <section v-if="detail.analysis">
         <h3>解析</h3>
-        <p class="reading-content">{{ detail.analysis }}</p>
+        <QuestionProse class="reading-content" :content="detail.analysis" />
       </section>
       <dl v-if="detail.tags || detail.source" class="detail-footnotes">
         <template v-if="detail.tags"
@@ -54,97 +59,114 @@ const open = defineModel<boolean>({ default: false })
         >
       </dl>
     </article>
-    <template #footer><el-button @click="open = false">关闭</el-button></template>
-  </el-dialog>
+    <div class="actions"><LtButton @click="open = false">关闭</LtButton></div>
+  </LtSheet>
 </template>
-
 <style scoped>
 .submission-detail {
   display: grid;
-  gap: var(--lp-space-5);
+  gap: var(--lt-space-5);
 }
 .detail-meta {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: var(--lp-space-3);
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
+  gap: var(--lt-space-3);
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
+}
+.status {
+  padding: calc(var(--lt-space-1) * 0.75) calc(var(--lt-space-2) + var(--lt-space-1) / 4);
+  border-radius: var(--lt-radius-pill);
+  background: var(--lt-fill-2);
+}
+.status[data-status='2'] {
+  background: var(--lt-orange-soft);
+  color: var(--lt-orange-text);
+}
+.status:is([data-status='1'], [data-status='3']) {
+  background: var(--lt-green-soft);
+  color: var(--lt-green-text);
 }
 .detail-time {
-  margin: calc(-1 * var(--lp-space-3)) 0 0;
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-xs);
+  margin: calc(-1 * var(--lt-space-3)) 0 0;
+  color: var(--lt-label-3);
+  font-size: var(--lt-text-caption);
 }
-.submission-detail h3 {
-  margin: 0 0 var(--lp-space-3);
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
-  font-weight: var(--lp-weight-medium);
+h3 {
+  margin: 0 0 var(--lt-space-3);
+  font-size: var(--lt-text-footnote);
 }
 .reading-content,
 .review-note p {
   margin: 0;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  line-height: var(--lp-leading-relaxed);
-  color: var(--lp-text);
+  font-size: var(--lt-text-reading);
+  line-height: var(--lt-leading-reading);
 }
 .review-note {
-  padding: var(--lp-space-4);
-  background: var(--lp-surface-soft);
-  border-radius: var(--lp-radius-md);
+  padding: var(--lt-space-4);
+  border-radius: var(--lt-radius-md);
+  background: var(--lt-orange-soft);
 }
 .review-note span {
   display: block;
-  margin-top: var(--lp-space-3);
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-xs);
+  margin-top: var(--lt-space-3);
+  color: var(--lt-orange-text);
+  font-size: var(--lt-text-caption);
 }
 .detail-options {
+  display: grid;
+  gap: var(--lt-space-3);
   margin: 0;
   padding: 0;
   list-style: none;
-  display: grid;
-  gap: var(--lp-space-3);
 }
 .detail-options li {
   display: flex;
+  gap: var(--lt-space-3);
   align-items: baseline;
-  gap: var(--lp-space-3);
-  padding: var(--lp-space-3);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-md);
-  line-height: var(--lp-leading-body);
+  padding: var(--lt-space-3);
+  border-radius: var(--lt-radius-md);
+  background: var(--lt-fill-2);
+  line-height: var(--lt-leading-ui);
+}
+.detail-options li[data-correct='true'] {
+  background: var(--lt-green-soft);
 }
 .detail-options strong {
-  color: var(--lp-text-secondary);
+  color: var(--lt-label-2);
 }
 .detail-options span {
   flex: 1;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  min-width: 0;
 }
 .detail-options small {
-  color: var(--lp-success);
-  flex-shrink: 0;
+  color: var(--lt-green-text);
+  white-space: nowrap;
 }
 .detail-footnotes {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: var(--lp-space-3);
+  gap: var(--lt-space-3);
   margin: 0;
-  padding-top: var(--lp-space-4);
-  border-top: var(--lp-border-hairline);
-  font-size: var(--lp-text-sm);
+  padding-top: var(--lt-space-4);
+  border-top: 1px solid var(--lt-separator);
+  font-size: var(--lt-text-footnote);
 }
-.detail-footnotes dt {
-  color: var(--lp-text-muted);
+dt {
+  color: var(--lt-label-3);
 }
-.detail-footnotes dd {
+dd {
   margin: 0;
-  color: var(--lp-text-secondary);
+  color: var(--lt-label-2);
   overflow-wrap: anywhere;
+}
+.actions {
+  display: flex;
+  justify-content: end;
+  margin-top: var(--lt-space-5);
 }
 </style>

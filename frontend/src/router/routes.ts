@@ -174,7 +174,7 @@ export const learnerRoutes: RouteRecordRaw[] = [
         path: 'submit',
         name: 'QuestionSubmit',
         component: () => import('@/views/practice/QuestionSubmitView.vue'),
-        meta: { title: '题目投稿', hidden: true },
+        meta: { title: '题目投稿', hidden: true, living: true },
       },
       {
         path: 'exams',

@@ -1,9 +1,18 @@
 <script setup lang="ts">
-import { nextTick, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
+import { Plus, Trash2 } from '@lucide/vue'
+import LtButton from '@/components/living/LtButton.vue'
+import LtSheet from '@/components/living/LtSheet.vue'
 import { useQuestionSubmissionEditor } from './useQuestionSubmissionEditor'
 import { difficultyLabel, practiceQuestionTypes } from './practiceLibraryPresentation'
 
 const open = defineModel<boolean>({ default: false })
+const sheetOpen = computed({
+  get: () => open.value,
+  set: (value: boolean) => {
+    if (value || !submitting.value) open.value = value
+  },
+})
 const emit = defineEmits<{ submitted: [] }>()
 const {
   draft,
@@ -32,279 +41,312 @@ watch(error, async (message) => {
 </script>
 
 <template>
-  <el-dialog
-    v-model="open"
-    title="投稿新题目"
-    width="720px"
-    :close-on-click-modal="!submitting"
-    :close-on-press-escape="!submitting"
-    :show-close="!submitting"
-    class="submission-editor"
-  >
+  <LtSheet v-model:open="sheetOpen" title="投稿新题目" :width="760">
     <p class="editor-intro">填写题目与参考答案，审核并入库后供大家练习。</p>
     <form class="submission-form" @submit.prevent="submit">
-      <LpStatePanel
-        v-if="coursesLoading || coursesError"
-        :state="coursesLoading ? 'loading' : 'error'"
-        title="课程暂时无法加载"
-        description="重试后可继续填写，已输入内容会保留。"
-        loading-label="正在加载可投稿课程"
-        @retry="loadCourses"
-      />
-      <p v-else-if="coursesLoaded && !courses.length" class="form-note" role="status">
-        当前没有可投稿的课程，请稍后再试。
-      </p>
-      <div class="form-columns">
-        <div class="field">
-          <label for="submission-course">所属课程 <span>必填</span></label
-          ><el-select
-            id="submission-course"
-            v-model="draft.courseId"
-            placeholder="选择课程"
-            filterable
-            :disabled="submitting || coursesLoading || coursesError || !courses.length"
-            ><el-option v-for="course in courses" :key="course.id" :value="course.id" :label="course.name"
-          /></el-select>
+      <div class="editor-fields">
+        <div v-if="coursesLoading" class="form-state" aria-busy="true">
+          <span class="sr-only" role="status">正在加载可投稿课程</span>正在加载可投稿课程…
         </div>
-        <div class="field">
-          <label for="submission-type">题型 <span>必填</span></label
-          ><el-select
-            id="submission-type"
-            v-model="draft.questionType"
-            placeholder="选择题型"
-            :disabled="submitting"
-            @change="typeChanged"
-            ><el-option v-for="type in practiceQuestionTypes" :key="type.value" :label="type.label" :value="type.value"
-          /></el-select>
+        <div v-else-if="coursesError" class="form-state">
+          <p>课程暂时无法加载，重试后可继续填写，已输入内容会保留。</p>
+          <LtButton @click="loadCourses">重试读取</LtButton>
         </div>
-      </div>
-      <div class="field">
-        <label for="submission-difficulty">难度 <span>必填</span></label
-        ><el-radio-group
-          id="submission-difficulty"
-          v-model="draft.difficulty"
-          aria-label="题目难度"
-          :disabled="submitting"
-          ><el-radio-button v-for="value in 5" :key="value" :value="value">{{
-            difficultyLabel(value)
-          }}</el-radio-button></el-radio-group
-        >
-      </div>
-      <div class="field">
-        <label for="submission-content">题干内容 <span>必填</span></label
-        ><el-input
-          id="submission-content"
-          v-model="draft.content"
-          type="textarea"
-          :rows="4"
-          :maxlength="10000"
-          show-word-limit
-          placeholder="写下完整的题目"
-          :disabled="submitting"
-        />
-      </div>
-      <fieldset v-if="showOptions" class="options-field" :disabled="submitting">
-        <legend>选项与正确答案 <span>至少填写两个选项</span></legend>
-        <div v-for="(option, index) in options" :key="option.key" class="option-row">
-          <span class="option-label" aria-hidden="true">{{ String.fromCharCode(65 + index) }}</span>
-          <el-input
-            v-model="option.content"
-            :aria-label="`选项 ${String.fromCharCode(65 + index)}`"
-            :placeholder="`选项 ${String.fromCharCode(65 + index)} 的内容`"
-            :disabled="submitting"
-          />
-          <el-checkbox
-            :model-value="option.isCorrect"
-            :aria-label="`标记 ${String.fromCharCode(65 + index)} 为正确答案`"
-            :disabled="submitting"
-            @change="setCorrect(index, $event === true)"
-            >正确</el-checkbox
-          >
-          <el-button
-            text
-            :disabled="submitting || options.length <= 2"
-            :aria-label="`移除选项 ${String.fromCharCode(65 + index)}`"
-            @click="removeOption(index)"
-            >移除</el-button
+        <p v-else-if="coursesLoaded && !courses.length" class="form-note" role="status">
+          当前没有可投稿的课程，请稍后再试。
+        </p>
+        <div class="form-columns">
+          <label
+            >所属课程 <em>必填</em
+            ><select v-model="draft.courseId" :disabled="submitting || !courses.length">
+              <option :value="undefined" disabled>选择课程</option>
+              <option v-for="course in courses" :key="course.id" :value="course.id">{{ course.name }}</option>
+            </select></label
+          ><label
+            >题型 <em>必填</em
+            ><select v-model="draft.questionType" :disabled="submitting" @change="typeChanged">
+              <option value="" disabled>选择题型</option>
+              <option v-for="type in practiceQuestionTypes" :key="type.value" :value="type.value">
+                {{ type.label }}
+              </option>
+            </select></label
           >
         </div>
-        <el-button v-if="options.length < 8" text :disabled="submitting" @click="addOption">添加选项</el-button>
-      </fieldset>
-      <div v-else-if="draft.questionType === 'TRUE_FALSE'" class="field">
-        <label>正确答案 <span>必填</span></label
-        ><el-radio-group v-model="draft.correctAnswer" aria-label="判断题正确答案" :disabled="submitting"
-          ><el-radio-button value="TRUE">正确</el-radio-button
-          ><el-radio-button value="FALSE">错误</el-radio-button></el-radio-group
-        >
-      </div>
-      <div v-else-if="['FILL_BLANK', 'SHORT_ANSWER'].includes(draft.questionType)" class="field">
-        <label for="submission-answer">参考答案 <span>必填</span></label
-        ><el-input
-          id="submission-answer"
-          v-model="draft.correctAnswer"
-          type="textarea"
-          :rows="3"
-          :maxlength="2000"
-          placeholder="填写参考答案"
-          :disabled="submitting"
-        />
-      </div>
-      <div class="field">
-        <label for="submission-analysis">解析 <span>选填</span></label
-        ><el-input
-          id="submission-analysis"
-          v-model="draft.analysis"
-          type="textarea"
-          :rows="3"
-          :maxlength="10000"
-          placeholder="解释思路与关键步骤"
-          :disabled="submitting"
-        />
-      </div>
-      <div class="form-columns">
-        <div class="field">
-          <label for="submission-tags">标签 <span>选填</span></label
-          ><el-input
-            id="submission-tags"
-            v-model="draft.tags"
-            :maxlength="500"
-            placeholder="用逗号分隔"
+        <fieldset :disabled="submitting">
+          <legend>难度 <em>必填</em></legend>
+          <div class="choice-row">
+            <label v-for="value in 5" :key="value" class="radio-choice"
+              ><input v-model="draft.difficulty" name="submission-difficulty" type="radio" :value="value" /><span>{{
+                difficultyLabel(value)
+              }}</span></label
+            >
+          </div>
+        </fieldset>
+        <label
+          >题干内容 <em>必填</em
+          ><textarea
+            v-model="draft.content"
+            rows="4"
+            maxlength="10000"
+            placeholder="写下完整的题目"
             :disabled="submitting"
           />
-        </div>
-        <div class="field">
-          <label for="submission-source">来源 <span>选填</span></label
-          ><el-input
-            id="submission-source"
-            v-model="draft.source"
-            :maxlength="200"
-            placeholder="例如：课本名称及章节"
+        </label>
+        <fieldset v-if="showOptions" class="options-field" :disabled="submitting">
+          <legend>选项与正确答案 <em>至少填写两个选项</em></legend>
+          <div v-for="(option, index) in options" :key="option.key" class="option-row">
+            <span class="option-label">{{ String.fromCharCode(65 + index) }}</span
+            ><input
+              v-model="option.content"
+              :aria-label="`选项 ${String.fromCharCode(65 + index)}`"
+              :placeholder="`选项 ${String.fromCharCode(65 + index)} 的内容`"
+            /><label class="check"
+              ><input
+                :checked="option.isCorrect"
+                :aria-label="`标记 ${String.fromCharCode(65 + index)} 为正确答案`"
+                type="checkbox"
+                @change="setCorrect(index, ($event.target as HTMLInputElement).checked)"
+              />正确</label
+            ><LtButton
+              size="sm"
+              :disabled="options.length <= 2"
+              :aria-label="`移除选项 ${String.fromCharCode(65 + index)}`"
+              @click="removeOption(index)"
+              ><template #icon><Trash2 aria-hidden="true" /></template
+            ></LtButton>
+          </div>
+          <LtButton v-if="options.length < 8" size="sm" @click="addOption"
+            ><template #icon><Plus aria-hidden="true" /></template>添加选项</LtButton
+          >
+        </fieldset>
+        <fieldset v-else-if="draft.questionType === 'TRUE_FALSE'" :disabled="submitting">
+          <legend>正确答案 <em>必填</em></legend>
+          <div class="choice-row">
+            <label class="radio-choice"
+              ><input v-model="draft.correctAnswer" name="submission-boolean" type="radio" value="TRUE" /><span
+                >正确</span
+              ></label
+            ><label class="radio-choice"
+              ><input v-model="draft.correctAnswer" name="submission-boolean" type="radio" value="FALSE" /><span
+                >错误</span
+              ></label
+            >
+          </div>
+        </fieldset>
+        <label v-else-if="['FILL_BLANK', 'SHORT_ANSWER'].includes(draft.questionType)"
+          >参考答案 <em>必填</em
+          ><textarea
+            v-model="draft.correctAnswer"
+            rows="3"
+            maxlength="2000"
+            placeholder="填写参考答案"
             :disabled="submitting"
           />
+        </label>
+        <label
+          >解析 <em>选填</em
+          ><textarea
+            v-model="draft.analysis"
+            rows="3"
+            maxlength="10000"
+            placeholder="解释思路与关键步骤"
+            :disabled="submitting"
+          />
+        </label>
+        <div class="form-columns">
+          <label
+            >标签 <em>选填</em
+            ><input v-model="draft.tags" maxlength="500" placeholder="用逗号分隔" :disabled="submitting" /></label
+          ><label
+            >来源 <em>选填</em
+            ><input v-model="draft.source" maxlength="200" placeholder="例如：课本名称及章节" :disabled="submitting"
+          /></label>
         </div>
+        <p v-if="error" ref="errorElement" tabindex="-1" class="form-error" role="alert">{{ error }}</p>
       </div>
-      <p v-if="error" ref="errorElement" tabindex="-1" class="form-error" role="alert">{{ error }}</p>
-    </form>
-    <template #footer
-      ><div class="editor-footer">
+      <footer class="editor-footer">
         <span>关闭后，未提交内容保留在本页。</span
-        ><el-button :disabled="submitting" @click="open = false">暂时关闭</el-button
-        ><el-button
-          type="primary"
-          :loading="submitting"
-          :disabled="coursesLoading || coursesError || !courses.length"
-          @click="submit"
-          >提交投稿</el-button
+        ><LtButton :disabled="submitting" @click="open = false">暂时关闭</LtButton
+        ><LtButton
+          type="submit"
+          variant="primary"
+          :disabled="submitting || coursesLoading || coursesError || !courses.length"
+          >{{ submitting ? '提交中…' : '提交投稿' }}</LtButton
         >
-      </div></template
-    >
-  </el-dialog>
+      </footer>
+    </form>
+  </LtSheet>
 </template>
 
 <style scoped>
-:global(.submission-editor) {
-  display: flex;
-  flex-direction: column;
-  margin-top: var(--lp-space-8);
-  max-height: calc(100dvh - var(--lp-space-8) - var(--lp-space-8));
-}
-:global(.submission-editor .el-dialog__body) {
-  overflow-y: auto;
-  min-height: 0;
-  scrollbar-gutter: stable;
-}
 .editor-intro {
-  margin: 0 0 var(--lp-space-5);
-  color: var(--lp-text-secondary);
-  line-height: var(--lp-leading-body);
+  margin: 0 0 var(--lt-space-5);
+  color: var(--lt-label-2);
+  line-height: var(--lt-leading-ui);
 }
 .submission-form {
   display: grid;
-  gap: var(--lp-space-5);
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: var(--lt-space-4);
+  height: calc(82vh - var(--lt-space-10) * 2 - var(--lt-space-6));
+}
+.editor-fields {
+  min-height: 0;
+  overflow: auto;
+  display: grid;
+  gap: var(--lt-space-5);
+  padding: var(--lt-space-1) var(--lt-space-2) var(--lt-space-5) var(--lt-space-1);
+  scroll-padding-block: var(--lt-space-3);
+}
+label,
+fieldset {
+  display: grid;
+  gap: var(--lt-space-2);
+  min-width: 0;
+  color: var(--lt-label);
+  font-size: var(--lt-text-footnote);
+  font-weight: 600;
+}
+em {
+  font-style: normal;
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-caption);
+  font-weight: 400;
+}
+fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+legend {
+  padding: 0;
 }
 .form-columns {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--lp-space-4);
+  gap: var(--lt-space-4);
 }
-.field {
-  display: grid;
-  gap: var(--lp-space-2);
+input,
+select,
+textarea {
+  box-sizing: border-box;
+  width: 100%;
+  border: 1px solid var(--lt-separator);
+  border-radius: var(--lt-radius-md);
+  background: var(--lt-fill-2);
+  color: var(--lt-label);
+  font: 400 var(--lt-text-body)/var(--lt-leading-ui) var(--lt-font);
 }
-.field label,
-.options-field legend {
-  color: var(--lp-text);
-  font-size: var(--lp-text-sm);
-  font-weight: var(--lp-weight-medium);
+input,
+select {
+  min-height: var(--lt-control-md);
+  padding: 0 var(--lt-space-3);
 }
-.field label span,
-.options-field legend span {
-  margin-left: var(--lp-space-2);
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-xs);
-  font-weight: var(--lp-weight-normal);
+textarea {
+  padding: var(--lt-space-3);
+  resize: vertical;
 }
-.options-field {
-  margin: 0;
-  padding: 0;
-  border: 0;
-  min-width: 0;
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+.radio-choice:has(input:focus-visible) {
+  outline: 2px solid var(--lt-accent);
+  outline-offset: 2px;
 }
-.options-field legend {
-  margin-bottom: var(--lp-space-3);
+.choice-row {
+  display: flex;
+  gap: var(--lt-space-2);
+  flex-wrap: wrap;
+}
+.radio-choice,
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lt-space-2);
+  width: auto;
+  padding: var(--lt-space-2) var(--lt-space-3);
+  border-radius: var(--lt-radius-pill);
+  background: var(--lt-fill-2);
+  cursor: pointer;
+}
+.radio-choice input,
+.check input {
+  width: auto;
+  min-height: 0;
+  accent-color: var(--lt-accent-fill);
 }
 .option-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: calc(var(--lt-space-6) + var(--lt-space-2) / 4) minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: var(--lp-space-3);
-  margin-bottom: var(--lp-space-3);
+  gap: var(--lt-space-3);
+  margin-bottom: var(--lt-space-3);
 }
 .option-label {
-  width: 16px;
-  flex-shrink: 0;
-  color: var(--lp-text-secondary);
+  display: grid;
+  place-items: center;
+  width: calc(var(--lt-space-6) + var(--lt-space-2) / 4);
+  height: calc(var(--lt-space-6) + var(--lt-space-2) / 4);
+  border-radius: var(--lt-radius-sm);
+  background: var(--lt-fill-2);
+  color: var(--lt-label-2);
 }
-.option-row :deep(.el-checkbox) {
-  margin-right: 0;
-}
+.form-state,
 .form-note {
   margin: 0;
-  color: var(--lp-text-secondary);
+  padding: var(--lt-space-4);
+  border-radius: var(--lt-radius-md);
+  background: var(--lt-fill-2);
+  color: var(--lt-label-2);
 }
 .form-error {
   margin: 0;
-  padding: var(--lp-space-3);
-  border-left: 3px solid var(--lp-danger);
-  background: var(--lp-danger-soft);
-  color: var(--lp-danger);
-  line-height: var(--lp-leading-body);
+  padding: var(--lt-space-3);
+  border-radius: var(--lt-radius-md);
+  background: var(--lt-orange-soft);
+  color: var(--lt-orange-text);
+  line-height: var(--lt-leading-ui);
 }
-.editor-footer {
+footer {
   display: flex;
   align-items: center;
-  gap: var(--lp-space-3);
+  justify-content: end;
+  gap: var(--lt-space-3);
 }
-.editor-footer span {
+.editor-footer {
+  margin: 0;
+  padding: var(--lt-space-4) 0 0;
+  background: var(--lt-surface-raised);
+  border-top: 1px solid var(--lt-separator);
+}
+footer span {
   margin-right: auto;
-  text-align: left;
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-xs);
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-caption);
 }
-.editor-footer .el-button + .el-button {
-  margin-left: 0;
-}
-@media (max-width: 767px) {
+@media (max-width: 700px) {
   .form-columns {
     grid-template-columns: 1fr;
   }
-  .editor-footer {
+  .option-row {
+    grid-template-columns: calc(var(--lt-space-6) + var(--lt-space-2) / 4) minmax(0, 1fr);
+  }
+  .check {
+    grid-column: 2;
+  }
+  .option-row .lt-button {
+    grid-column: 2;
+    width: max-content;
+  }
+  footer {
     flex-wrap: wrap;
   }
-  .editor-footer span {
+  footer span {
     width: 100%;
   }
-  .option-row {
-    gap: var(--lp-space-2);
-  }
+}
+:is(input, textarea)::placeholder {
+  color: var(--lt-label-2);
+  opacity: 1;
 }
 </style>
