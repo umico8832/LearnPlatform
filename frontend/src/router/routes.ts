@@ -114,7 +114,7 @@ export const learnerRoutes: RouteRecordRaw[] = [
         path: 'courses/:id',
         name: 'CourseDetail',
         component: () => import('@/views/course/CourseDetailView.vue'),
-        meta: { title: '课程详情' },
+        meta: { title: '课程详情', living: true },
       },
       {
         path: 'my-courses/:id/space',

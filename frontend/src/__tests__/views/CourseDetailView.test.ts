@@ -151,6 +151,7 @@ describe('CourseDetailView', () => {
     const wrapper = mount(CourseDetailView, { global: { stubs } })
     await flushPromises()
 
+    expect(mockGetKnowledgeTree).toHaveBeenCalledWith(408, { errorDisplay: 'inline' })
     expect(wrapper.text()).toContain('开始学习')
     await findButton(wrapper, '进入课程空间').trigger('click')
 
