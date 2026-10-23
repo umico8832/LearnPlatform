@@ -159,7 +159,10 @@ describe('PracticeView', () => {
     expect(wrapper.findAll('button').filter((item) => item.text().includes('开始刷题'))).toHaveLength(1)
     await startButton(wrapper).trigger('click')
 
-    expect(mockGetAdaptiveQuestions).toHaveBeenCalledWith({ count: 10, courseId: 7, knowledgePointId: 31 })
+    expect(mockGetAdaptiveQuestions).toHaveBeenCalledWith(
+      { count: 10, courseId: 7, knowledgePointId: 31 },
+      { errorDisplay: 'inline' },
+    )
     expect(mockGetPracticeQuestions).not.toHaveBeenCalled()
     expect(mockSavePracticeSession).toHaveBeenCalledWith(3, [question], 'adaptive')
     expect(mockPush).toHaveBeenCalledWith({ name: 'PracticeSession' })
@@ -169,12 +172,18 @@ describe('PracticeView', () => {
     const wrapper = mountView()
     await flushPromises()
 
-    await wrapper.get('[data-testid="custom-mode"]').trigger('click')
+    await wrapper
+      .findAll('[role="radio"]')
+      .find((item) => item.text().includes('自选条件'))!
+      .trigger('click')
     await flushPromises()
     await startButton(wrapper).trigger('click')
     await flushPromises()
 
-    expect(mockGetPracticeQuestions).toHaveBeenCalledWith({ count: 10, courseId: 7, knowledgePointId: 31 })
+    expect(mockGetPracticeQuestions).toHaveBeenCalledWith(
+      { count: 10, courseId: 7, knowledgePointId: 31 },
+      { errorDisplay: 'inline' },
+    )
     expect(mockGetAdaptiveQuestions).not.toHaveBeenCalled()
     expect(mockSavePracticeSession).toHaveBeenCalledWith(3, [question], 'custom')
   })
@@ -247,5 +256,23 @@ describe('PracticeView', () => {
 
     expect(mockGetAdaptiveSummary).toHaveBeenCalledTimes(2)
     expect(wrapper.text()).toContain('初次练习偏好')
+  })
+  it('keeps arbitrary group sizes and recovers a failed course list', async () => {
+    mockGetCoursePage.mockRejectedValueOnce(new Error('offline'))
+    const wrapper = mountView()
+    await flushPromises()
+    expect(wrapper.text()).toContain('课程暂时无法加载')
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === '重试课程')!
+      .trigger('click')
+    await flushPromises()
+    expect(wrapper.text()).not.toContain('课程暂时无法加载')
+    await wrapper.get('input[type="number"]').setValue(17)
+    await startButton(wrapper).trigger('click')
+    await flushPromises()
+    expect(mockGetAdaptiveQuestions).toHaveBeenCalledWith(expect.objectContaining({ count: 17 }), {
+      errorDisplay: 'inline',
+    })
   })
 })

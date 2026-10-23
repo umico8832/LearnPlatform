@@ -617,8 +617,11 @@ export function getAllCourses(options?: { errorDisplay?: 'inline' }) {
 }
 
 /** 获取课程分页 */
-export function getCoursePage(params: { pageNum?: number; pageSize?: number; keyword?: string }) {
-  return request.get<unknown, ApiResponse<PageResult<CourseVO>>>('/courses', { params })
+export function getCoursePage(
+  params: { pageNum?: number; pageSize?: number; keyword?: string },
+  options?: { errorDisplay?: 'inline' },
+) {
+  return request.get<unknown, ApiResponse<PageResult<CourseVO>>>('/courses', { params, ...options })
 }
 
 export interface AdminCourseRequestOptions {

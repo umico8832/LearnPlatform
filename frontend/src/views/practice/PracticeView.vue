@@ -1,183 +1,84 @@
-<template>
-  <div class="practice-container page-container">
-    <LpPageHeader title="练习" description="选择条件后开始一组练习；推荐仅帮助你理解当前难度。" />
-
-    <div class="practice-grid">
-      <section class="config-section">
-        <LpSectionHeading title="开始练习" description="选择范围后开始一组练习。" />
-        <el-card class="config-card" shadow="never">
-          <el-form :model="form" label-position="top">
-            <el-form-item label="出题方式">
-              <el-radio-group v-model="mode">
-                <el-radio-button label="adaptive">智能推荐</el-radio-button>
-                <el-radio-button label="custom">自选条件</el-radio-button>
-              </el-radio-group>
-            </el-form-item>
-            <div class="config-fields">
-              <el-form-item label="选择课程"
-                ><el-select
-                  v-model="form.courseId"
-                  placeholder="全部课程"
-                  clearable
-                  style="width: 100%"
-                  @change="handleCourseChange"
-                  ><el-option
-                    v-for="course in courseList"
-                    :key="course.id"
-                    :label="course.name"
-                    :value="course.id" /></el-select
-              ></el-form-item>
-              <el-form-item v-if="form.courseId" label="知识点"
-                ><el-select v-model="form.knowledgePointId" placeholder="全部知识点" clearable style="width: 100%"
-                  ><el-option
-                    v-for="point in knowledgePoints"
-                    :key="point.id"
-                    :label="point.name"
-                    :value="point.id" /></el-select
-              ></el-form-item>
-              <el-form-item v-if="mode === 'custom'" label="题型"
-                ><el-select v-model="form.questionType" placeholder="全部题型" clearable style="width: 100%"
-                  ><el-option label="单选题" value="SINGLE_CHOICE" /><el-option
-                    label="多选题"
-                    value="MULTIPLE_CHOICE" /><el-option label="判断题" value="TRUE_FALSE" /><el-option
-                    label="填空题"
-                    value="FILL_BLANK" /><el-option label="简答题" value="SHORT_ANSWER" /></el-select
-              ></el-form-item>
-              <el-form-item v-if="mode === 'custom'" label="难度"
-                ><el-rate v-model="form.difficulty" :max="5" allow-half
-              /></el-form-item>
-              <el-form-item label="题目数量"><el-input-number v-model="form.count" :min="1" :max="50" /></el-form-item>
-            </div>
-            <el-form-item
-              ><el-button type="primary" size="large" :icon="Promotion" @click="startPractice" :loading="loading"
-                >开始刷题</el-button
-              ></el-form-item
-            >
-          </el-form>
-        </el-card>
-      </section>
-
-      <section class="adaptive-section" aria-label="推荐依据">
-        <LpSectionHeading title="智能推荐" description="根据你已完成的练习记录调整难度。" />
-        <div class="adaptive-panel" v-loading="adaptiveLoading">
-          <div v-if="adaptiveSummary" class="adaptive-content">
-            <p class="recommend-label">{{ adaptiveSummary.totalAnswered ? '推荐难度偏好' : '初次练习偏好' }}</p>
-            <strong class="recommend-value">{{ adaptiveSummary.recommendedDifficulty.toFixed(1) }} / 5</strong>
-            <p v-if="!adaptiveSummary.totalAnswered" class="recommend-note">
-              优先从当前范围内较易的题目开始，再根据作答调整。
-            </p>
-            <details v-else class="recommend-details">
-              <summary>查看推荐依据</summary>
-              <dl>
-                <div v-for="item in adaptiveSummary.difficultyDetails" :key="item.difficulty">
-                  <dt>{{ item.label }}</dt>
-                  <dd>{{ item.total }} 题 · {{ item.total > 0 ? `正确率 ${item.correctRate}%` : '暂无数据' }}</dd>
-                </div>
-              </dl>
-            </details>
-          </div>
-          <LpStatePanel
-            v-else-if="adaptiveError"
-            state="error"
-            title="推荐概览暂时无法加载"
-            description="可重试，或直接选择练习条件。"
-            @retry="loadAdaptiveSummary"
-          />
-        </div>
-      </section>
-    </div>
-
-    <section class="stats-section" aria-label="全课程练习统计">
-      <LpSectionHeading title="全课程练习记录" />
-      <div v-if="statsLoading" class="stats-grid"><LpSkeleton v-for="n in 4" :key="n" :rows="1" /></div>
-      <div v-else-if="stats" class="stats-grid">
-        <LpStat v-for="item in statCards" :key="item.label" :label="item.label" :value="item.value" />
-      </div>
-      <LpStatePanel
-        v-else-if="statsError"
-        state="error"
-        title="练习统计暂时无法加载"
-        description="请重试后再查看真实学习数据。"
-        @retry="loadStats"
-      />
-    </section>
-  </div>
-</template>
-
 <script setup lang="ts">
-import { useUserStore } from '@/stores/user'
-import { savePracticeSession } from '@/utils/practiceSession'
-import { ref, reactive, onBeforeUnmount, onMounted, computed } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { ChevronLeft, Play, RotateCcw } from '@lucide/vue'
+import { getAdaptiveQuestions, getAdaptiveSummary, getPracticeQuestions, getPracticeStats } from '@/api/practice'
+import type { AdaptiveSummaryVO, PracticeStatsVO } from '@/api/practice'
 import { getCoursePage, type CourseVO } from '@/api/course'
 import { getKnowledgeTree, type KnowledgePointVO } from '@/api/knowledgePoint'
-import { useRoute, useRouter } from 'vue-router'
+import { LtButton, LtCard, LtIconButton, LtSegmented } from '@/components/living'
+import { useLivingTheme } from '@/composables/useLivingTheme'
+import { useUserStore } from '@/stores/user'
 import { getAuthSessionVersion, isAuthenticated, onAuthSessionChange } from '@/utils/auth'
-import { ElMessage } from 'element-plus'
-import { Promotion } from '@element-plus/icons-vue'
-import { getAdaptiveQuestions, getPracticeQuestions, getPracticeStats, getAdaptiveSummary } from '@/api/practice'
-import type { PracticeStatsVO, AdaptiveSummaryVO } from '@/api/practice'
+import { savePracticeSession } from '@/utils/practiceSession'
 
+defineOptions({ name: 'PracticeView' })
+useLivingTheme({ dark: true })
 const router = useRouter()
 const route = useRoute()
-const loading = ref(false)
+const loading = ref(false),
+  statsLoading = ref(true),
+  adaptiveLoading = ref(true),
+  statsError = ref(false),
+  adaptiveError = ref(false),
+  startError = ref('')
+const coursesLoading = ref(true),
+  coursesError = ref(''),
+  pointsLoading = ref(false),
+  pointsError = ref('')
 const mode = ref<'adaptive' | 'custom'>('adaptive')
-const statsLoading = ref(true)
-const adaptiveLoading = ref(true)
-const stats = ref<PracticeStatsVO | null>(null)
-const adaptiveSummary = ref<AdaptiveSummaryVO | null>(null)
-const statsError = ref(false)
-const adaptiveError = ref(false)
-const courseList = ref<CourseVO[]>([])
-const knowledgePoints = ref<KnowledgePointVO[]>([])
-
+const stats = ref<PracticeStatsVO | null>(null),
+  adaptiveSummary = ref<AdaptiveSummaryVO | null>(null)
+const courseList = ref<CourseVO[]>([]),
+  knowledgePoints = ref<KnowledgePointVO[]>([])
 const form = reactive({
   courseId: undefined as number | undefined,
   knowledgePointId: undefined as number | undefined,
-  questionType: '' as string,
+  questionType: '',
   difficulty: undefined as number | undefined,
   count: 10,
 })
-
-const statCards = computed(() => [
-  { label: '总答题数', value: stats.value?.totalAnswered ?? 0, tone: 'emphasis' as const },
-  { label: '答对数', value: stats.value?.correctCount ?? 0, tone: 'default' as const },
-  { label: '答错数', value: stats.value?.wrongCount ?? 0, tone: 'danger' as const },
-  { label: '正确率', value: `${stats.value?.correctRate ?? 0}%`, tone: 'warning' as const },
-])
-
+const modeOptions: { value: 'adaptive' | 'custom'; label: string }[] = [
+  { value: 'adaptive', label: '智能推荐' },
+  { value: 'custom', label: '自选条件' },
+]
+const statCards = computed(() =>
+  stats.value
+    ? [
+        { label: '总答题数', value: stats.value.totalAnswered },
+        { label: '答对数', value: stats.value.correctCount },
+        { label: '答错数', value: stats.value.wrongCount },
+        { label: '正确率', value: `${stats.value.correctRate}%` },
+      ]
+    : [],
+)
 function positiveQueryNumber(value: unknown) {
   const parsed = Number(value)
   return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined
 }
-
-let alive = true
-let generation = 0
-
+let alive = true,
+  generation = 0
 function requestIsCurrent(requestGeneration: number, session: number) {
   return alive && requestGeneration === generation && session === getAuthSessionVersion()
 }
-
 function flattenKnowledgePoints(points: KnowledgePointVO[]): KnowledgePointVO[] {
   return points.flatMap((point) => [point, ...flattenKnowledgePoints(point.children || [])])
 }
-
 onMounted(() => {
-  const presetCourseId = positiveQueryNumber(route.query.courseId)
-  const presetKnowledgePointId = positiveQueryNumber(route.query.knowledgePointId)
-  if (presetCourseId !== undefined) form.courseId = presetCourseId
-  if (presetKnowledgePointId !== undefined) form.knowledgePointId = presetKnowledgePointId
+  const courseId = positiveQueryNumber(route.query.courseId),
+    pointId = positiveQueryNumber(route.query.knowledgePointId)
+  if (courseId !== undefined) form.courseId = courseId
+  if (pointId !== undefined) form.knowledgePointId = pointId
   void loadStats()
   void loadCourses()
   void loadAdaptiveSummary()
   if (form.courseId) void loadKnowledgePoints(form.courseId)
 })
-
 onBeforeUnmount(() => {
   alive = false
   generation++
   unsubscribeSession()
 })
-
 const unsubscribeSession = onAuthSessionChange(() => {
   generation++
   stats.value = null
@@ -199,10 +100,9 @@ const unsubscribeSession = onAuthSessionChange(() => {
   void loadAdaptiveSummary()
   if (form.courseId) void loadKnowledgePoints(form.courseId)
 })
-
-const loadStats = async () => {
-  const requestGeneration = generation
-  const session = getAuthSessionVersion()
+async function loadStats() {
+  const requestGeneration = generation,
+    session = getAuthSessionVersion()
   statsLoading.value = true
   statsError.value = false
   try {
@@ -216,40 +116,52 @@ const loadStats = async () => {
     if (requestIsCurrent(requestGeneration, session)) statsLoading.value = false
   }
 }
-
-const loadCourses = async () => {
-  const requestGeneration = generation
-  const session = getAuthSessionVersion()
+async function loadCourses() {
+  const requestGeneration = generation,
+    session = getAuthSessionVersion()
+  coursesLoading.value = true
+  coursesError.value = ''
   try {
-    const res = await getCoursePage({ pageNum: 1, pageSize: 100 })
+    const res = await getCoursePage({ pageNum: 1, pageSize: 100 }, { errorDisplay: 'inline' })
     if (requestIsCurrent(requestGeneration, session)) courseList.value = res.data?.records ?? []
   } catch {
-    if (requestIsCurrent(requestGeneration, session)) courseList.value = []
+    if (requestIsCurrent(requestGeneration, session)) {
+      courseList.value = []
+      coursesError.value = '课程暂时无法加载。'
+    }
+  } finally {
+    if (requestIsCurrent(requestGeneration, session)) coursesLoading.value = false
   }
 }
-
-const loadKnowledgePoints = async (courseId: number) => {
-  const requestGeneration = generation
-  const session = getAuthSessionVersion()
+async function loadKnowledgePoints(courseId: number) {
+  const requestGeneration = generation,
+    session = getAuthSessionVersion()
   knowledgePoints.value = []
+  pointsLoading.value = true
+  pointsError.value = ''
   try {
-    const res = await getKnowledgeTree(courseId)
+    const res = await getKnowledgeTree(courseId, { errorDisplay: 'inline' })
     if (!requestIsCurrent(requestGeneration, session) || form.courseId !== courseId) return
     knowledgePoints.value = res.code === 0 && res.data ? flattenKnowledgePoints(res.data) : []
   } catch {
-    if (requestIsCurrent(requestGeneration, session) && form.courseId === courseId) knowledgePoints.value = []
+    if (requestIsCurrent(requestGeneration, session) && form.courseId === courseId) {
+      knowledgePoints.value = []
+      pointsError.value = '知识点暂时无法加载。'
+    }
+  } finally {
+    if (requestIsCurrent(requestGeneration, session) && form.courseId === courseId) pointsLoading.value = false
   }
 }
-
-const handleCourseChange = (courseId: number | undefined) => {
+function handleCourseChange() {
+  pointsError.value = ''
+  pointsLoading.value = false
   form.knowledgePointId = undefined
   knowledgePoints.value = []
-  if (courseId) void loadKnowledgePoints(courseId)
+  if (form.courseId) void loadKnowledgePoints(form.courseId)
 }
-
-const loadAdaptiveSummary = async () => {
-  const requestGeneration = generation
-  const session = getAuthSessionVersion()
+async function loadAdaptiveSummary() {
+  const requestGeneration = generation,
+    session = getAuthSessionVersion()
   adaptiveLoading.value = true
   adaptiveSummary.value = null
   adaptiveError.value = false
@@ -264,11 +176,16 @@ const loadAdaptiveSummary = async () => {
     if (requestIsCurrent(requestGeneration, session)) adaptiveLoading.value = false
   }
 }
-
-const startPractice = async () => {
-  const userId = useUserStore().userInfo?.id
-  const requestGeneration = generation
-  const session = getAuthSessionVersion()
+async function startPractice() {
+  const userId = useUserStore().userInfo?.id,
+    requestGeneration = generation,
+    session = getAuthSessionVersion()
+  if (loading.value) return
+  startError.value = ''
+  if (!Number.isInteger(form.count) || form.count < 1 || form.count > 50) {
+    startError.value = '请输入 1 到 50 之间的题目数。'
+    return
+  }
   loading.value = true
   try {
     const params: Parameters<typeof getPracticeQuestions>[0] = { count: form.count }
@@ -278,117 +195,316 @@ const startPractice = async () => {
       if (form.questionType) params.questionType = form.questionType
       if (form.difficulty) params.difficulty = form.difficulty
     }
-
-    const res = mode.value === 'adaptive' ? await getAdaptiveQuestions(params) : await getPracticeQuestions(params)
+    const res =
+      mode.value === 'adaptive'
+        ? await getAdaptiveQuestions(params, { errorDisplay: 'inline' })
+        : await getPracticeQuestions(params, { errorDisplay: 'inline' })
     if (!requestIsCurrent(requestGeneration, session)) return
     if (res.code === 0 && res.data && res.data.length > 0) {
       if (!savePracticeSession(userId, res.data, mode.value)) return
       await router.push({ name: 'PracticeSession' })
-    } else {
-      ElMessage.warning('未找到符合条件的题目，请调整筛选条件')
-    }
+    } else startError.value = '未找到符合条件的题目，请调整筛选条件。'
   } catch {
-    if (requestIsCurrent(requestGeneration, session)) ElMessage.error('获取题目失败')
+    if (requestIsCurrent(requestGeneration, session)) startError.value = '获取题目失败，请重试。'
   } finally {
     if (requestIsCurrent(requestGeneration, session)) loading.value = false
   }
 }
+function goBack() {
+  if (typeof window !== 'undefined' && typeof window.history.state?.back === 'string') router.back()
+  else void router.push('/my-courses')
+}
 </script>
 
+<template>
+  <main class="lt page" data-appearance="dark">
+    <header class="head">
+      <LtIconButton label="返回" class="back" @click="goBack"><ChevronLeft aria-hidden="true" /></LtIconButton>
+      <h1>练习</h1>
+      <p>选好范围，开始一组专注练习。推荐只根据已经完成的练习调整难度。</p>
+    </header>
+    <div class="grid">
+      <LtCard as="section" radius="xl" class="configuration" aria-labelledby="config-title"
+        ><h2 id="config-title">开始练习</h2>
+        <p class="section-lead">每次只设置需要的条件，其他条件会交给题库选择。</p>
+        <LtSegmented v-model="mode" :options="modeOptions" label="出题方式" />
+        <div class="fields">
+          <label
+            >选择课程<select
+              v-model="form.courseId"
+              aria-label="选择课程"
+              :disabled="coursesLoading || !!coursesError"
+              @change="handleCourseChange"
+            >
+              <option :value="undefined">{{ coursesLoading ? '正在加载课程…' : '全部课程' }}</option>
+              <option v-for="course in courseList" :key="course.id" :value="course.id">{{ course.name }}</option>
+            </select></label
+          ><label v-if="form.courseId"
+            >知识点<select
+              v-model="form.knowledgePointId"
+              aria-label="选择知识点"
+              :disabled="pointsLoading || !!pointsError"
+            >
+              <option :value="undefined">{{ pointsLoading ? '正在加载知识点…' : '全部知识点' }}</option>
+              <option v-for="point in knowledgePoints" :key="point.id" :value="point.id">{{ point.name }}</option>
+            </select></label
+          ><template v-if="mode === 'custom'"
+            ><label
+              >题型<select v-model="form.questionType">
+                <option value="">全部题型</option>
+                <option value="SINGLE_CHOICE">单选题</option>
+                <option value="MULTIPLE_CHOICE">多选题</option>
+                <option value="TRUE_FALSE">判断题</option>
+                <option value="FILL_BLANK">填空题</option>
+                <option value="SHORT_ANSWER">简答题</option>
+              </select></label
+            ><label
+              >难度<select v-model="form.difficulty">
+                <option :value="undefined">全部难度</option>
+                <option v-for="n in 10" :key="n" :value="n / 2">{{ n / 2 }} / 5</option>
+              </select></label
+            ></template
+          ><label>题目数量<input v-model.number="form.count" type="number" min="1" max="50" step="1" /></label>
+        </div>
+        <div v-if="coursesError" role="alert" class="error">
+          {{ coursesError }}<LtButton @click="loadCourses">重试课程</LtButton>
+        </div>
+        <div v-if="pointsError" role="alert" class="error">
+          {{ pointsError
+          }}<LtButton v-if="form.courseId" @click="loadKnowledgePoints(form.courseId)">重试知识点</LtButton>
+        </div>
+        <p v-if="startError" class="error" role="alert">{{ startError }}</p>
+        <LtButton variant="primary" size="lg" :disabled="loading" @click="startPractice"
+          ><template #icon><Play aria-hidden="true" /></template>{{ loading ? '正在准备…' : '开始刷题' }}</LtButton
+        ></LtCard
+      >
+      <LtCard as="aside" radius="xl" class="recommendation" aria-labelledby="recommendation-title"
+        ><h2 id="recommendation-title">智能推荐</h2>
+        <template v-if="adaptiveLoading"
+          ><div class="skeleton" />
+          <div class="skeleton short" />
+          <span class="sr-only">正在读取推荐</span></template
+        ><template v-else-if="adaptiveSummary"
+          ><p class="eyebrow">{{ adaptiveSummary.totalAnswered ? '推荐难度偏好' : '初次练习偏好' }}</p>
+          <strong>{{ adaptiveSummary.recommendedDifficulty.toFixed(1) }} <small>/ 5</small></strong>
+          <p>
+            {{
+              adaptiveSummary.totalAnswered
+                ? '按你已经完成的练习记录计算。'
+                : '优先从当前范围内较易的题目开始，再根据作答调整。'
+            }}
+          </p>
+          <details v-if="adaptiveSummary.totalAnswered">
+            <summary>查看推荐依据</summary>
+            <dl>
+              <div v-for="item in adaptiveSummary.difficultyDetails" :key="item.difficulty">
+                <dt>{{ item.label }}</dt>
+                <dd>{{ item.total }} 题 · {{ item.total ? `正确率 ${item.correctRate}%` : '暂无数据' }}</dd>
+              </div>
+            </dl>
+          </details></template
+        >
+        <div v-else class="state" data-testid="state-panel">
+          <p>推荐概览暂时无法加载。</p>
+          <LtButton size="sm" @click="loadAdaptiveSummary"
+            ><template #icon><RotateCcw aria-hidden="true" /></template>重试</LtButton
+          >
+        </div></LtCard
+      >
+    </div>
+    <section class="records" aria-labelledby="records-title">
+      <div>
+        <h2 id="records-title">全课程练习记录</h2>
+        <p>真实完成记录会在这里累计。</p>
+      </div>
+      <div v-if="statsLoading" class="stats loading" aria-busy="true">
+        <span v-for="n in 4" :key="n" class="skeleton" />
+      </div>
+      <div v-else-if="stats" class="stats">
+        <dl v-for="item in statCards" :key="item.label" data-testid="stat">
+          <dt>{{ item.label }}</dt>
+          <dd>{{ item.value }}</dd>
+        </dl>
+      </div>
+      <div v-else class="state" data-testid="state-panel">
+        <p>练习统计暂时无法加载。</p>
+        <LtButton size="sm" @click="loadStats"
+          ><template #icon><RotateCcw aria-hidden="true" /></template>重试</LtButton
+        >
+      </div>
+    </section>
+  </main>
+</template>
+
 <style scoped>
-.practice-container {
-  display: flex;
-  flex-direction: column;
-  gap: var(--lp-space-8);
+.page {
+  max-width: calc(var(--lt-space-10) * 15 + var(--lt-space-5));
+  margin: 0 auto;
+  padding: 0 var(--lt-space-7) calc(var(--lt-space-10) + var(--lt-space-8));
 }
-.stats-section,
-.adaptive-section,
-.config-section {
-  display: grid;
-  gap: var(--lp-space-4);
+.head {
+  padding: var(--lt-space-7) 0 var(--lt-space-6);
 }
-.practice-grid {
+.back {
+  margin-left: calc(var(--lt-space-2) * -1);
+}
+.head h1 {
+  margin: var(--lt-space-4) 0 0;
+  font-size: var(--lt-text-title1);
+}
+.head > p,
+.section-lead,
+.recommendation > p,
+.records > div > p {
+  margin: var(--lt-space-2) 0 0;
+  color: var(--lt-label-2);
+  line-height: var(--lt-leading-reading);
+}
+.head > p {
+  max-width: 60ch;
+}
+.grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(300px, 0.55fr);
-  gap: var(--lp-space-6);
+  grid-template-columns: minmax(0, 1fr) minmax(calc(var(--lt-space-10) * 4), 0.55fr);
+  gap: var(--lt-space-6);
   align-items: start;
 }
-.config-card,
-.adaptive-panel {
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-lg);
-  box-shadow: var(--lp-shadow-xs);
-  background: var(--lp-surface);
+.configuration {
+  display: grid;
+  gap: var(--lt-space-5);
 }
-.config-card :deep(.el-card__body),
-.adaptive-panel {
-  padding: var(--lp-space-5);
+.configuration h2,
+.recommendation h2,
+.records h2 {
+  margin: 0;
+  font-size: var(--lt-text-title3);
 }
-.config-fields {
+.section-lead {
+  margin-top: calc(var(--lt-space-2) * -1);
+}
+.fields {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0 var(--lp-space-4);
+  gap: var(--lt-space-4);
 }
-.adaptive-content {
+.fields label {
   display: grid;
-  gap: var(--lp-space-3);
+  gap: var(--lt-space-2);
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
 }
-.recommend-label {
+select,
+input {
+  width: 100%;
+  height: var(--lt-control-lg);
+  padding: 0 var(--lt-space-3);
+  border: solid var(--lt-hairline);
+  border-radius: var(--lt-radius-md);
+  background: var(--lt-fill-2);
+  color: var(--lt-label);
+  font: inherit;
+}
+.error {
   margin: 0;
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-sm);
+  color: var(--lt-red-text);
+  font-size: var(--lt-text-footnote);
 }
-.recommend-value {
-  color: var(--lp-text);
-  font-size: var(--lp-text-2xl);
+.recommendation {
+  display: grid;
+  gap: var(--lt-space-4);
+}
+.recommendation .eyebrow {
+  margin: 0;
+  font-size: var(--lt-text-footnote);
+}
+.recommendation strong {
+  font-family: var(--lt-font-rounded);
+  font-size: var(--lt-text-display);
   font-variant-numeric: tabular-nums;
 }
-.recommend-note {
-  margin: 0;
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
-  line-height: var(--lp-leading-body);
+.recommendation small {
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-body);
+  font-weight: 500;
 }
-.recommend-details {
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
+.recommendation details {
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
 }
-.recommend-details summary {
+.recommendation summary {
+  color: var(--lt-accent);
   cursor: pointer;
-  color: var(--lp-primary);
-  font-weight: var(--lp-weight-semibold);
 }
-.recommend-details dl {
+.recommendation dl {
   display: grid;
-  gap: var(--lp-space-2);
-  margin: var(--lp-space-3) 0 0;
+  gap: var(--lt-space-2);
+  margin: var(--lt-space-3) 0 0;
 }
-.recommend-details dl div {
+.recommendation dl div {
   display: flex;
   justify-content: space-between;
-  gap: var(--lp-space-3);
+  gap: var(--lt-space-3);
 }
-.recommend-details dt,
-.recommend-details dd {
+.recommendation dt,
+.recommendation dd {
   margin: 0;
 }
-.stats-grid {
+.records {
+  display: grid;
+  gap: var(--lt-space-4);
+  margin-top: var(--lt-space-8);
+}
+.stats {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--lp-space-3);
+  gap: var(--lt-space-3);
 }
-@media (max-width: 960px) {
-  .practice-grid {
-    grid-template-columns: 1fr;
-  }
+.stats dl {
+  min-height: calc(var(--lt-space-10) + var(--lt-space-6));
+  margin: 0;
+  padding: var(--lt-space-5);
+  border-radius: var(--lt-radius-lg);
+  background: var(--lt-surface);
+  box-shadow: var(--lt-shadow-card);
 }
-@media (max-width: 640px) {
-  .config-card :deep(.el-card__body),
-  .adaptive-panel {
-    padding: var(--lp-space-4);
-  }
-  .config-fields,
-  .stats-grid {
+.stats dt {
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
+}
+.stats dd {
+  margin: var(--lt-space-2) 0 0;
+  font-family: var(--lt-font-rounded);
+  font-size: var(--lt-text-title2);
+  font-variant-numeric: tabular-nums;
+}
+.skeleton {
+  display: block;
+  min-height: var(--lt-space-4);
+  border-radius: var(--lt-radius-pill);
+  background: var(--lt-fill);
+}
+.recommendation .skeleton {
+  width: calc(100% - var(--lt-space-5));
+}
+.recommendation .short {
+  width: calc(50% - var(--lt-space-2));
+}
+.loading .skeleton {
+  min-height: calc(var(--lt-space-10) + var(--lt-space-6));
+}
+.state {
+  display: flex;
+  align-items: center;
+  gap: var(--lt-space-4);
+  color: var(--lt-label-2);
+}
+.state p {
+  margin: 0;
+}
+@media (max-width: 800px) {
+  .grid,
+  .fields,
+  .stats {
     grid-template-columns: 1fr;
   }
 }

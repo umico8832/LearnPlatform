@@ -15,9 +15,9 @@ test('隔离学习者完成练习后可获取并停止 AI 学习建议', async (
   await page.setViewportSize({ width: 1440, height: 900 })
   await createLearnerAndLogin(browser, page, 'learning-diagnosis-populated')
   await page.goto('/practice')
-  await page.locator('.config-card .el-select').first().click()
-  await page.getByRole('option', { name: 'Java 基础' }).click()
-  await page.locator('.config-card input').last().fill('5')
+  const configuration = page.getByRole('region', { name: '开始练习' })
+  await configuration.getByLabel('选择课程').selectOption({ label: 'Java 基础' })
+  await configuration.getByLabel('题目数量').fill('5')
   await page.getByRole('button', { name: '开始刷题' }).click()
   await expect(page).toHaveURL(/\/practice\/session/)
   for (let index = 0; index < 5; index += 1) {
