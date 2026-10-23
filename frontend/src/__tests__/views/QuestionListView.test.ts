@@ -44,6 +44,8 @@ vi.mock('@/views/course/useQuestionCatalog', async () => {
     handleSizeChange: vi.fn(),
     handleFilterChange: vi.fn(),
     resetFilters: vi.fn(),
+    questionTypeLabel: vi.fn(() => '单选题'),
+    difficultyLabel: vi.fn(() => '简单'),
   }
   return { useQuestionCatalog: () => state }
 })
@@ -53,6 +55,7 @@ describe('QuestionListView pagination', () => {
   beforeEach(() => {
     const state = useQuestionCatalog()
     state.pageNum.value = 1
+    state.questions.value = []
     vi.clearAllMocks()
   })
   it('keeps the current page and page size wired to real query handlers', async () => {
@@ -76,6 +79,36 @@ describe('QuestionListView pagination', () => {
     await w.get('[aria-label="每页题数"]').setValue('20')
     expect(state.pageSize.value).toBe(20)
     expect(state.handleSizeChange).toHaveBeenCalledOnce()
+    w.unmount()
+  })
+
+  it('renders option text with inline Markdown', () => {
+    const state = useQuestionCatalog()
+    state.questions.value = [
+      {
+        id: 1,
+        content: '题干',
+        questionType: 'SINGLE_CHOICE',
+        courseId: 1,
+        courseName: '课程',
+        difficulty: 1,
+        analysis: null,
+        tags: null,
+        score: 1,
+        status: 1,
+        createTime: '2026-10-23T00:00:00',
+        updateTime: '2026-10-23T00:00:00',
+        options: [{ id: 11, optionLabel: 'A', content: '使用 `Push` 更新远端分支', isCorrect: 0, sortOrder: 1 }],
+        knowledgePointIds: [],
+        knowledgePointNames: [],
+      },
+    ]
+
+    const w = mount(QuestionListView, {
+      global: { stubs: { RouterLink: { template: '<a><slot /></a>' }, LtSheet: { template: '<div />' } } },
+    })
+
+    expect(w.get('.question-options li').html()).toContain('<code>Push</code>')
     w.unmount()
   })
 })

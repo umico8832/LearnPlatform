@@ -93,7 +93,7 @@
             <span>{{ difficultyLabel(question.difficulty) }}</span>
             <span>{{ question.score }} 分</span>
           </header>
-          <div class="question-content"><MarkdownRenderer :content="question.content" /></div>
+          <div class="question-content"><QuestionProse :content="question.content" /></div>
           <ol
             v-if="question.options?.length"
             class="question-options"
@@ -104,7 +104,8 @@
             }"
           >
             <li v-for="option in question.options" :key="option.id">
-              <span class="option-label">{{ option.optionLabel }}.</span><span>{{ option.content }}</span>
+              <span class="option-label">{{ option.optionLabel }}.</span
+              ><QuestionProse :content="option.content" inline />
             </li>
           </ol>
           <div v-if="question.knowledgePointNames?.length" class="question-tags" aria-label="相关知识点">
@@ -218,7 +219,7 @@
 import { computed } from 'vue'
 import { Star, MessageCircle, CircleAlert } from '@lucide/vue'
 import { LtBackLink, LtButton, LtCard, LtSheet } from '@/components/living'
-import MarkdownRenderer from '@/views/question/QuestionProse.vue'
+import QuestionProse from '@/views/question/QuestionProse.vue'
 import CatalogSearch from './CatalogSearch.vue'
 import QuestionComment from './CatalogDiscussion.vue'
 import { useQuestionCatalog } from './useQuestionCatalog'
