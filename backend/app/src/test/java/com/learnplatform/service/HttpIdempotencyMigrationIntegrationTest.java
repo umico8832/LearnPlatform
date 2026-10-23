@@ -11,17 +11,39 @@ import org.testcontainers.mysql.MySQLContainer;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-/** V119 must work both on an empty schema and as an upgrade from the V118 production shape. */
+/** V119/V121 must work both on an empty schema and as an upgrade from the V118 production shape. */
 @Tag("integration")
 class HttpIdempotencyMigrationIntegrationTest {
-    @Test void migratesAnEmptyDatabaseToV119() {
+    @Test void migratesAnEmptyDatabaseToV121WithTheExpiryIndex() {
         try (var mysql = new MySQLContainer("mysql:8.0").withDatabaseName("learn_platform")
                 .withUsername("test").withPassword("test")) {
             mysql.start();
-            Flyway.configure().dataSource(mysql.getJdbcUrl(), "root", mysql.getPassword()).target("119").load().migrate();
+            Flyway.configure().dataSource(mysql.getJdbcUrl(), "root", mysql.getPassword()).target("121").load().migrate();
             var db = new JdbcTemplate(new DriverManagerDataSource(mysql.getJdbcUrl(), "root", mysql.getPassword()));
             assertEquals(1, db.queryForObject("SELECT COUNT(DISTINCT index_name) FROM information_schema.statistics "
                     + "WHERE table_schema=DATABASE() AND table_name='http_idempotency_record' AND index_name='uk_http_idempotency'", Integer.class));
+            assertEquals(1, db.queryForObject("SELECT COUNT(DISTINCT index_name) FROM information_schema.statistics "
+                    + "WHERE table_schema=DATABASE() AND table_name='http_idempotency_record' AND index_name='idx_http_idempotency_create_time'", Integer.class));
+        }
+    }
+
+    @Test void upgradesV120WithoutChangingCommittedReplaySnapshots() {
+        try (var mysql = new MySQLContainer("mysql:8.0").withDatabaseName("learn_platform")
+                .withUsername("test").withPassword("test")) {
+            mysql.start();
+            Flyway.configure().dataSource(mysql.getJdbcUrl(), "root", mysql.getPassword()).target("120").load().migrate();
+            var db = new JdbcTemplate(new DriverManagerDataSource(mysql.getJdbcUrl(), "root", mysql.getPassword()));
+            db.update("""
+                    INSERT INTO http_idempotency_record(user_id,operation,request_key,request_hash,response_json)
+                    VALUES(900121,'practice.submit','00000000-0000-4000-8000-000000000121','hash','{"saved":true}')
+                    """);
+            var before = db.queryForMap("SELECT * FROM http_idempotency_record WHERE user_id=900121");
+            Flyway.configure().dataSource(mysql.getJdbcUrl(), "root", mysql.getPassword()).target("121").load().migrate();
+            assertEquals(before, db.queryForMap("SELECT * FROM http_idempotency_record WHERE user_id=900121"));
+            assertEquals(1, db.queryForObject("""
+                    SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema=DATABASE()
+                    AND table_name='http_idempotency_record' AND index_name='idx_http_idempotency_create_time'
+                    """, Integer.class));
         }
     }
 

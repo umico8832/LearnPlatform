@@ -2,7 +2,17 @@ package com.learnplatform.service;
 
 import com.learnplatform.IntegrationTestBase;
 import com.learnplatform.common.exception.BusinessException;
+import com.learnplatform.common.time.BusinessTime;
 import com.learnplatform.support.MySqlRaceSupport;
+import java.sql.Timestamp;
+import java.time.Clock;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -17,12 +27,6 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
-
-import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static com.learnplatform.support.MySqlRaceSupport.awaitLatch;
 import static org.junit.jupiter.api.Assertions.*;
@@ -42,8 +46,8 @@ class HttpIdempotencyIntegrationTest extends IntegrationTestBase {
 
     @BeforeEach void setUp() {
         jdbc.execute("CREATE TABLE IF NOT EXISTS idempotency_test_fact (id BIGINT AUTO_INCREMENT PRIMARY KEY, user_id BIGINT NOT NULL, marker VARCHAR(64) NOT NULL)");
-        jdbc.update("DELETE FROM idempotency_test_fact WHERE user_id IN (?,?,?,?)", USER, USER + 1, USER + 2, USER + 3);
-        jdbc.update("DELETE FROM http_idempotency_record WHERE user_id IN (?,?,?,?)", USER, USER + 1, USER + 2, USER + 3);
+        jdbc.update("DELETE FROM idempotency_test_fact WHERE user_id IN (?,?,?,?,?,?)", USER, USER + 1, USER + 2, USER + 3, USER + 4, USER + 5);
+        jdbc.update("DELETE FROM http_idempotency_record WHERE user_id IN (?,?,?,?,?,?)", USER, USER + 1, USER + 2, USER + 3, USER + 4, USER + 5);
     }
 
     @Test void sameKeyWaitsForCommittedFirstResponseAndWritesOneFact() throws Exception {
@@ -151,12 +155,78 @@ class HttpIdempotencyIntegrationTest extends IntegrationTestBase {
                 () -> { fail("Must replay the first result"); return null; }));
     }
 
+    @Test void cleanupKeepsTheReplayBoundaryAndDeletesAnExpiredIncompleteRecordInOneBatch() {
+        LocalDateTime now = LocalDateTime.of(2026, 10, 23, 12, 30);
+        insertRecord(USER + 4, "expired-incomplete", "00000000-0000-4000-8000-000000000124", null);
+        insertRecord(USER + 5, "boundary", "00000000-0000-4000-8000-000000000125", "{}");
+        jdbc.update("UPDATE http_idempotency_record SET create_time=? WHERE user_id=?", Timestamp.valueOf(now.minusDays(7).minusSeconds(1)), USER + 4);
+        jdbc.update("UPDATE http_idempotency_record SET create_time=? WHERE user_id=?", Timestamp.valueOf(now.minusDays(7)), USER + 5);
+
+        int deleted = new HttpIdempotencyCleanupService(jdbc, clockAt(now)).cleanupExpiredRecords();
+
+        assertEquals(1, deleted);
+        assertEquals(0, count("SELECT COUNT(*) FROM http_idempotency_record WHERE user_id=?", USER + 4));
+        assertEquals(1, count("SELECT COUNT(*) FROM http_idempotency_record WHERE user_id=?", USER + 5));
+    }
+
+    @Test void cleanupDeletesOnlyOneThousandExpiredRecordsPerInvocation() {
+        LocalDateTime now = LocalDateTime.of(2026, 10, 23, 12, 30);
+        insertExpiredRecords(1001, now);
+        insertRecord(USER + 5, "cleanup-boundary", "00000000-0000-4000-8000-000000009001", "{}");
+        jdbc.update("UPDATE http_idempotency_record SET create_time=? WHERE user_id=? AND operation='cleanup-boundary'",
+                Timestamp.valueOf(now.minusDays(7)), USER + 5);
+
+        int deleted = new HttpIdempotencyCleanupService(jdbc, clockAt(now)).cleanupExpiredRecords();
+
+        assertEquals(1000, deleted);
+        assertEquals(1, count("SELECT COUNT(*) FROM http_idempotency_record WHERE operation='cleanup-expired'"));
+        assertEquals(1, count("SELECT COUNT(*) FROM http_idempotency_record WHERE operation='cleanup-boundary'"));
+    }
+
+    @Test void concurrentCleanupInstancesKeepRecordsInsideTheReplayWindow() throws Exception {
+        LocalDateTime now = LocalDateTime.of(2026, 10, 23, 12, 30);
+        insertExpiredRecords(1001, now);
+        insertRecord(USER + 5, "cleanup-boundary", "00000000-0000-4000-8000-000000009001", "{}");
+        insertRecord(USER + 5, "cleanup-young", "00000000-0000-4000-8000-000000009002", "{}");
+        jdbc.update("UPDATE http_idempotency_record SET create_time=? WHERE user_id=? AND operation='cleanup-boundary'",
+                Timestamp.valueOf(now.minusDays(7)), USER + 5);
+        jdbc.update("UPDATE http_idempotency_record SET create_time=? WHERE user_id=? AND operation='cleanup-young'",
+                Timestamp.valueOf(now.minusDays(6)), USER + 5);
+        var first = new HttpIdempotencyCleanupService(jdbc, clockAt(now));
+        var second = new HttpIdempotencyCleanupService(jdbc, clockAt(now));
+        var start = new CountDownLatch(1);
+        try (var pool = Executors.newFixedThreadPool(2)) {
+            var results = List.of(pool.submit(() -> { start.await(); return first.cleanupExpiredRecords(); }),
+                    pool.submit(() -> { start.await(); return second.cleanupExpiredRecords(); }));
+            start.countDown();
+            for (var result : results) {
+                int deleted = result.get(30, TimeUnit.SECONDS);
+                assertTrue(deleted >= 0 && deleted <= 1000);
+            }
+        }
+        assertEquals(0, count("SELECT COUNT(*) FROM http_idempotency_record WHERE operation='cleanup-expired'"));
+        assertEquals(1, count("SELECT COUNT(*) FROM http_idempotency_record WHERE operation='cleanup-boundary'"));
+        assertEquals(1, count("SELECT COUNT(*) FROM http_idempotency_record WHERE operation='cleanup-young'"));
+    }
+
     private Map submit(long user, String operation, String key, String marker) {
         return service.execute(user, operation, key, Map.of("answer", marker), Map.class, () -> {
             jdbc.update("INSERT INTO idempotency_test_fact(user_id,marker) VALUES(?,?)", user, marker);
             return Map.of("marker", marker);
         });
     }
+    private void insertRecord(long user, String operation, String key, String response) {
+        jdbc.update("INSERT INTO http_idempotency_record(user_id,operation,request_key,request_hash,response_json) VALUES(?,?,?,?,?)",
+                user, operation, key, "hash", response);
+    }
+    private void insertExpiredRecords(int amount, LocalDateTime now) {
+        for (int sequence = 0; sequence < amount; sequence++) {
+            insertRecord(USER + 4, "cleanup-expired", String.format("00000000-0000-4000-8000-%012d", sequence), "{}");
+        }
+        jdbc.update("UPDATE http_idempotency_record SET create_time=? WHERE operation='cleanup-expired'",
+                Timestamp.valueOf(now.minusDays(7).minusSeconds(1)));
+    }
+    private Clock clockAt(LocalDateTime now) { return Clock.fixed(now.atZone(BusinessTime.ZONE).toInstant(), BusinessTime.ZONE); }
     private int count(String sql, Object... args) { return jdbc.queryForObject(sql, Integer.class, args); }
     @TestConfiguration static class RaceConfiguration { @Bean MySqlRaceSupport httpIdempotencyRaceSupport(Environment env) { return new MySqlRaceSupport(env); } }
 }
