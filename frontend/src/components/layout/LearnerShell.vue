@@ -76,7 +76,7 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
         <RouterLink to="/my-courses" class="brand" aria-label="LearnPlatform 我的课程">LearnPlatform</RouterLink>
         <ShellNav />
         <div class="actions">
-          <ShellProgress v-if="gamification.summary" :summary="gamification.summary" />
+          <ShellProgress v-if="gamification.summary" class="progress" :summary="gamification.summary" />
           <button type="button" class="search" aria-label="搜索题目、课程、知识点" @click="searchDialog?.open()">
             <Search :size="15" aria-hidden="true" />
             <span class="search-text">搜索</span>
@@ -226,5 +226,29 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
 
 .skip-link:focus-visible {
   transform: translateY(0);
+}
+
+/* 学员端按桌面设计（≥1280）。更窄时只保证不撑出横向滚动：导航可横向滑动，进度与搜索文字收起。 */
+@media (max-width: 1100px) {
+  .bar-inner {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: var(--lt-space-3);
+    padding: 0 var(--lt-space-4);
+  }
+
+  .progress {
+    display: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .search-text,
+  .search-key {
+    display: none;
+  }
+
+  .search {
+    padding: 0 8px;
+  }
 }
 </style>

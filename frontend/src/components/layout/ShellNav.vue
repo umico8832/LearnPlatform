@@ -100,10 +100,18 @@ onBeforeUnmount(() => observer?.disconnect())
 </template>
 
 <style scoped>
+/* 窄于桌面时导航在自己的格子里横向滑动，不撑宽页面。 */
+.shell-nav {
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
 .list {
   position: relative;
   display: flex;
   gap: 2px;
+  width: max-content;
 }
 
 .highlight {
