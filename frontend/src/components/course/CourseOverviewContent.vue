@@ -1,8 +1,5 @@
 <template>
   <div class="lt course-page course-overview" data-appearance="dark">
-    <div class="back-row">
-      <LtBackLink :to="{ name: 'CourseOverview', params: { id: courseId } }" label="返回课程" />
-    </div>
     <CoursePageState v-if="loading" state="loading" title="正在读取课程空间" />
     <CoursePageState
       v-else-if="failed || !overview"
@@ -13,22 +10,26 @@
       @retry="emit('retry')"
     />
     <template v-else>
-      <header class="course-head overview-hero">
-        <h1>{{ overview.courseName }}</h1>
-        <div class="course-actions">
-          <LtButton
-            v-if="!hasRecommendedTarget"
-            variant="primary"
-            :disabled="starting"
-            :aria-label="primaryActionLabel"
-            @click="emit('primaryAction')"
-            >{{ starting ? '正在准备…' : primaryActionLabel }}</LtButton
-          >
-          <LtButton @click="emit('openContent')">查看教学目录</LtButton
-          ><LtButton @click="moreOpen = true">更多</LtButton>
-        </div>
+      <LtPageHeader class="overview-hero" :title="overview.courseName">
+        <template #lead>
+          <LtBackLink :to="{ name: 'CourseOverview', params: { id: courseId } }" label="返回课程" />
+        </template>
+        <template #actions>
+          <div class="course-actions">
+            <LtButton
+              v-if="!hasRecommendedTarget"
+              variant="primary"
+              :disabled="starting"
+              :aria-label="primaryActionLabel"
+              @click="emit('primaryAction')"
+              >{{ starting ? '正在准备…' : primaryActionLabel }}</LtButton
+            >
+            <LtButton @click="emit('openContent')">查看教学目录</LtButton
+            ><LtButton @click="moreOpen = true">更多</LtButton>
+          </div>
+        </template>
         <p v-if="primaryActionError" class="course-error" role="alert">{{ primaryActionError }}</p>
-      </header>
+      </LtPageHeader>
       <LtCard v-if="overview.recommendedTargets.length" as="section" radius="xl" class="continue-section">
         <div>
           <p class="course-muted">下一步</p>
@@ -169,7 +170,7 @@
 import { computed, ref, watch } from 'vue'
 import type { Component } from 'vue'
 import { ArrowRight, BookOpen, Pencil, RotateCcw, Timer, FileText, CircleAlert } from '@lucide/vue'
-import { LtBackLink, LtButton, LtCard, LtSheet } from '@/components/living'
+import { LtBackLink, LtButton, LtCard, LtPageHeader, LtSheet } from '@/components/living'
 import CoursePageState from '@/views/course/CoursePageState.vue'
 import '@/views/course/course-baseline.css'
 import type { CourseOverviewVO, CourseStageAssessmentKnowledgePointSummaryVO, LearningTargetVO } from '@/api/course'
@@ -275,9 +276,6 @@ function knowledgePointSummaryText(summary: CourseStageAssessmentKnowledgePointS
 }
 </script>
 <style scoped>
-.overview-hero h1 {
-  margin-top: 0;
-}
 .overview-grid {
   display: flex;
   flex-wrap: wrap;

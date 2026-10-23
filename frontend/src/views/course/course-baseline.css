@@ -1,15 +1,12 @@
 .course-page {
   width: 100%;
-  max-width: calc(var(--lt-space-10) * 16);
-  margin: 0 auto;
-  padding: var(--lt-space-7) var(--lt-space-7) var(--lt-space-10);
   display: grid;
   gap: var(--lt-space-6);
 }
-.course-head h1 {
-  margin: var(--lt-space-4) 0 var(--lt-space-2);
-  font-size: var(--lt-text-title1);
+.course-page > .lt-page-header {
+  margin-bottom: 0;
 }
+
 .course-head p,
 .course-muted {
   color: var(--lt-label-2);

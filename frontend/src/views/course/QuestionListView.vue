@@ -1,11 +1,9 @@
 <template>
   <main class="lt question-list" data-appearance="dark">
-    <header class="page-head">
-      <LtBackLink to="/practice" label="返回练习" />
-      <h1>题库</h1>
-      <p>选一道题开始练习，或收藏后集中练习。</p>
-      <RouterLink class="collection-link" to="/favorites">查看我的收藏</RouterLink>
-    </header>
+    <LtPageHeader title="题库" description="选一道题开始练习，或收藏后集中练习。">
+      <template #lead><LtBackLink to="/practice" label="返回练习" /></template>
+      <template #actions><RouterLink class="collection-link" to="/favorites">查看我的收藏</RouterLink></template>
+    </LtPageHeader>
     <CatalogSearch />
     <section class="filter-panel" aria-label="题目筛选">
       <div class="filter-fields">
@@ -218,7 +216,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { Star, MessageCircle, CircleAlert } from '@lucide/vue'
-import { LtBackLink, LtButton, LtCard, LtSheet } from '@/components/living'
+import { LtBackLink, LtButton, LtCard, LtPageHeader, LtSheet } from '@/components/living'
 import QuestionProse from '@/views/question/QuestionProse.vue'
 import CatalogSearch from './CatalogSearch.vue'
 import QuestionComment from './CatalogDiscussion.vue'
@@ -287,18 +285,8 @@ const {
 
 <style scoped>
 .question-list {
-  max-width: calc(var(--lt-space-10) * 16);
-  margin: 0 auto;
-  padding: var(--lt-space-7) var(--lt-space-7) var(--lt-space-10);
   display: grid;
   gap: var(--lt-space-5);
-}
-.page-head h1 {
-  margin: var(--lt-space-4) 0 var(--lt-space-2);
-  font-size: var(--lt-text-title1);
-}
-.page-head p {
-  color: var(--lt-label-2);
 }
 .collection-link {
   color: var(--lt-accent);

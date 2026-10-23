@@ -153,13 +153,16 @@ onMounted(load)
 
 <style scoped>
 .page {
-  max-width: 880px;
-  margin: 0 auto;
-  padding: 0 var(--lt-space-7) 120px;
+  display: grid;
+}
+
+.page > * {
+  width: min(100%, 880px);
+  margin-inline: auto;
 }
 
 .head {
-  padding: var(--lt-space-7) 0 var(--lt-space-6);
+  padding: 0 0 var(--lt-space-6);
 }
 
 .back {

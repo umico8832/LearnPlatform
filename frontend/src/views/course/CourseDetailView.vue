@@ -1,8 +1,5 @@
 <template>
   <div class="lt course-page" data-appearance="dark">
-    <div>
-      <LtBackLink :to="backTarget" :label="backLabel" />
-    </div>
     <CoursePageState v-if="loading" state="loading" title="正在读取课程详情" />
     <CoursePageState
       v-else-if="loadFailed || !course"
@@ -12,10 +9,29 @@
       @retry="fetchDetail"
     />
     <template v-else>
-      <header class="course-head detail-hero">
-        <div>
-          <h1 id="course-title">{{ course.name }}</h1>
-          <p class="detail-desc">{{ course.description || '暂无课程描述' }}</p>
+      <LtPageHeader
+        class="detail-hero"
+        :title="course.name"
+        :description="course.description || '暂无课程描述'"
+        title-id="course-title"
+      >
+        <template #lead><LtBackLink :to="backTarget" :label="backLabel" /></template>
+        <template #actions>
+          <div class="course-actions">
+            <LtButton @click="goToQuestions">查看题目</LtButton>
+            <LtButton v-if="membershipState === 'ready' && isInLibrary" variant="primary" @click="goToCourseOverview"
+              >进入课程空间</LtButton
+            >
+            <LtButton
+              v-else
+              variant="primary"
+              :disabled="membershipState !== 'ready' || addingToLibrary"
+              @click="addToLibrary"
+              >{{ addingToLibrary ? '正在加入…' : '加入课程库' }}</LtButton
+            >
+          </div>
+        </template>
+        <template #default>
           <p class="detail-meta">
             {{ totalKP }} 个知识点<template v-if="membershipState === 'ready' && isInLibrary">
               · 已加入我的课程</template
@@ -25,21 +41,8 @@
             暂时无法确认是否已加入课程。<LtButton variant="quiet" @click="() => loadMembership()">重新确认</LtButton>
           </p>
           <p v-if="joinError" class="course-error" role="alert">{{ joinError }}</p>
-        </div>
-        <div class="course-actions">
-          <LtButton @click="goToQuestions">查看题目</LtButton>
-          <LtButton v-if="membershipState === 'ready' && isInLibrary" variant="primary" @click="goToCourseOverview"
-            >进入课程空间</LtButton
-          >
-          <LtButton
-            v-else
-            variant="primary"
-            :disabled="membershipState !== 'ready' || addingToLibrary"
-            @click="addToLibrary"
-            >{{ addingToLibrary ? '正在加入…' : '加入课程库' }}</LtButton
-          >
-        </div>
-      </header>
+        </template>
+      </LtPageHeader>
       <section class="knowledge-section" aria-labelledby="knowledge-heading">
         <div class="section-head">
           <h2 id="knowledge-heading">课程目录</h2>
@@ -66,7 +69,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { LtBackLink, LtButton, LtCard } from '@/components/living'
+import { LtBackLink, LtButton, LtCard, LtPageHeader } from '@/components/living'
 import CoursePageState from './CoursePageState.vue'
 import CourseOutlineNode from './CourseOutlineNode.vue'
 import './course-baseline.css'
@@ -186,16 +189,9 @@ onUnmounted(() => {
 })
 </script>
 <style scoped>
-.detail-hero {
-  display: grid;
-  gap: var(--lt-space-5);
-  padding-bottom: var(--lt-space-5);
-}
-.detail-desc {
-  max-width: calc(var(--lt-space-10) * 10);
-}
-.course-head .detail-meta {
-  margin-top: var(--lt-space-4);
+.detail-meta {
+  margin: var(--lt-space-4) 0 0;
+  color: var(--lt-label-2);
   font-size: var(--lt-text-footnote);
 }
 .knowledge-section {

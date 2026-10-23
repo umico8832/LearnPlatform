@@ -1,9 +1,6 @@
 <template>
   <div class="lt course-page" data-appearance="dark">
-    <header class="course-head">
-      <h1>课程库</h1>
-      <p>选择一门课程，查看目录后加入自己的学习空间。</p>
-    </header>
+    <LtPageHeader title="课程库" description="选择一门课程，查看目录后加入自己的学习空间。" />
     <form class="course-toolbar" role="search" @submit.prevent="search">
       <label class="course-search"
         ><Search aria-hidden="true" /><input
@@ -60,7 +57,7 @@
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowRight, BookOpen, Search } from '@lucide/vue'
-import { LtButton, LtCard } from '@/components/living'
+import { LtButton, LtCard, LtPageHeader } from '@/components/living'
 import CoursePageState from './CoursePageState.vue'
 import './course-baseline.css'
 import { getCoursePage, type CourseVO } from '@/api/course'

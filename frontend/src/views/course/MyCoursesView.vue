@@ -1,12 +1,10 @@
 <template>
   <div class="lt course-page" data-appearance="dark">
-    <header class="course-head">
-      <div class="my-heading">
-        <h1>我的课程</h1>
+    <LtPageHeader title="我的课程" :description="pageDescription">
+      <template #actions>
         <LtButton v-if="courses.length" @click="router.push({ name: 'CourseList' })">浏览课程库</LtButton>
-      </div>
-      <p>{{ pageDescription }}</p>
-    </header>
+      </template>
+    </LtPageHeader>
     <CoursePageState v-if="loading" state="loading" title="正在读取我的课程" />
     <CoursePageState
       v-else-if="loadFailed"
@@ -125,7 +123,7 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { BookOpen, Search } from '@lucide/vue'
-import { LtButton, LtCard } from '@/components/living'
+import { LtButton, LtCard, LtPageHeader } from '@/components/living'
 import CoursePageState from './CoursePageState.vue'
 import './course-baseline.css'
 import type { CourseVO, LearningTargetVO } from '@/api/course'
