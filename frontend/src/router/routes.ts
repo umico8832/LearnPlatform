@@ -138,7 +138,7 @@ export const learnerRoutes: RouteRecordRaw[] = [
         path: 'practice/session',
         name: 'PracticeSession',
         component: () => import('@/views/practice/PracticeSessionView.vue'),
-        meta: { title: '答题中' },
+        meta: { title: '答题中', living: true },
       },
       {
         path: 'practice/records',

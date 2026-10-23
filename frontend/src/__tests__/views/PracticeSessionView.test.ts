@@ -136,6 +136,36 @@ describe('PracticeSessionView', () => {
     })
   })
 
+  it('hides default counts while restoring a session and recovers a failed restore', async () => {
+    const store = useUserStore(),
+      user = store.userInfo
+    store.userInfo = null
+    let reject!: (cause: Error) => void
+    vi.spyOn(store, 'fetchUserInfo')
+      .mockImplementationOnce(
+        () =>
+          new Promise((_resolve, fail) => {
+            reject = fail
+          }),
+      )
+      .mockImplementationOnce(async () => {
+        store.userInfo = user
+      })
+    const wrapper = mount(PracticeSessionView, { global: { stubs } })
+    expect(wrapper.text()).toContain('正在加载练习')
+    expect(wrapper.text()).not.toContain('1 / 0')
+    reject(new Error('offline'))
+    await flushPromises()
+    expect(wrapper.text()).toContain('练习暂时无法加载')
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === '重试')!
+      .trigger('click')
+    await flushPromises()
+    expect(wrapper.text()).toContain('第一题')
+    wrapper.unmount()
+  })
+
   it('waits for the authenticated user to restore before reading a refresh cache', async () => {
     const store = useUserStore()
     const user = store.userInfo

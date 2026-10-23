@@ -10,6 +10,7 @@ vi.mock('@/utils/auth', () => ({
   },
 }))
 import AIQuestionAssistant from '@/components/AiQuestionAssistant.vue'
+import PracticeAiAssistant from '@/views/practice/PracticeAiAssistant.vue'
 
 type Handlers = { onContent: (text: string) => void; onDone: (source: string) => void }
 function deferred() {
@@ -49,6 +50,19 @@ beforeEach(() => {
 afterEach(() => wrappers.splice(0).forEach((wrapper) => wrapper.unmount()))
 
 describe('AI question assistant', () => {
+  it('keeps the practice-page assistant on the same stream contract without Element controls', async () => {
+    const wrapper = mount(PracticeAiAssistant, { props: { questionId: 1 } })
+    wrappers.push(wrapper)
+    mocks.stream.mockImplementationOnce(async (_type, _id, handlers: Handlers) => {
+      handlers.onContent('练习页解析')
+      handlers.onDone('ai')
+    })
+    await button(wrapper, '补充解析').trigger('click')
+    await flushPromises()
+    expect(mocks.stream).toHaveBeenCalledWith('explanation', 1, expect.any(Object), expect.any(AbortSignal))
+    expect(wrapper.text()).toContain('练习页解析')
+    expect(wrapper.html()).not.toContain('el-button')
+  })
   it('blocks assistance until the paper question has a first answer', async () => {
     const wrapper = setup()
     await wrapper.setProps({ learningSessionId: 8, disabled: true, disabledReason: '先提交本题答案' })

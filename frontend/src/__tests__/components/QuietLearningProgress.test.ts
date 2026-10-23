@@ -3,6 +3,8 @@ import { mount } from '@vue/test-utils'
 import ShellProgress from '@/components/layout/ShellProgress.vue'
 import AnswerRewardFeedback from '@/components/gamification/AnswerRewardFeedback.vue'
 import GamificationPracticeSummary from '@/components/gamification/GamificationPracticeSummary.vue'
+import PracticeRewardFeedback from '@/views/practice/PracticeRewardFeedback.vue'
+import PracticeSummary from '@/views/practice/PracticeSummary.vue'
 
 const summary = {
   totalXp: 36,
@@ -56,6 +58,30 @@ describe('quiet learning progress', () => {
     expect(wrapper.attributes('aria-live')).toBeUndefined()
     expect(wrapper.text()).toContain('本次记录 +6 经验')
     expect(wrapper.text()).not.toContain('连击')
+  })
+
+  it('keeps the practice-local reward and summary on the same factual contract', () => {
+    const reward = mount(PracticeRewardFeedback, {
+      props: {
+        reward: {
+          eventId: 10,
+          awardedXp: 6,
+          reason: 'ANSWERED',
+          eligible: true,
+          levelBefore: 2,
+          levelAfter: 2,
+          leveledUp: false,
+          streakDays: 3,
+          newAchievements: [],
+          summary,
+        },
+      },
+    })
+    const practiceSummary = mount(PracticeSummary, {
+      props: { summary: { correctRate: 75, xpGained: 12, answeredCount: 8 } },
+    })
+    expect(reward.text()).toContain('本次记录 +6 经验')
+    expect(practiceSummary.get('[role="progressbar"]').attributes('aria-valuenow')).toBe('75')
   })
 
   it('summarizes answered facts without a combo metric or a large animated score ring', () => {

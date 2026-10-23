@@ -1,35 +1,35 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import AnswerRewardFeedback from '@/components/gamification/AnswerRewardFeedback.vue'
-import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
-import AiQuestionAssistant from '@/components/AiQuestionAssistant.vue'
-import QuestionLearningAsset from '@/components/QuestionLearningAsset.vue'
+import { ChevronDown } from '@lucide/vue'
+import MarkdownRenderer from '@/views/question/QuestionProse.vue'
+import QuestionLearningAsset from './learning/QuestionLearningAsset.vue'
 import type { PracticeResultVO } from '@/api/practice'
 import { isGradedPracticeResult, practiceResultTitle } from './practiceSessionPresentation'
+import PracticeAiAssistant from './PracticeAiAssistant.vue'
+import PracticeRewardFeedback from './PracticeRewardFeedback.vue'
 
 const props = defineProps<{ result: PracticeResultVO; wrongPractice?: boolean }>()
 const graded = computed(() => isGradedPracticeResult(props.result))
 const title = computed(() => practiceResultTitle(props.result))
-const feedbackStatus = computed(() => {
-  if (!graded.value) return '答案已记录，尚未判分。'
-  return props.result.correct ? '本题回答正确。' : '本题回答错误。'
-})
+const feedbackStatus = computed(() =>
+  !graded.value ? '答案已记录，尚未判分。' : props.result.correct ? '本题回答正确。' : '本题回答错误。',
+)
 const understandingOpen = ref(false)
 </script>
 
 <template>
   <section
-    class="practice-answer-feedback"
-    :class="{ 'is-correct': result.correct === true, 'is-wrong': result.correct === false }"
+    class="feedback practice-answer-feedback"
+    :class="{ correct: result.correct === true, wrong: result.correct === false }"
     data-testid="practice-feedback"
   >
-    <p class="lp-sr-only" role="status" aria-atomic="true" data-testid="practice-feedback-status">
+    <p class="lt-sr-only" role="status" aria-atomic="true" data-testid="practice-feedback-status">
       {{ feedbackStatus }}
     </p>
-    <p class="practice-answer-feedback__eyebrow">本题反馈</p>
+    <p class="eyebrow">本题反馈</p>
     <h2>{{ title }}</h2>
-    <p v-if="!graded" class="practice-answer-feedback__pending">答案已记录，尚未判分，不计入正确率。</p>
-    <dl v-else class="practice-answer-feedback__answers">
+    <p v-if="!graded" class="note">答案已记录，尚未判分，不计入正确率。</p>
+    <dl v-else class="answers">
       <div>
         <dt>你的答案</dt>
         <dd>{{ result.userAnswer || '未填写' }}</dd>
@@ -39,102 +39,112 @@ const understandingOpen = ref(false)
         <dd>{{ result.correctAnswer || '待补充' }}</dd>
       </div>
     </dl>
-    <p v-if="wrongPractice && result.correct === true" class="practice-answer-feedback__resolved">
-      这道错题已移出错题本。
-    </p>
-    <div v-if="result.analysis" class="practice-answer-feedback__analysis">
+    <p v-if="wrongPractice && result.correct === true" class="resolved">这道错题已移出错题本。</p>
+    <div v-if="result.analysis" class="analysis practice-answer-feedback__analysis">
       <h3>解析</h3>
       <MarkdownRenderer :content="result.analysis" />
     </div>
-    <details
-      class="practice-answer-feedback__understand"
-      @toggle="understandingOpen = ($event.currentTarget as HTMLDetailsElement).open"
-    >
-      <summary>继续理解这道题</summary>
-      <AiQuestionAssistant v-if="understandingOpen" :question-id="result.questionId" />
-      <QuestionLearningAsset
+    <details class="understand" @toggle="understandingOpen = ($event.currentTarget as HTMLDetailsElement).open">
+      <summary>继续理解这道题 <ChevronDown aria-hidden="true" /></summary>
+      <PracticeAiAssistant v-if="understandingOpen" :question-id="result.questionId" /><QuestionLearningAsset
         v-if="understandingOpen && result.correct === false"
         :question-id="result.questionId"
         collapsible
       />
     </details>
-    <AnswerRewardFeedback v-if="result.reward" :reward="result.reward" />
+    <PracticeRewardFeedback v-if="result.reward" :reward="result.reward" />
   </section>
 </template>
 
 <style scoped>
-.practice-answer-feedback {
+.feedback {
   display: grid;
-  gap: var(--lp-space-3);
-  margin-top: var(--lp-space-6);
-  padding: var(--lp-space-5);
-  border: var(--lp-border-hairline);
-  border-inline-start: 3px solid var(--lp-primary);
-  border-radius: var(--lp-radius-lg);
-  background: var(--lp-surface-subtle);
+  gap: var(--lt-space-4);
+  margin: 0 var(--lt-space-6);
+  padding: var(--lt-space-5);
+  border-radius: var(--lt-radius-lg);
+  background: var(--lt-fill-2);
+  box-shadow: inset var(--lt-space-1) 0 var(--lt-accent-fill);
 }
-.practice-answer-feedback.is-correct {
-  border-inline-start-color: var(--lp-success);
+.feedback.correct {
+  box-shadow: inset var(--lt-space-1) 0 var(--lt-green);
 }
-.practice-answer-feedback.is-wrong {
-  border-inline-start-color: var(--lp-danger);
+.feedback.wrong {
+  box-shadow: inset var(--lt-space-1) 0 var(--lt-orange);
 }
-.practice-answer-feedback__eyebrow,
-.practice-answer-feedback h2,
-.practice-answer-feedback h3,
-.practice-answer-feedback p {
+.eyebrow,
+.feedback h2,
+.feedback h3,
+.feedback p {
   margin: 0;
 }
-.practice-answer-feedback__eyebrow {
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-xs);
+.eyebrow {
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-caption);
 }
-.practice-answer-feedback h2 {
-  color: var(--lp-text);
-  font-size: var(--lp-text-xl);
+.feedback h2 {
+  font-size: var(--lt-text-title3);
 }
-.practice-answer-feedback__pending,
-.practice-answer-feedback__resolved {
-  color: var(--lp-text-secondary);
-  line-height: var(--lp-leading-body);
+.note,
+.resolved {
+  color: var(--lt-label-2);
+  line-height: var(--lt-leading-reading);
 }
-.practice-answer-feedback__answers {
+.answers {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--lp-space-3);
+  gap: var(--lt-space-3);
   margin: 0;
 }
-.practice-answer-feedback dt {
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-xs);
+.answers div {
+  padding: var(--lt-space-3);
+  border-radius: var(--lt-radius-md);
+  background: var(--lt-surface);
 }
-.practice-answer-feedback dd {
-  margin: var(--lp-space-1) 0 0;
-  color: var(--lp-text);
+.answers dt {
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-caption);
+}
+.answers dd {
+  margin: var(--lt-space-1) 0 0;
   overflow-wrap: anywhere;
 }
-.practice-answer-feedback__analysis {
-  display: grid;
-  gap: var(--lp-space-2);
-  padding-top: var(--lp-space-4);
-  border-top: var(--lp-border-hairline);
+.analysis {
+  padding-top: var(--lt-space-4);
+  border-top: solid var(--lt-hairline);
 }
-.practice-answer-feedback__analysis h3 {
-  color: var(--lp-text);
-  font-size: var(--lp-text-base);
+.analysis h3 {
+  margin-bottom: var(--lt-space-2);
+  font-size: var(--lt-text-body);
 }
-.practice-answer-feedback__analysis :deep(.markdown-body) {
-  color: var(--lp-text-secondary);
-  line-height: var(--lp-leading-relaxed);
+.analysis :deep(.markdown-body) {
+  color: var(--lt-label-2);
+  line-height: var(--lt-leading-reading);
   white-space: pre-wrap;
 }
-.practice-answer-feedback__understand {
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
+.understand {
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
 }
-.practice-answer-feedback__understand summary {
+.understand summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--lt-accent);
   cursor: pointer;
-  color: var(--lp-primary);
-  font-weight: var(--lp-weight-semibold);
+}
+.understand summary svg {
+  width: var(--lt-space-4);
+}
+.understand[open] summary svg {
+  transform: rotate(180deg);
+}
+@media (max-width: 640px) {
+  .feedback {
+    margin: 0 var(--lt-space-3);
+  }
+  .answers {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
