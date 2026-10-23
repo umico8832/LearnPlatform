@@ -404,5 +404,8 @@ PUT 请求同样包含三个字段：必填非负 `revision`，可空 `explanati
 | `DELETE /api/search/history` | 清空当前用户搜索历史 |
 | `DELETE /api/search/history/item` | 删除单条搜索历史 |
 
+搜索历史按最后一次记录的先后倒序返回，最多 10 条；重复关键词移到最前。
+同毫秒记录和机器时钟回拨不改变该顺序。
+
 题目搜索结果链接为 `/questions?questionId=<id>`；知识点结果链接为
 `/questions?knowledgePointId=<id>`。题库显示当前搜索范围，显式清除后才回到普通筛选。

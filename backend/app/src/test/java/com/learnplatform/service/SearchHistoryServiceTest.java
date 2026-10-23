@@ -6,6 +6,10 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Map;
+import java.util.LinkedHashMap;
+
+import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -45,8 +49,7 @@ class SearchHistoryServiceTest {
 
             List<String> history = searchHistoryService.getUserHistory(1L);
             assertEquals(2, history.size());
-            assertTrue(history.contains("Python"));
-            assertTrue(history.contains("Java"));
+            assertEquals(List.of("Python", "Java"), history);
         }
 
         @Test
@@ -70,10 +73,8 @@ class SearchHistoryServiceTest {
         @Test
         @DisplayName("历史条数超过上限后淘汰最旧的")
         void recordSearch_exceedsMaxHistory_evictsOldest() {
-            // 每次插入后等待 1ms 确保时间戳不同，排序稳定
             for (int i = 0; i < 25; i++) {
                 searchHistoryService.recordSearch(1L, "keyword" + i);
-                try { Thread.sleep(1); } catch (InterruptedException ignored) {}
             }
 
             List<String> history = searchHistoryService.getUserHistory(1L);
@@ -85,6 +86,27 @@ class SearchHistoryServiceTest {
             assertFalse(history.contains("keyword1"));
             assertFalse(history.contains("keyword2"));
         }
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void sameMillisecondSearchesReturnMostRecentFirst() {
+        for (int i = 0; i < 25; i++) {
+            searchHistoryService.recordSearch(1L, "keyword" + i);
+        }
+        // 显式构造同毫秒碰撞，避免依赖测试机器的墙钟粒度。
+        var histories = (Map<Long, LinkedHashMap<String, Long>>)
+                ReflectionTestUtils.getField(searchHistoryService, "userHistories");
+        histories.get(1L).replaceAll((keyword, timestamp) -> 123L);
+
+        assertEquals(List.of("keyword24", "keyword23", "keyword22", "keyword21", "keyword20",
+                "keyword19", "keyword18", "keyword17", "keyword16", "keyword15"),
+                searchHistoryService.getUserHistory(1L));
+        searchHistoryService.recordSearch(1L, "keyword20");
+        histories.get(1L).replaceAll((keyword, timestamp) -> 123L);
+        assertEquals(List.of("keyword20", "keyword24", "keyword23", "keyword22", "keyword21",
+                "keyword19", "keyword18", "keyword17", "keyword16", "keyword15"),
+                searchHistoryService.getUserHistory(1L));
     }
 
     @Nested

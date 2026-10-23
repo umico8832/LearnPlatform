@@ -39,7 +39,7 @@ public class SearchHistoryService {
 
     /**
      * 用户搜索历史：userId -> (关键词 -> 搜索时间戳)
-     * 使用 LinkedHashMap 保持插入顺序（最新在前）
+     * 使用 LinkedHashMap 保持记录顺序，读取时从最新项开始
      */
     private final ConcurrentHashMap<Long, LinkedHashMap<String, Long>> userHistories = new ConcurrentHashMap<>();
 
@@ -81,10 +81,8 @@ public class SearchHistoryService {
         if (history == null || history.isEmpty()) { return Collections.emptyList(); }
 
         synchronized (history) {
-            return history.entrySet().stream()
-                    .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
+            return history.sequencedKeySet().reversed().stream()
                     .limit(HISTORY_RETURN_LIMIT)
-                    .map(Map.Entry::getKey)
                     .collect(Collectors.toList());
         }
     }
