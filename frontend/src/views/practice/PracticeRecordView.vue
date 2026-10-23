@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeft, Play, RefreshCw } from '@lucide/vue'
-import { LtButton, LtCard, LtLinkButton } from '@/components/living'
+import { Play, RefreshCw } from '@lucide/vue'
+import { LtBackLink, LtButton, LtCard, LtLinkButton } from '@/components/living'
 import { useLivingTheme } from '@/composables/useLivingTheme'
 import { getPracticeRecords, type PracticeRecordVO } from '@/api/practice'
 import { usePersonalCollection } from './usePersonalCollection'
@@ -59,17 +59,19 @@ function changeSize(event: Event) {
   size.value = Number((event.target as HTMLSelectElement).value)
   void resetPage()
 }
-function goBack() {
-  if (typeof window !== 'undefined' && typeof window.history.state?.back === 'string') router.back()
-  else void router.push('/practice')
+function goBack(event: MouseEvent) {
+  const previous = typeof window === 'undefined' ? undefined : window.history.state?.back
+  if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+  if (typeof previous === 'string' && previous.startsWith('/') && !previous.startsWith('//')) {
+    event.preventDefault()
+    router.back()
+  }
 }
 </script>
 <template>
   <main class="record-page lt" data-appearance="dark">
     <header class="head">
-      <LtButton class="back" variant="quiet" aria-label="返回" @click="goBack"
-        ><template #icon><ArrowLeft aria-hidden="true" /></template>返回</LtButton
-      >
+      <LtBackLink to="/practice" label="返回练习" @click.capture="goBack" />
       <div class="heading-row">
         <div>
           <h1>练习记录</h1>
@@ -171,9 +173,6 @@ function goBack() {
 }
 .head {
   padding: var(--lt-space-7) 0 var(--lt-space-6);
-}
-.back {
-  margin-left: calc(-1 * var(--lt-space-2));
 }
 .heading-row,
 .filters,

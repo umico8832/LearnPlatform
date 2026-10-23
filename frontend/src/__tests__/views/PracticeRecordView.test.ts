@@ -1,10 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 
-const { getPracticeRecords, push } = vi.hoisted(() => ({ getPracticeRecords: vi.fn(), push: vi.fn() }))
+const { getPracticeRecords, push, back } = vi.hoisted(() => ({
+  getPracticeRecords: vi.fn(),
+  push: vi.fn(),
+  back: vi.fn(),
+}))
 vi.mock('@/api/practice', () => ({ getPracticeRecords }))
 vi.mock('vue-router', () => ({
-  useRouter: () => ({ push }),
+  useRouter: () => ({ push, back }),
   RouterLink: { props: ['to'], template: '<a :href="to"><slot /></a>' },
 }))
 
@@ -35,6 +39,22 @@ const record = (id: number, isCorrect: number | null) => ({
 describe('PracticeRecordView', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+  })
+
+  it('keeps an in-app previous page for an ordinary return click', async () => {
+    getPracticeRecords.mockResolvedValue({ code: 0, data: { records: [], total: 0 } })
+    window.history.replaceState({ back: '/practice' }, '', '/practice/records')
+    const wrapper = mount(PracticeRecordView, { global: { stubs } })
+    await flushPromises()
+
+    await wrapper
+      .findAll('a')
+      .find((link) => link.text() === '返回练习')!
+      .trigger('click')
+
+    expect(back).toHaveBeenCalledOnce()
+    window.history.replaceState({}, '', '/practice/records')
+    wrapper.unmount()
   })
 
   it('keeps pending records out of the wrong count and grades the rate from graded records only', async () => {

@@ -3,7 +3,10 @@ import { flushPromises, mount } from '@vue/test-utils'
 import QuestionListView from '@/views/course/QuestionListView.vue'
 import { useQuestionCatalog } from '@/views/course/useQuestionCatalog'
 
-vi.mock('vue-router', () => ({ useRouter: () => ({ push: vi.fn() }) }))
+vi.mock('vue-router', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('vue-router')>()),
+  useRouter: () => ({ push: vi.fn() }),
+}))
 vi.mock('@/views/course/useQuestionCatalog', async () => {
   const { ref } = await import('vue')
   const state = {

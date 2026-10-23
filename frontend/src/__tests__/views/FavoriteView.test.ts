@@ -6,12 +6,13 @@ const api = vi.hoisted(() => ({
   removeFavorite: vi.fn(),
   getFavoritePractice: vi.fn(),
   push: vi.fn(),
+  back: vi.fn(),
 }))
 vi.mock('@/api/favorite', () => api)
 vi.mock('@/api/practice', () => api)
 vi.mock('@/stores/user', () => ({ useUserStore: () => ({ userInfo: { id: 1 } }) }))
 vi.mock('vue-router', () => ({
-  useRouter: () => ({ push: api.push }),
+  useRouter: () => ({ push: api.push, back: api.back }),
   RouterLink: { props: ['to'], template: '<a :href="to"><slot /></a>' },
 }))
 enableAutoUnmount(afterEach)
@@ -30,6 +31,20 @@ beforeEach(() => {
   api.removeFavorite.mockResolvedValue({ code: 0 })
 })
 describe('FavoriteView', () => {
+  it('keeps an in-app previous page for an ordinary return click', async () => {
+    window.history.replaceState({ back: '/questions' }, '', '/favorites')
+    const w = mount(FavoriteView, { global })
+    await flushPromises()
+
+    await w
+      .findAll('a')
+      .find((link) => link.text() === '返回练习')!
+      .trigger('click')
+
+    expect(api.back).toHaveBeenCalledOnce()
+    window.history.replaceState({}, '', '/favorites')
+  })
+
   it('keeps removal behind confirmation and uses the real next page', async () => {
     const w = mount(FavoriteView, { global })
     await flushPromises()

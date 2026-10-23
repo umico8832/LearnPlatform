@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ChevronLeft, Play, RotateCcw } from '@lucide/vue'
+import { Play, RotateCcw } from '@lucide/vue'
 import { getAdaptiveQuestions, getAdaptiveSummary, getPracticeQuestions, getPracticeStats } from '@/api/practice'
 import type { AdaptiveSummaryVO, PracticeStatsVO } from '@/api/practice'
 import { getCoursePage, type CourseVO } from '@/api/course'
 import { getKnowledgeTree, type KnowledgePointVO } from '@/api/knowledgePoint'
-import { LtButton, LtCard, LtIconButton, LtSegmented } from '@/components/living'
+import { LtButton, LtCard, LtSegmented } from '@/components/living'
 import { useLivingTheme } from '@/composables/useLivingTheme'
 import { useUserStore } from '@/stores/user'
 import { getAuthSessionVersion, isAuthenticated, onAuthSessionChange } from '@/utils/auth'
@@ -210,16 +210,11 @@ async function startPractice() {
     if (requestIsCurrent(requestGeneration, session)) loading.value = false
   }
 }
-function goBack() {
-  if (typeof window !== 'undefined' && typeof window.history.state?.back === 'string') router.back()
-  else void router.push('/my-courses')
-}
 </script>
 
 <template>
   <main class="lt page" data-appearance="dark">
     <header class="head">
-      <LtIconButton label="返回" class="back" @click="goBack"><ChevronLeft aria-hidden="true" /></LtIconButton>
       <h1>练习</h1>
       <p>选好范围，开始一组专注练习。推荐只根据已经完成的练习调整难度。</p>
     </header>
@@ -344,9 +339,6 @@ function goBack() {
 }
 .head {
   padding: var(--lt-space-7) 0 var(--lt-space-6);
-}
-.back {
-  margin-left: calc(var(--lt-space-2) * -1);
 }
 .head h1 {
   margin: var(--lt-space-4) 0 0;

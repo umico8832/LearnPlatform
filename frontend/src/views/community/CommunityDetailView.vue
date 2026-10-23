@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, nextTick, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ChevronLeft, Download, FileText, RotateCcw, ThumbsUp, Trash2 } from '@lucide/vue'
-import { LtButton, LtSheet } from '@/components/living'
+import { Download, FileText, RotateCcw, ThumbsUp, Trash2 } from '@lucide/vue'
+import { LtBackLink, LtButton, LtSheet } from '@/components/living'
 import { communityStatuses, communityTypes } from '@/api/community'
 import { formatTime } from '@/utils/format'
 import { formatBytes, useCommunityThread } from '@/components/community/useCommunityThread'
@@ -84,10 +84,7 @@ function initial(name: string) {
 
 <template>
   <div class="community-detail">
-    <RouterLink class="back" to="/community">
-      <ChevronLeft :size="18" aria-hidden="true" />
-      返回社区
-    </RouterLink>
+    <LtBackLink to="/community" label="返回社区" />
 
     <section class="community-thread" aria-label="社区内容详情">
       <div v-if="loading" class="layout" aria-busy="true">
@@ -224,26 +221,6 @@ function initial(name: string) {
   width: min(100%, calc(var(--reading) + var(--rail) + var(--lt-space-9)));
   margin: 0 auto;
   padding: var(--lt-space-6) 0 var(--lt-space-10);
-}
-
-.back {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  margin-left: -6px;
-  padding: 6px 10px 6px 4px;
-  border-radius: var(--lt-radius-pill);
-  color: var(--lt-label-2);
-  font-size: var(--lt-text-subhead);
-  text-decoration: none;
-  transition:
-    background-color var(--lt-dur-fade) var(--lt-ease-fade),
-    color var(--lt-dur-fade) var(--lt-ease-fade);
-}
-
-.back:hover {
-  background: var(--lt-fill-3);
-  color: var(--lt-label);
 }
 
 .layout {

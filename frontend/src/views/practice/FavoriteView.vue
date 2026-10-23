@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeft, BookOpen, Play, RefreshCw, StarOff } from '@lucide/vue'
-import { LtButton, LtCard, LtLinkButton, LtSheet } from '@/components/living'
+import { BookOpen, Play, RefreshCw, StarOff } from '@lucide/vue'
+import { LtBackLink, LtButton, LtCard, LtLinkButton, LtSheet } from '@/components/living'
 import { useLivingTheme } from '@/composables/useLivingTheme'
 import { difficultyLabel, questionTypeLabel, recordTime } from './practiceLibraryPresentation'
 import { useFavoriteLibrary } from './useFavoriteLibrary'
@@ -37,9 +37,13 @@ const removeSheetOpen = computed({
     if (!open) removing.value = null
   },
 })
-function goBack() {
-  if (typeof window !== 'undefined' && typeof window.history.state?.back === 'string') router.back()
-  else void router.push('/my-courses')
+function goBack(event: MouseEvent) {
+  const previous = typeof window === 'undefined' ? undefined : window.history.state?.back
+  if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+  if (typeof previous === 'string' && previous.startsWith('/') && !previous.startsWith('//')) {
+    event.preventDefault()
+    router.back()
+  }
 }
 function openRemove(questionId: number, event: MouseEvent) {
   removeOrigin.value = event.currentTarget as HTMLElement
@@ -64,9 +68,7 @@ function changeSize(event: Event) {
 <template>
   <main class="favorite-page lt" data-appearance="dark">
     <header class="head">
-      <LtButton class="back" variant="quiet" aria-label="返回" @click="goBack"
-        ><template #icon><ArrowLeft aria-hidden="true" /></template>返回</LtButton
-      >
+      <LtBackLink to="/practice" label="返回练习" @click.capture="goBack" />
       <div class="heading-row">
         <div>
           <h1>我的收藏</h1>
@@ -188,9 +190,6 @@ function changeSize(event: Event) {
 }
 .head {
   padding: var(--lt-space-7) 0 var(--lt-space-6);
-}
-.back {
-  margin-left: calc(-1 * var(--lt-space-2));
 }
 .heading-row,
 .practice-card,

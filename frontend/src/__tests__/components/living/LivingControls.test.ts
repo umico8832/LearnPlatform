@@ -1,13 +1,26 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
-import { LtField, LtSegmented, LtSheet, LtStepper } from '@/components/living'
+import { LtBackLink, LtField, LtSegmented, LtSheet, LtStepper } from '@/components/living'
 
 const options = [
   { value: 'insert', label: '插入' },
   { value: 'delete', label: '删除', disabled: true },
   { value: 'reverse', label: '逆置' },
 ]
+
+describe('LtBackLink', () => {
+  it('keeps the destination and visible return label on a real router link', () => {
+    const wrapper = mount(LtBackLink, {
+      props: { to: '/practice', label: '返回练习' },
+      global: { stubs: { RouterLink: { props: ['to'], template: '<a :href="to"><slot /></a>' } } },
+    })
+
+    expect(wrapper.attributes('href')).toBe('/practice')
+    expect(wrapper.text()).toBe('返回练习')
+    expect(wrapper.find('svg').exists()).toBe(true)
+  })
+})
 
 describe('LtSegmented', () => {
   it('以单选组呈现，只有选中项可被 Tab 聚焦', () => {

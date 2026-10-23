@@ -10,6 +10,7 @@ const {
   mockReset,
   mockSync,
   mockConfirm,
+  mockBack,
 } = vi.hoisted(() => ({
   mockGetReviewStats: vi.fn(),
   mockGetDueReviewCards: vi.fn(),
@@ -18,6 +19,7 @@ const {
   mockReset: vi.fn(),
   mockSync: vi.fn(),
   mockConfirm: vi.fn(),
+  mockBack: vi.fn(),
 }))
 
 vi.mock('@/api/review', () => ({
@@ -48,7 +50,8 @@ let routeQuery: Record<string, string> = { courseId: '408', questionId: '21' }
 
 vi.mock('vue-router', () => ({
   useRoute: () => ({ query: routeQuery }),
-  useRouter: () => ({ replace: vi.fn() }),
+  useRouter: () => ({ replace: vi.fn(), back: mockBack }),
+  RouterLink: { props: ['to'], template: '<a :href="to"><slot /></a>' },
 }))
 
 import ReviewView from '@/views/practice/ReviewView.vue'
@@ -103,6 +106,20 @@ describe('ReviewView course target', () => {
         },
       }),
     )
+  })
+
+  it('keeps an in-app previous page for an ordinary return click', async () => {
+    window.history.replaceState({ back: '/review' }, '', '/review/classic')
+    const wrapper = mount(ReviewView)
+    await flushPromises()
+
+    await wrapper
+      .findAll('a')
+      .find((link) => link.text() === '返回复习')!
+      .trigger('click')
+
+    expect(mockBack).toHaveBeenCalledOnce()
+    window.history.replaceState({}, '', '/review/classic')
   })
 
   afterEach(() => removeToken())

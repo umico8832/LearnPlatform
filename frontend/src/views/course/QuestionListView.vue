@@ -1,9 +1,7 @@
 <template>
   <main class="lt question-list" data-appearance="dark">
     <header class="page-head">
-      <LtIconButton label="返回我的课程" @click="router.push('/my-courses')"
-        ><ChevronLeft aria-hidden="true"
-      /></LtIconButton>
+      <LtBackLink to="/practice" label="返回练习" />
       <h1>题库</h1>
       <p>选一道题开始练习，或收藏后集中练习。</p>
       <RouterLink class="collection-link" to="/favorites">查看我的收藏</RouterLink>
@@ -218,15 +216,13 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { ChevronLeft, Star, MessageCircle, CircleAlert } from '@lucide/vue'
-import { LtButton, LtCard, LtIconButton, LtSheet } from '@/components/living'
-import { useRouter } from 'vue-router'
+import { Star, MessageCircle, CircleAlert } from '@lucide/vue'
+import { LtBackLink, LtButton, LtCard, LtSheet } from '@/components/living'
 import MarkdownRenderer from '@/views/question/QuestionProse.vue'
 import CatalogSearch from './CatalogSearch.vue'
 import QuestionComment from './CatalogDiscussion.vue'
 import { useQuestionCatalog } from './useQuestionCatalog'
 
-const router = useRouter()
 function changePage(delta: number) {
   pageNum.value += delta
   void fetchQuestions()
