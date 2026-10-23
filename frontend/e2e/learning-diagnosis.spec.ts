@@ -74,7 +74,7 @@ test('隔离学习者完成练习后可获取并停止 AI 学习建议', async (
     if (index < 4) await expect(page.locator('.question-card')).toBeVisible()
   }
   await page.goto('/learning-diagnosis')
-  await expect(page.getByRole('heading', { name: '下一步从最需要处理的内容开始' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: '学习诊断', level: 1 })).toBeVisible()
   let holdRequest!: (route: Route) => void
   const heldRequest = new Promise<Route>((resolve) => (holdRequest = resolve))
   await page.route('**/statistics/ai-advice/stream', (route) => holdRequest(route), { times: 1 })

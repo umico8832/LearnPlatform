@@ -2,9 +2,9 @@
   <div class="lt learning-diagnosis" data-appearance="dark">
     <div class="diagnosis-wrap">
       <LtPageHeader
-        title="下一步从最需要处理的内容开始"
+        title="学习诊断"
         title-id="diagnosis-heading"
-        description="诊断只汇总已判分的学习事实；待判分记录会在完成批阅后更新。"
+        description="从最需要处理的内容开始。诊断只汇总已判分的学习事实，待判分记录批阅后更新。"
       />
       <div v-if="state === 'loading'" class="diagnosis-state" aria-busy="true">
         <span class="skeleton" /><span class="skeleton" /><span class="sr-only" role="status">正在整理学习记录</span>

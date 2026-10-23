@@ -477,7 +477,7 @@ test.describe('学习投入边界验收', () => {
     ]) {
       await page.goto(path)
       if (path === '/learning-diagnosis')
-        await expect(page.getByRole('heading', { name: '下一步从最需要处理的内容开始' })).toBeVisible()
+        await expect(page.getByRole('heading', { name: '学习诊断', level: 1 })).toBeVisible()
       else await expect(page.getByRole('main').getByText(heading, { exact: true }).first()).toBeVisible()
       expect(
         await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth),
