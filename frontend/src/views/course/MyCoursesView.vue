@@ -1,9 +1,6 @@
 <template>
   <div class="lt course-page" data-appearance="dark">
     <header class="course-head">
-      <LtIconButton label="返回课程库" @click="router.push({ name: 'CourseList' })"
-        ><ChevronLeft aria-hidden="true"
-      /></LtIconButton>
       <div class="my-heading">
         <h1>我的课程</h1>
         <LtButton v-if="courses.length" @click="router.push({ name: 'CourseList' })">浏览课程库</LtButton>
@@ -127,8 +124,8 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { BookOpen, ChevronLeft, Search } from '@lucide/vue'
-import { LtButton, LtCard, LtIconButton } from '@/components/living'
+import { BookOpen, Search } from '@lucide/vue'
+import { LtButton, LtCard } from '@/components/living'
 import CoursePageState from './CoursePageState.vue'
 import './course-baseline.css'
 import type { CourseVO, LearningTargetVO } from '@/api/course'

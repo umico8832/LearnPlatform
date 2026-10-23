@@ -207,7 +207,7 @@ test('课程空间返回恢复滚动位置，页面自带返回课程入口', as
   await expect(page).toHaveURL(`${courseUrl}/space`)
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(target)
 
-  await page.getByRole('button', { name: '返回课程', exact: true }).click()
+  await page.getByRole('link', { name: '返回课程', exact: true }).click()
   await expect(page).toHaveURL(courseUrl)
 })
 

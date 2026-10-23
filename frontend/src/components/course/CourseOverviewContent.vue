@@ -1,9 +1,7 @@
 <template>
   <div class="lt course-page course-overview" data-appearance="dark">
     <div class="back-row">
-      <LtButton variant="quiet" @click="emit('back')"
-        ><template #icon><ChevronLeft aria-hidden="true" /></template>返回课程</LtButton
-      >
+      <LtBackLink :to="{ name: 'CourseOverview', params: { id: courseId } }" label="返回课程" />
     </div>
     <CoursePageState v-if="loading" state="loading" title="正在读取课程空间" />
     <CoursePageState
@@ -170,8 +168,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import type { Component } from 'vue'
-import { ArrowRight, ChevronLeft, BookOpen, Pencil, RotateCcw, Timer, FileText, CircleAlert } from '@lucide/vue'
-import { LtButton, LtCard, LtSheet } from '@/components/living'
+import { ArrowRight, BookOpen, Pencil, RotateCcw, Timer, FileText, CircleAlert } from '@lucide/vue'
+import { LtBackLink, LtButton, LtCard, LtSheet } from '@/components/living'
 import CoursePageState from '@/views/course/CoursePageState.vue'
 import '@/views/course/course-baseline.css'
 import type { CourseOverviewVO, CourseStageAssessmentKnowledgePointSummaryVO, LearningTargetVO } from '@/api/course'
@@ -200,7 +198,6 @@ const props = defineProps<{
   factsRefreshKey: number
 }>()
 const emit = defineEmits<{
-  back: []
   retry: []
   primaryAction: []
   openContent: []

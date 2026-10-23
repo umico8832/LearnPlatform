@@ -265,10 +265,9 @@ describe('TutorSessionView', () => {
     expect(wrapper.text()).not.toContain('最近相关记录')
     expect(wrapper.find('[data-testid="tutor-agent"]').exists()).toBe(false)
   })
-  it('提供明确返回当前课程空间的入口', async () => {
+  it('课程教学内容不重复呈现外框返回入口', async () => {
     const wrapper = mount(TutorSessionView, { global: { stubs } })
     await flushPromises()
-    await findButton(wrapper, '返回课程空间').trigger('click')
-    expect(mockPush).toHaveBeenCalledWith({ name: 'CourseSpace', params: { id: 408 } })
+    expect(wrapper.text()).not.toContain('返回课程空间')
   })
 })

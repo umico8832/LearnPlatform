@@ -38,7 +38,8 @@ vi.mock('@/utils/auth', () => ({
 }))
 
 let routeQuery: Record<string, string> = {}
-vi.mock('vue-router', () => ({
+vi.mock('vue-router', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('vue-router')>()),
   useRoute: () => ({ params: { id: '408' }, query: routeQuery }),
   useRouter: () => ({ back: vi.fn(), push: mockPush }),
 }))
@@ -48,6 +49,7 @@ vi.mock('element-plus', () => ({ ElMessage: { success: mockSuccess } }))
 import CourseDetailView from '@/views/course/CourseDetailView.vue'
 
 const stubs = {
+  RouterLink: { props: ['to'], template: '<a><slot /></a>' },
   'el-button': {
     template: '<button :disabled="loading" @click="$emit(\'click\', $event)"><slot /></button>',
     props: ['loading', 'type', 'icon', 'text', 'plain'],
@@ -180,8 +182,11 @@ describe('CourseDetailView', () => {
     const wrapper = mount(CourseDetailView, { global: { stubs } })
     await flushPromises()
 
-    await findButton(wrapper, '返回课程空间').trigger('click')
-    expect(mockPush).toHaveBeenCalledWith({ name: 'CourseOverview', params: { id: 408 } })
+    expect(wrapper.get('a.lt-back-link').text()).toBe('返回课程空间')
+    expect(wrapper.getComponent({ name: 'LtBackLink' }).props('to')).toEqual({
+      name: 'CourseOverview',
+      params: { id: 408 },
+    })
   })
 
   it('未审查内容不提供学习入口', async () => {

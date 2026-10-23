@@ -1,10 +1,5 @@
 <template>
   <section class="lt course-page tutor" data-appearance="dark" aria-label="课程教学">
-    <div>
-      <LtButton variant="quiet" @click="router.push({ name: 'CourseSpace', params: { id: courseId } })"
-        ><template #icon><ChevronLeft aria-hidden="true" /></template>返回课程空间</LtButton
-      >
-    </div>
     <CoursePageState v-if="loading" state="loading" title="正在读取课程教学" />
     <template v-else-if="failed">
       <CoursePageState
@@ -171,7 +166,7 @@
 </template>
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { ChevronLeft, CircleCheck, CircleAlert } from '@lucide/vue'
+import { CircleCheck, CircleAlert } from '@lucide/vue'
 import { LtButton } from '@/components/living'
 import CoursePageState from './CoursePageState.vue'
 import './course-baseline.css'

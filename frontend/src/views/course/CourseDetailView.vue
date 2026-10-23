@@ -1,9 +1,7 @@
 <template>
   <div class="lt course-page" data-appearance="dark">
     <div>
-      <LtButton variant="quiet" @click="returnToSource"
-        ><template #icon><ChevronLeft aria-hidden="true" /></template>{{ backLabel }}</LtButton
-      >
+      <LtBackLink :to="backTarget" :label="backLabel" />
     </div>
     <CoursePageState v-if="loading" state="loading" title="正在读取课程详情" />
     <CoursePageState
@@ -68,8 +66,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ChevronLeft } from '@lucide/vue'
-import { LtButton, LtCard } from '@/components/living'
+import { LtBackLink, LtButton, LtCard } from '@/components/living'
 import CoursePageState from './CoursePageState.vue'
 import CourseOutlineNode from './CourseOutlineNode.vue'
 import './course-baseline.css'
@@ -93,6 +90,9 @@ let generation = 0
 
 const courseId = computed(() => Number(route.params.id))
 const fromLearningSpace = computed(() => route.query?.from === 'learning-space')
+const backTarget = computed(() =>
+  fromLearningSpace.value ? { name: 'CourseOverview', params: { id: courseId.value } } : { name: 'CourseList' },
+)
 const backLabel = computed(() => (fromLearningSpace.value ? '返回课程空间' : '返回课程库'))
 const totalKP = computed(() => countNodes(treeData.value))
 
@@ -137,11 +137,6 @@ async function fetchDetail() {
   }
 }
 
-function returnToSource() {
-  router.push(
-    fromLearningSpace.value ? { name: 'CourseOverview', params: { id: courseId.value } } : { name: 'CourseList' },
-  )
-}
 function goToQuestions() {
   router.push({ name: 'QuestionList', query: { courseId: String(courseId.value) } })
 }

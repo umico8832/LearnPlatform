@@ -36,7 +36,8 @@ vi.mock('@/api/course', () => ({
 
 vi.mock('@/stores/gamification', () => ({ useGamificationStore: () => ({ load: mockLoadGamification }) }))
 
-vi.mock('vue-router', () => ({
+vi.mock('vue-router', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('vue-router')>()),
   useRoute: () => ({ params: { id: '408' } }),
   useRouter: () => ({ push: mockPush }),
 }))
@@ -44,6 +45,7 @@ vi.mock('vue-router', () => ({
 import CourseOverviewView from '@/views/course/CourseOverviewView.vue'
 
 const stubs = {
+  RouterLink: { props: ['to'], template: '<a><slot /></a>' },
   LtSheet: {
     template: '<section :data-sheet-title="title" :data-open="open"><slot /></section>',
     props: ['open', 'title'],

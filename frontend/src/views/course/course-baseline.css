@@ -93,6 +93,6 @@
 .course-page h3 {
   font-size: var(--lt-text-headline);
 }
-.course-page a {
+.course-page a:not(.lt-back-link) {
   color: var(--lt-accent);
 }
