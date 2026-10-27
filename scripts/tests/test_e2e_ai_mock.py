@@ -195,6 +195,24 @@ class E2eAiMockTest(unittest.TestCase):
         _, response = MOCK.completion(payload)
         self.assertEqual("当前无法提供下一步提示。", response["choices"][0]["message"]["content"])
 
+    def test_diagnosis_advice_is_markdown_only_for_its_real_prompt_pair(self):
+        system = ("你是一位专业的 AI 学习顾问，擅长根据学生的学习数据给出个性化、可操作的学习建议。"
+                  "使用 Markdown 格式输出，包含标题、列表等结构化内容")
+        question = ("请根据以下学习数据，为该用户生成个性化的 AI 学习建议：\n\n"
+                    "## 基本学习数据\n- 总已判分作答：5 次\n## 证据边界\n当前记录样本不足。")
+        _, response = MOCK.completion({"messages": [{"role": "system", "content": system},
+                                                    {"role": "user", "content": question}]})
+        content = response["choices"][0]["message"]["content"]
+        self.assertTrue(content.startswith("### 下一步学习建议"))
+        self.assertIn("- **先回看已做过的题**", content)
+        self.assertIn("1. ", content)
+        self.assertNotIn("answerLabels", content)
+        for system_text, user_text in [("普通题目解析", question), (system, "解释这道题")]:
+            with self.subTest(system=system_text, question=user_text):
+                _, fallback = MOCK.completion({"messages": [{"role": "system", "content": system_text},
+                                                           {"role": "user", "content": user_text}]})
+                self.assertEqual(["A"], json.loads(fallback["choices"][0]["message"]["content"])["answerLabels"])
+
     def test_variant_fixture_is_limited_to_the_named_generation_request(self):
         _, response = MOCK.completion({"messages": [{"role": "system", "content": "questionContent"},
                                                      {"role": "user", "content": MOCK.VARIANT_MARKER}]})

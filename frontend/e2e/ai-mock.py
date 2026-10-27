@@ -52,6 +52,15 @@ def is_paper_learning_explanation(messages):
     )
 
 
+def is_learning_diagnosis_advice(messages, question):
+    return question.startswith("请根据以下学习数据，为该用户生成个性化的 AI 学习建议：") and any(
+        message.get("role") == "system"
+        and "专业的 AI 学习顾问" in str(message.get("content", ""))
+        and "使用 Markdown 格式输出" in str(message.get("content", ""))
+        for message in messages
+    )
+
+
 def tool_call(identifier, name):
     return {"id": identifier, "type": "function", "function": {"name": name, "arguments": "{}"}}
 
@@ -147,6 +156,28 @@ def completion(payload):
         message["content"] = (
             "### 补充解析\n\n"
             "请结合题干和已保存的作答，逐步核对每个选项的依据。"
+        )
+    elif is_learning_diagnosis_advice(messages, question):
+        message["content"] = (
+            "### 下一步学习建议\n\n"
+            "记录较少时，先积累可核对的作答，不凭一次正确或错误判断能力、基础或长期学习习惯。"
+            "以下安排只帮助你组织下一轮练习；具体处理顺序仍以本页已有记录和知识点提示为依据。\n\n"
+            "#### 先核对已有记录\n\n"
+            "- **先回看已做过的题**：重新读题干，把条件和自己的判断依据写下来。"
+            "答对的题也要说明为什么选择该选项，避免只记住答案字母；答错时先定位哪一步理解发生变化。\n"
+            "- **围绕一个知识点练习**：从本页需要继续处理的知识点中选一个，回到课程核对概念，"
+            "再独立完成少量相关题。先比较题目条件的异同，不要同时切换多个主题。\n"
+            "- **保留能够复查的依据**：把仍不确定的条件和排除选项的理由记下来，"
+            "提交后对照解析修正。已经理解的内容不必重复抄写，留下最需要再次核对的一处即可。\n\n"
+            "#### 完成一次短练习\n\n"
+            "1. 在练习页选择对应课程与知识点，先自己作答，再查看反馈。"
+            "遇到拿不准的题先写下推理过程，区分概念不清与读题遗漏。\n"
+            "2. 需要复习时，从错题或复习入口重新做题，并说明这次采用的依据。"
+            "若理由仍不清楚，回到课程中的同一概念继续核对，不把重复答对直接当成掌握证明。\n"
+            "3. 完成后回到学习诊断，核对已判分作答和知识点记录是否更新。"
+            "让新增作答成为下一轮安排的依据，记录增加后再观察变化，暂不推断长期表现。\n\n"
+            "**今天的目标**是完成一轮可以解释、可以复查的练习。保持每次只处理一个明确的问题，"
+            "比在记录不足时急着给自己下结论更有帮助。"
         )
     elif VARIANT_MARKER in question and "questionContent" in messages[0].get("content", ""):
         message["content"] = json.dumps({

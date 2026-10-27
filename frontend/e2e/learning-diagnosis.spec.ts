@@ -50,10 +50,20 @@ test('隔离学习者完成练习后可获取并停止 AI 学习建议', async (
   await page.goto('/practice')
   const configuration = page.getByRole('region', { name: '开始练习' })
   await configuration.getByLabel('选择课程').selectOption({ label: 'Java 基础' })
+  await configuration.getByText('自选条件', { exact: true }).click()
+  await configuration.getByLabel('题型').selectOption('SINGLE_CHOICE')
   await configuration.getByLabel('题目数量').fill('5')
+  const selected = page.waitForResponse((response) => new URL(response.url()).pathname === '/api/practice/questions')
   await page.getByRole('button', { name: '开始刷题' }).click()
+  const selection = await selected
+  expect(selection.status()).toBe(200)
+  const questions = (await selection.json()) as ApiEnvelope<unknown[]>
+  expect(questions.code).toBe(0)
+  const questionCount = questions.data.length
+  expect(questionCount).toBeGreaterThan(0)
+  expect(questionCount).toBeLessThanOrEqual(5)
   await expect(page).toHaveURL(/\/practice\/session/)
-  for (let index = 0; index < 5; index += 1) {
+  for (let index = 0; index < questionCount; index += 1) {
     await page.locator('.question-card').locator('input[type="radio"], input[type="checkbox"]').first().check()
     // 先填充三个 Redis 缓存，再由真实练习写入 PracticeRecord；命中缓存后的读取必须看到新数据。
     const cachedBeforeAnswer = index === 0 ? await readCacheSensitiveStatistics(page) : undefined
@@ -71,10 +81,14 @@ test('隔离学习者完成练习后可获取并停止 AI 学习建议', async (
       expect(learningPathAttempts(refreshedAfterAnswer)).toBeGreaterThan(learningPathAttempts(cachedBeforeAnswer))
     }
     await page.getByRole('button', { name: /查看结果|下一题|完成练习/ }).click()
-    if (index < 4) await expect(page.locator('.question-card')).toBeVisible()
+    if (index < questionCount - 1) await expect(page.locator('.question-card')).toBeVisible()
   }
+  await expect(page.getByRole('heading', { name: `${questionCount} 题已记录` })).toBeVisible()
   await page.goto('/learning-diagnosis')
   await expect(page.getByRole('heading', { name: '学习诊断', level: 1 })).toBeVisible()
+  expect((await getApiData<{ totalPractice: number }>(page, '/statistics/learning-diagnosis')).totalPractice).toBe(
+    questionCount,
+  )
   let holdRequest!: (route: Route) => void
   const heldRequest = new Promise<Route>((resolve) => (holdRequest = resolve))
   await page.route('**/statistics/ai-advice/stream', (route) => holdRequest(route), { times: 1 })
@@ -92,6 +106,14 @@ test('隔离学习者完成练习后可获取并停止 AI 学习建议', async (
   const advice = page.getByRole('heading', { name: 'AI 学习建议' }).locator('xpath=ancestor::article[1]')
   await expect(advice.getByText('AI 生成', { exact: true })).toBeVisible()
   await expect(advice.locator('.prose')).not.toBeEmpty()
-  await expect(advice.getByRole('alert')).toHaveCount(0)
   await page.screenshot({ path: testInfo.outputPath('learning-diagnosis-populated.png'), fullPage: true })
+  const prose = advice.locator('.prose')
+  await expect(prose.getByRole('heading', { name: '下一步学习建议', level: 3 })).toBeVisible()
+  await expect(prose.locator('ul > li')).toHaveCount(3)
+  await expect(prose.locator('ol > li')).toHaveCount(3)
+  await expect(prose.locator('strong').filter({ hasText: '先回看已做过的题' })).toBeVisible()
+  await expect(prose).toContainText('记录较少时，先积累可核对的作答')
+  await expect(prose).not.toContainText(/^\s*[\[{]/)
+  await expect(page.getByRole('main')).not.toContainText(/answerLabels|"analysis"/)
+  await expect(advice.getByRole('alert')).toHaveCount(0)
 })
