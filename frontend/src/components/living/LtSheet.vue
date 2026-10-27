@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, useId, watch } from 'vue'
 import { X } from '@lucide/vue'
-import { springAnimate, springs } from '@/motion'
+import { ignoreAnimationCancellation, springAnimate, springs } from '@/motion'
 import LtIconButton from './LtIconButton.vue'
 
 /**
@@ -35,6 +35,7 @@ function stopRunning() {
 
 function track(...animations: (Animation | null)[]) {
   running = animations.filter((animation): animation is Animation => animation !== null)
+  for (const animation of running) void ignoreAnimationCancellation(animation)
 }
 
 function aimAtOrigin() {

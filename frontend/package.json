@@ -42,7 +42,7 @@
     "@vue/test-utils": "2.4.11",
     "eslint": "^9.39.2",
     "eslint-plugin-vue": "10.11.1",
-    "happy-dom": "20.10.3",
+    "happy-dom": "21.0.4",
     "prettier": "^3.9.10",
     "typescript": "^5.4.5",
     "unplugin-auto-import": "21.1.0",

@@ -10,3 +10,4 @@ export {
   type TickFn,
 } from './spring'
 export { blurIn, springAnimate, springEasing, type SpringEasing } from './easing'
+export { ignoreAnimationCancellation } from './animation'
