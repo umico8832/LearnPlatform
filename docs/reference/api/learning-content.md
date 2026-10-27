@@ -36,6 +36,23 @@
 管理员调用 `/api/questions` 时仅返回自己的正式学习状态，权限不提供他人的作答或预览状态；
 `/api/admin/questions` 与题目详情不提供本次新增的个人状态（两个字段为 `null`）。
 
+### 列表关键词与个人内容筛选
+
+以下接口遵守[学习者列表的筛选边界](conventions.md#学习者列表的筛选边界)，返回既有分页结构。
+
+| 接口 | 筛选契约 |
+|---|---|
+| `GET /api/questions` | 新增 `keyword`，匹配题干 `content`（题目没有独立标题字段）；与现有 `courseId/questionType/difficulty/questionId/knowledgePointId/hasUnderstanding` 取交集。仍只列启用的 PUBLIC 题目，个人学习状态仍仅属当前认证用户。 |
+| `GET /api/favorites` | 新增 `courseId/questionType/keyword`；关键词匹配关联题目 `content`，保留原收藏可见范围和本人所有权，不因过滤放开草稿或其他人的私有题。 |
+| `GET /api/submission/my` | 保留 `status`，新增 `courseId/questionType/keyword`；关键词匹配投稿 `content`，所有条件均限定本人投稿，不复用管理员的全站范围。 |
+
+收藏未传新增筛选时保留原入口及收藏关系计数；历史关系若关联到已不可读题目，
+该旧入口会跳过行展示而保留关系 `total`。新增筛选路径在 SQL 中先确定可读题目再分页和计数。
+统一旧入口的统计口径需另行明确兼容边界。
+
+课程 ID 不存在或无匹配关系时返回空页。投稿审核状态沿用现有值，筛选不触发审核或入库。
+这些接口的行字段与题目答案隔离不变；收藏和投稿仍按原创建时间倒序。
+
 ## 课程与知识点
 
 | 接口 | 说明 |
@@ -45,7 +62,8 @@
 | `GET /api/courses/{id}` | 获取课程详情 |
 | `GET /api/knowledge-points/tree/{courseId}` | 获取课程知识点树 |
 | `POST /api/my-courses/{courseId}` | 将已开放课程幂等加入当前用户的个人课程库 |
-| `GET /api/my-courses` | 查询当前用户的个人课程库 |
+| `GET /api/my-courses` | 查询当前用户的个人课程库（原数组） |
+| `GET /api/my-courses/page` | 筛选、分页并批量返回本人课程与学习概况 |
 | `GET /api/my-courses/{courseId}/overview` | 查询已加入课程的学习概况与下一步候选目标 |
 | `GET /api/my-courses/{courseId}/tutor-memory` | 读取本人在该课程保存的学习目标和讲解偏好 |
 | `PUT /api/my-courses/{courseId}/tutor-memory` | 携带当前版本显式保存或纠正课程记忆 |
@@ -71,6 +89,32 @@
 | `POST /api/my-courses/{courseId}/tutor-sessions/{sessionKey}/agent-runs/{runKey}/messages/{sequence}/practice/answer` | 提交 `{ "userAnswer": "B", "answerTime": 12 }`；返回首次判分，耗时秒数可省略 |
 | `GET /api/my-courses/{courseId}/tutor-sessions/{sessionKey}/agent-runs/{runKey}/messages/{sequence}/plan` | 恢复已保存安排及真实确认状态，重新核对目标可用性 |
 | `POST /api/my-courses/{courseId}/tutor-sessions/{sessionKey}/agent-runs/{runKey}/messages/{sequence}/plan/confirm` | 无请求体；显式确认该消息的安排，重试返回首次确认时间 |
+
+### 课程列表与个人课程分页
+
+`GET /api/courses` 保留 `keyword` 对课程名称 `name` 的匹配及原有排序、启用与软删除范围；
+关键词校验和分页边界按[统一约定](conventions.md#学习者列表的筛选边界)。
+当前课程没有学科/分类归属数据，本次不提供会制造虚假分类事实的 `subjectId/categoryId` 参数。
+
+`GET /api/my-courses` 保持原有本人课程数组，供现有客户端兼容使用。
+新增 `GET /api/my-courses/page`，返回 `R<Page<UserCoursePageVO>>`：
+
+- 支持 `pageNum/pageSize`、可选 `courseId`、`keyword`、`learningStatus`，全部按 AND 组合；
+  `keyword` 匹配课程名称或简介，保持现有“我的课程”页的搜索含义。
+- `learningStatus` 省略或空白时不过滤；`STARTED` 表示 `lastLearningTime` 非空，
+  `NOT_STARTED` 表示为空，`DUE_REVIEW` 表示 `dueReviewCount > 0`。非法值返回 `1001`。
+  状态只陈述平台学习事实，不表示掌握程度；到期日期按纽约业务日期计算。
+- `sortBy` 省略时为 `ADDED_AT`（加入时间倒序），也接受 `LAST_LEARNING_TIME`（最近学习时间倒序，
+  无学习记录排最后）；同值按加入时间、关系 ID 倒序。非法排序值返回 `1001`。
+  前端“继续学习”卡片可用 `learningStatus=STARTED&sortBy=LAST_LEARNING_TIME&pageSize=1` 读取全库最近课程，
+  无需把当前页误当作整个课程库，也无需逐门补请求概况。
+- 每行包含原 `UserCourseVO` 字段，并必返 `overview`（已有 `CourseOverviewVO` 结构与统计口径）。
+  概况按当页课程批量查询，保留推荐目标、Tutor 进度与最近阶段测评等现有含义，
+  前端无需逐门再请求 `/overview`。无学习事实时计数为 0、日期及测评为空，推荐仍由现有规则生成。
+- 只返回本人已加入、当前启用且未删除的课程。缺省按原加入时间倒序，
+  相同时间按关系 ID 倒序保证分页稳定；`total` 在筛选后计算。
+
+单课程 `/api/my-courses/{courseId}/overview` 和加入课程行为不变。
 
 课程和知识点的写接口位于[管理与治理 API](admin-governance.md#课程与知识点管理)。
 个人课程库关系以服务端认证用户为准，客户端不能指定或查询其他用户的 `userId`。
