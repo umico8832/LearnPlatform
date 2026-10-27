@@ -211,6 +211,10 @@ chore(checkpoint): 保存课程状态迁移中间结果
 用户长期授权：尚未推送的提交，可以通过 fixup 与 rebase 把同一目的的修复或被拆散的提交并入原提交；
 已推送的提交不改，与原提交目的无关的问题照常单独提交。合并过哪些提交，在用户要求推送时一并列出。
 
+用户长期授权：Codex 任务固定在自己的 worktree 和 `codex/` 分支上进行（见[协作约定](collaboration.md#代码与环境)），
+不需另行说明隔离理由。Codex 可以把自己未推送的分支 rebase 到最新 `main`，再在主检出用 `git merge --ff-only` 合入；
+合入后删除该 worktree 和已合入的分支。已推送的提交和 `main` 本身不 rebase。
+
 除此之外，未经用户对具体目标明确授权，不执行 push、force push、rebase、reset、清理历史、
 删除分支或 tag。禁止对共享分支 force push。
 

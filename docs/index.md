@@ -11,7 +11,7 @@
 - 了解系统：[系统架构](architecture/overview.md)
 - 查询契约：[API 参考](reference/api/index.md) 与 [数据库参考](reference/database/index.md)
 - 开始开发：[AI Agent 开发工作流](development/workflow.md) 与 [测试策略](development/testing.md)
-- 工程协作：[Git 规则](development/git-rules.md)与[审查标准](development/workflow.md#审查标准)
+- 工程协作：[Claude 与 Codex 协作](development/collaboration.md)、[Git 规则](development/git-rules.md)与[审查标准](development/workflow.md#审查标准)
 - Docker 磁盘治理：[Docker 磁盘增长治理](development/docker-disk-governance.md)
 - 查看当前状态：[项目状态](project/status.md)
 - 查看里程碑：[项目里程碑](project/history.md)
@@ -48,6 +48,7 @@
 | 存储语义、唯一约束与事务不变量 | [reference/database/index.md](reference/database/index.md)及对应业务域 |
 | 验证范围、命令与 E2E 生命周期 | [development/testing.md](development/testing.md) |
 | 任务拆分、开发循环与完成状态 | [development/workflow.md](development/workflow.md) |
+| Claude 与 Codex 分工、任务单与 Codex 调用 | [development/collaboration.md](development/collaboration.md) |
 | 提交边界、分支与远端操作 | [development/git-rules.md](development/git-rules.md) |
 | 项目 Skills 来源与升级 | 本页的[工具维护](#工具维护) |
 | 文档归属、更新与验证规则 | 本页的[文档维护](#文档维护) |
