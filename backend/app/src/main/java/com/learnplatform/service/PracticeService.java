@@ -52,6 +52,12 @@ public class PracticeService {
                 userId, pageNum, pageSize, questionType, courseId, isCorrect);
     }
 
+    public Page<PracticeRecordVO> getUserPracticeRecords(Long userId, Page<?> page,
+                                                          String questionType, Long courseId,
+                                                          Integer isCorrect, String keyword) {
+        return historyService.getUserPracticeRecords(userId, page, questionType, courseId, isCorrect, keyword);
+    }
+
     public Map<String, Object> getUserPracticeStats(Long userId) {
         return historyService.getUserPracticeStats(userId);
     }

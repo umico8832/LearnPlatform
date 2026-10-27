@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
+import com.learnplatform.common.query.ListQuery;
 import com.learnplatform.dto.FavoriteQuestionVO;
 import com.learnplatform.entity.Course;
 import com.learnplatform.entity.Question;
@@ -15,8 +16,11 @@ import com.learnplatform.service.question.QuestionAccessPolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -86,6 +90,7 @@ public class FavoriteService {
     /**
      * 获取收藏列表（分页）
      */
+    @Transactional(readOnly = true)
     public Page<FavoriteQuestionVO> getFavorites(Long userId, int pageNum, int pageSize) {
         // 1. 查询收藏记录
         LambdaQueryWrapper<UserFavoriteQuestion> wrapper = new LambdaQueryWrapper<>();
@@ -95,33 +100,49 @@ public class FavoriteService {
         Page<UserFavoriteQuestion> favoritePage = favoriteMapper.selectPage(
                 new Page<>(pageNum, pageSize), wrapper);
 
-        // 2. 组装 VO
-        List<FavoriteQuestionVO> voList = favoritePage.getRecords().stream()
-                .map(fav -> {
-                    Question question = questionMapper.selectById(fav.getQuestionId());
-                    if (!QuestionAccessPolicy.canAccess(question, userId)) { return null; }
-                    FavoriteQuestionVO vo = new FavoriteQuestionVO();
-                    vo.setId(fav.getId());
-                    vo.setQuestionId(fav.getQuestionId());
-                    vo.setQuestionContent(question.getContent());
-                    vo.setQuestionType(question.getQuestionType());
-                    vo.setCourseId(question.getCourseId());
-                    vo.setDifficulty(question.getDifficulty());
-                    vo.setScore(question.getScore());
-                    vo.setCreateTime(fav.getCreateTime());
-                    // 查询课程名称
-                    Course course = courseMapper.selectById(question.getCourseId());
-                    if (course != null) {
-                        vo.setCourseName(course.getName());
-                    }
-                    return vo;
-                })
-                .filter(vo -> vo != null)
-                .collect(Collectors.toList());
+        List<FavoriteQuestionVO> voList = favoriteViews(userId, favoritePage.getRecords());
 
         Page<FavoriteQuestionVO> resultPage = new Page<>(pageNum, pageSize, favoritePage.getTotal());
         resultPage.setRecords(voList);
         return resultPage;
+    }
+
+    @Transactional(readOnly = true)
+    public Page<FavoriteQuestionVO> getFavorites(Long userId, Page<?> page, Long courseId,
+                                                  String questionType, String keyword) {
+        Page<UserFavoriteQuestion> result = favoriteMapper.selectFilteredPage(
+                new Page<>(page.getCurrent(), page.getSize()), userId, courseId, questionType,
+                ListQuery.likePattern(keyword));
+        Page<FavoriteQuestionVO> views = new Page<>(result.getCurrent(), result.getSize(), result.getTotal());
+        views.setRecords(favoriteViews(userId, result.getRecords()));
+        return views;
+    }
+
+    private List<FavoriteQuestionVO> favoriteViews(Long userId, List<UserFavoriteQuestion> favorites) {
+        if (favorites.isEmpty()) { return List.of(); }
+        Map<Long, Question> questions = questionMapper.selectBatchIds(
+                favorites.stream().map(UserFavoriteQuestion::getQuestionId).toList()).stream()
+                .collect(Collectors.toMap(Question::getId, question -> question));
+        List<Long> courseIds = questions.values().stream().map(Question::getCourseId)
+                .filter(Objects::nonNull).distinct().toList();
+        Map<Long, Course> courses = courseIds.isEmpty() ? Map.of() : courseMapper.selectBatchIds(courseIds).stream()
+                .collect(Collectors.toMap(Course::getId, course -> course));
+        return favorites.stream().map(favorite -> {
+            Question question = questions.get(favorite.getQuestionId());
+            if (!QuestionAccessPolicy.canAccess(question, userId)) { return null; }
+            FavoriteQuestionVO view = new FavoriteQuestionVO();
+            view.setId(favorite.getId());
+            view.setQuestionId(favorite.getQuestionId());
+            view.setQuestionContent(question.getContent());
+            view.setQuestionType(question.getQuestionType());
+            view.setCourseId(question.getCourseId());
+            view.setDifficulty(question.getDifficulty());
+            view.setScore(question.getScore());
+            view.setCreateTime(favorite.getCreateTime());
+            Course course = courses.get(question.getCourseId());
+            if (course != null) { view.setCourseName(course.getName()); }
+            return view;
+        }).filter(Objects::nonNull).toList();
     }
 
     /**

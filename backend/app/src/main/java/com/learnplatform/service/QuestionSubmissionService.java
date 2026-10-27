@@ -11,6 +11,7 @@ import java.util.List;
 import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.learnplatform.common.query.ListQuery;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.dto.QuestionReviewRequest;
@@ -113,6 +114,20 @@ public class QuestionSubmissionService {
 
         Page<QuestionSubmission> result = submissionMapper.selectPage(page, wrapper);
         return viewService.toPage(result);
+    }
+
+    public Page<QuestionSubmissionVO> getMySubmissions(Long userId, Page<?> page, Integer status,
+                                                        Long courseId, String questionType, String keyword) {
+        LambdaQueryWrapper<QuestionSubmission> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(QuestionSubmission::getUserId, userId);
+        if (status != null) { wrapper.eq(QuestionSubmission::getStatus, status); }
+        if (courseId != null) { wrapper.eq(QuestionSubmission::getCourseId, courseId); }
+        if (questionType != null) { wrapper.eq(QuestionSubmission::getQuestionType, questionType); }
+        if (keyword != null) {
+            wrapper.apply("content LIKE {0} ESCAPE '!'", ListQuery.likePattern(keyword));
+        }
+        wrapper.orderByDesc(QuestionSubmission::getCreateTime);
+        return viewService.toPage(submissionMapper.selectPage(new Page<>(page.getCurrent(), page.getSize()), wrapper));
     }
 
     /**

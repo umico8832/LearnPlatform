@@ -67,4 +67,17 @@ class QuestionControllerTest {
         mockMvc.perform(get("/api/questions").param("hasUnderstanding", "invalid"))
                 .andExpect(jsonPath("$.code").value(1001));
     }
+
+    @Test
+    void listQuestions_passesNormalizedKeywordWithoutChangingExistingFilters() throws Exception {
+        Page<QuestionVO> page = new Page<>(1, 10, 0);
+        when(questionService.getEnabledQuestionPage(
+                org.mockito.ArgumentMatchers.any(), isNull(), eq(2L), isNull(), isNull(), isNull(), isNull(), isNull(), eq("链表")))
+                .thenReturn(page);
+
+        mockMvc.perform(get("/api/questions").param("courseId", "2").param("keyword", "  链表  "))
+                .andExpect(status().isOk());
+
+        verify(questionService).getEnabledQuestionPage(org.mockito.ArgumentMatchers.any(), isNull(), eq(2L), isNull(), isNull(), isNull(), isNull(), isNull(), eq("链表"));
+    }
 }

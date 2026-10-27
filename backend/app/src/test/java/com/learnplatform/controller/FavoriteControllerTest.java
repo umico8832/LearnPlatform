@@ -145,6 +145,19 @@ class FavoriteControllerTest {
                 .andExpect(jsonPath("$.data.records.length()").value(1));
     }
 
+    @Test
+    void getFavorites_passesAllNewFiltersForCurrentUser() throws Exception {
+        Page<FavoriteQuestionVO> page = new Page<>(1, 10, 0);
+        when(favoriteService.getFavorites(eq(1L), org.mockito.ArgumentMatchers.any(), eq(2L), eq("SINGLE_CHOICE"), eq("链表")))
+                .thenReturn(page);
+
+        mockMvc.perform(get("/api/favorites").with(mockUser(1L))
+                        .param("courseId", "2").param("questionType", "SINGLE_CHOICE").param("keyword", " 链表 "))
+                .andExpect(status().isOk());
+
+        verify(favoriteService).getFavorites(eq(1L), org.mockito.ArgumentMatchers.any(), eq(2L), eq("SINGLE_CHOICE"), eq("链表"));
+    }
+
     // ======================== 收藏 ID 列表 ========================
 
     @Test

@@ -2,6 +2,7 @@ package com.learnplatform.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.learnplatform.common.query.ListQuery;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.dto.QuestionCreateRequest;
@@ -88,6 +89,13 @@ public class QuestionService {
         return getEnabledQuestionPage(pageNum, pageSize, questionType, courseId, difficulty, null, null);
     }
 
+    public Page<QuestionVO> getEnabledQuestionPage(Page<Question> page, String questionType, Long courseId,
+                                                    Integer difficulty, Long questionId, Long knowledgePointId,
+                                                    Boolean hasUnderstanding, Long userId, String keyword) {
+        return queryEnabledQuestionPage(page, questionType, courseId, difficulty, questionId, knowledgePointId,
+                hasUnderstanding, userId, keyword);
+    }
+
     public Page<QuestionVO> getEnabledQuestionPage(int pageNum, int pageSize, String questionType,
                                                     Long courseId, Integer difficulty,
                                                     Long questionId, Long knowledgePointId) {
@@ -99,7 +107,14 @@ public class QuestionService {
                                                     Long courseId, Integer difficulty,
                                                     Long questionId, Long knowledgePointId,
                                                     Boolean hasUnderstanding, Long userId) {
-        Page<Question> page = new Page<>(pageNum, pageSize);
+        return queryEnabledQuestionPage(new Page<>(pageNum, pageSize), questionType, courseId, difficulty,
+                questionId, knowledgePointId, hasUnderstanding, userId, null);
+    }
+
+    private Page<QuestionVO> queryEnabledQuestionPage(Page<Question> page, String questionType,
+                                                       Long courseId, Integer difficulty, Long questionId,
+                                                       Long knowledgePointId, Boolean hasUnderstanding,
+                                                       Long userId, String keyword) {
         LambdaQueryWrapper<Question> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Question::getStatus, 1).eq(Question::getVisibility, "PUBLIC");
         if (questionType != null && !questionType.isEmpty()) {
@@ -114,10 +129,13 @@ public class QuestionService {
         if (questionId != null) {
             wrapper.eq(Question::getId, questionId);
         }
+        if (keyword != null) {
+            wrapper.apply("content LIKE {0} ESCAPE '!'", ListQuery.likePattern(keyword));
+        }
         if (knowledgePointId != null) {
             List<Long> questionIds = knowledgePointMapper.selectQuestionIdsByKnowledgePointId(knowledgePointId);
             if (questionIds.isEmpty()) {
-                return new Page<>(pageNum, pageSize, 0);
+                return new Page<>(page.getCurrent(), page.getSize(), 0);
             }
             wrapper.in(Question::getId, questionIds);
         }
@@ -126,7 +144,7 @@ public class QuestionService {
             var candidates = questionMapper.selectList(wrapper.clone()
                     .inSql(Question::getId, "SELECT question_id FROM question_understanding_content"));
             available = understanding.available(userId, candidates);
-            if (hasUnderstanding && available.isEmpty()) { return new Page<>(pageNum, pageSize, 0); }
+            if (hasUnderstanding && available.isEmpty()) { return new Page<>(page.getCurrent(), page.getSize(), 0); }
             if (!available.isEmpty()) {
                 if (hasUnderstanding) { wrapper.in(Question::getId, available); }
                 else { wrapper.notIn(Question::getId, available); }

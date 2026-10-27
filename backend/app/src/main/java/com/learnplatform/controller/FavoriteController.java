@@ -2,6 +2,7 @@ package com.learnplatform.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.result.R;
+import com.learnplatform.common.query.ListQuery;
 import com.learnplatform.dto.FavoriteQuestionVO;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.FavoriteService;
@@ -77,9 +78,16 @@ public class FavoriteController {
     public R<Page<FavoriteQuestionVO>> getFavorites(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam(defaultValue = "1") int pageNum,
-            @RequestParam(defaultValue = "10") int pageSize) {
-        Page<FavoriteQuestionVO> page = favoriteService.getFavorites(
-                userDetails.getUserId(), pageNum, pageSize);
+            @RequestParam(defaultValue = "10") int pageSize,
+            @RequestParam(required = false) Long courseId,
+            @RequestParam(required = false) String questionType,
+            @RequestParam(required = false) String keyword) {
+        int boundedPageSize = (int) ListQuery.page(pageNum, pageSize).getSize();
+        String normalizedKeyword = ListQuery.keyword(keyword);
+        Page<FavoriteQuestionVO> page = courseId == null && questionType == null && normalizedKeyword == null
+                ? favoriteService.getFavorites(userDetails.getUserId(), pageNum, boundedPageSize)
+                : favoriteService.getFavorites(userDetails.getUserId(), ListQuery.page(pageNum, boundedPageSize),
+                        courseId, questionType, normalizedKeyword);
         return R.ok(page);
     }
 

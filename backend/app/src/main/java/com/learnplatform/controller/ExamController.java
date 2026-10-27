@@ -2,6 +2,7 @@ package com.learnplatform.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.result.R;
+import com.learnplatform.common.query.ListQuery;
 import com.learnplatform.dto.ExamRecordVO;
 import com.learnplatform.dto.ExamSubmitRequest;
 import com.learnplatform.security.CustomUserDetails;
@@ -69,7 +70,17 @@ public class ExamController {
     public R<Page<ExamRecordVO>> getMyExamRecords(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam(defaultValue = "1") int pageNum,
-            @RequestParam(defaultValue = "10") int pageSize) {
-        return R.ok(examService.getExamList(userDetails.getUserId(), pageNum, pageSize));
+            @RequestParam(defaultValue = "10") int pageSize,
+            @RequestParam(required = false) Long courseId,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Integer status) {
+        Page<?> page = ListQuery.page(pageNum, pageSize);
+        String term = ListQuery.keyword(keyword);
+        if (courseId == null && term == null && status == null) {
+            return R.ok(examService.getExamList(userDetails.getUserId(),
+                    (int) page.getCurrent(), (int) page.getSize()));
+        }
+        return R.ok(examService.getExamList(userDetails.getUserId(), (int) page.getCurrent(),
+                (int) page.getSize(), courseId, term, status));
     }
 }

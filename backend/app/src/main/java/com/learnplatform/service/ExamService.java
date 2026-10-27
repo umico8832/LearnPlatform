@@ -32,6 +32,12 @@ public class ExamService {
         return examSessionService.getExamList(userId, pageNum, pageSize);
     }
 
+    @Transactional(readOnly = true)
+    public Page<ExamRecordVO> getExamList(Long userId, int pageNum, int pageSize,
+                                         Long courseId, String keyword, Integer status) {
+        return examSessionService.getExamList(userId, pageNum, pageSize, courseId, keyword, status);
+    }
+
     @Transactional
     public ExamRecordVO startExam(Long examPaperId, Long userId) {
         return examSessionService.startExam(examPaperId, userId);

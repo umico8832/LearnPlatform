@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.result.R;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.common.exception.BusinessException;
+import com.learnplatform.common.query.ListQuery;
 import com.learnplatform.dto.QuestionCorrectionReportRequest;
 import com.learnplatform.dto.QuestionCorrectionReportVO;
 import com.learnplatform.dto.QuestionVO;
@@ -49,10 +50,18 @@ public class QuestionController {
             @RequestParam(required = false) Long questionId,
             @RequestParam(required = false) Long knowledgePointId,
             @RequestParam(required = false) String hasUnderstanding,
+            @RequestParam(required = false) String keyword,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        return R.ok(questionService.getEnabledQuestionPage(pageNum, pageSize,
-                questionType, courseId, difficulty, questionId, knowledgePointId,
-                understandingFilter(hasUnderstanding), userDetails == null ? null : userDetails.getUserId()));
+        int boundedPageSize = (int) ListQuery.page(pageNum, pageSize).getSize();
+        String normalizedKeyword = ListQuery.keyword(keyword);
+        Boolean understanding = understandingFilter(hasUnderstanding);
+        Long userId = userDetails == null ? null : userDetails.getUserId();
+        if (normalizedKeyword == null) {
+            return R.ok(questionService.getEnabledQuestionPage(pageNum, boundedPageSize, questionType, courseId,
+                    difficulty, questionId, knowledgePointId, understanding, userId));
+        }
+        return R.ok(questionService.getEnabledQuestionPage(ListQuery.page(pageNum, boundedPageSize), questionType,
+                courseId, difficulty, questionId, knowledgePointId, understanding, userId, normalizedKeyword));
     }
 
     private Boolean understandingFilter(String value) {

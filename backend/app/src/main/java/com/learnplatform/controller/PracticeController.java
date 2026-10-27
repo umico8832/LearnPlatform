@@ -2,6 +2,7 @@ package com.learnplatform.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.result.R;
+import com.learnplatform.common.query.ListQuery;
 import com.learnplatform.dto.PracticeRecordVO;
 import com.learnplatform.dto.PracticeResultVO;
 import com.learnplatform.dto.PracticeSubmitRequest;
@@ -89,9 +90,15 @@ public class PracticeController {
             @RequestParam(defaultValue = "10") int pageSize,
             @RequestParam(required = false) String questionType,
             @RequestParam(required = false) Long courseId,
-            @RequestParam(required = false) Integer isCorrect) {
-        Page<PracticeRecordVO> records = practiceService.getUserPracticeRecords(
-                userDetails.getUserId(), pageNum, pageSize, questionType, courseId, isCorrect);
+            @RequestParam(required = false) Integer isCorrect,
+            @RequestParam(required = false) String keyword) {
+        int boundedPageSize = (int) ListQuery.page(pageNum, pageSize).getSize();
+        String normalizedKeyword = ListQuery.keyword(keyword);
+        Page<PracticeRecordVO> records = normalizedKeyword == null
+                ? practiceService.getUserPracticeRecords(userDetails.getUserId(), pageNum, boundedPageSize,
+                        questionType, courseId, isCorrect)
+                : practiceService.getUserPracticeRecords(userDetails.getUserId(),
+                        ListQuery.page(pageNum, boundedPageSize), questionType, courseId, isCorrect, normalizedKeyword);
         return R.ok(records);
     }
 

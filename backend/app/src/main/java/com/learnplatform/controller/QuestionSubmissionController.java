@@ -2,6 +2,7 @@ package com.learnplatform.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.result.R;
+import com.learnplatform.common.query.ListQuery;
 import com.learnplatform.dto.QuestionSubmissionRequest;
 import com.learnplatform.dto.QuestionSubmissionVO;
 import com.learnplatform.security.CustomUserDetails;
@@ -52,9 +53,17 @@ public class QuestionSubmissionController {
     public R<Page<QuestionSubmissionVO>> mySubmissions(
             @RequestParam(defaultValue = "1") int pageNum,
             @RequestParam(defaultValue = "10") int pageSize,
-            @RequestParam(required = false) Integer status) {
+            @RequestParam(required = false) Integer status,
+            @RequestParam(required = false) Long courseId,
+            @RequestParam(required = false) String questionType,
+            @RequestParam(required = false) String keyword) {
         Long userId = getCurrentUserId();
-        Page<QuestionSubmissionVO> page = submissionService.getMySubmissions(userId, pageNum, pageSize, status);
+        int boundedPageSize = (int) ListQuery.page(pageNum, pageSize).getSize();
+        String normalizedKeyword = ListQuery.keyword(keyword);
+        Page<QuestionSubmissionVO> page = courseId == null && questionType == null && normalizedKeyword == null
+                ? submissionService.getMySubmissions(userId, pageNum, boundedPageSize, status)
+                : submissionService.getMySubmissions(userId, ListQuery.page(pageNum, boundedPageSize),
+                        status, courseId, questionType, normalizedKeyword);
         return R.ok(page);
     }
 

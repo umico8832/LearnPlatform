@@ -2,6 +2,7 @@ package com.learnplatform.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.learnplatform.common.query.ListQuery;
 import com.learnplatform.dto.PracticeRecordVO;
 import com.learnplatform.entity.Course;
 import com.learnplatform.entity.PracticeRecord;
@@ -11,6 +12,7 @@ import com.learnplatform.mapper.PracticeRecordMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.service.question.QuestionAccessPolicy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.List;
@@ -59,6 +61,21 @@ public class PracticeHistoryService {
                 .map(record -> toView(record, userId))
                 .collect(Collectors.toList()));
         return viewPage;
+    }
+
+    @Transactional(readOnly = true)
+    public Page<PracticeRecordVO> getUserPracticeRecords(Long userId, Page<?> page, String questionType,
+                                                        Long courseId, Integer isCorrect, String keyword) {
+        String pattern = ListQuery.likePattern(keyword);
+        if (pattern == null) {
+            return getUserPracticeRecords(userId, (int) page.getCurrent(), (int) page.getSize(),
+                    questionType, courseId, isCorrect);
+        }
+        Page<PracticeRecord> records = practiceRecordMapper.selectKeywordPage(
+                new Page<>(page.getCurrent(), page.getSize()), userId, questionType, courseId, isCorrect, pattern);
+        Page<PracticeRecordVO> views = new Page<>(records.getCurrent(), records.getSize(), records.getTotal());
+        views.setRecords(records.getRecords().stream().map(record -> toView(record, userId)).toList());
+        return views;
     }
 
     public Map<String, Object> getUserPracticeStats(Long userId) {

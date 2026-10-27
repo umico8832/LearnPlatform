@@ -1,6 +1,7 @@
 package com.learnplatform.service;
 
 import com.learnplatform.common.time.BusinessTime;
+import com.learnplatform.common.query.ListQuery;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.exception.BusinessException;
@@ -59,7 +60,7 @@ public class ExamSessionService {
     }
 
     public Page<ExamRecordVO> getExamList(Long userId, int pageNum, int pageSize) {
-        Page<ExamRecord> page = new Page<>(pageNum, pageSize);
+        Page<ExamRecord> page = ListQuery.page(pageNum, pageSize);
         Page<ExamRecord> result = examRecordMapper.selectPage(page, new LambdaQueryWrapper<ExamRecord>()
                 .eq(ExamRecord::getUserId, userId)
                 .orderByDesc(ExamRecord::getCreateTime));
@@ -69,6 +70,25 @@ public class ExamSessionService {
                 .map(record -> examRecordViewService.toRecordVO(record, now))
                 .collect(Collectors.toList()));
         return voPage;
+    }
+
+    public Page<ExamRecordVO> getExamList(Long userId, int pageNum, int pageSize,
+                                         Long courseId, String keyword, Integer status) {
+        Page<ExamRecord> page = ListQuery.page(pageNum, pageSize);
+        String term = ListQuery.likePattern(keyword);
+        if (status != null && (status < 0 || status > 3)) {
+            throw new BusinessException(ResultCode.VALIDATION_ERROR, "不支持的考试状态");
+        }
+        if (courseId == null && term == null && status == null) {
+            return getExamList(userId, pageNum, pageSize);
+        }
+        Instant now = clock.instant();
+        Page<ExamRecord> result = examRecordMapper.selectFilteredPage(page, userId, courseId,
+                term, status, LocalDateTime.ofInstant(now, ZoneOffset.UTC));
+        Page<ExamRecordVO> views = new Page<>(result.getCurrent(), result.getSize(), result.getTotal());
+        views.setRecords(result.getRecords().stream()
+                .map(record -> examRecordViewService.toRecordVO(record, now)).toList());
+        return views;
     }
 
     public ExamRecordVO startExam(Long examPaperId, Long userId) {

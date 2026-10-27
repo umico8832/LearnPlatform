@@ -117,6 +117,21 @@ class PracticeControllerTest {
                 .andExpect(jsonPath("$.data").isEmpty());
     }
 
+    @Test
+    void getPracticeRecords_passesKeywordWithExistingFilters() throws Exception {
+        com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.learnplatform.dto.PracticeRecordVO> page =
+                new com.baomidou.mybatisplus.extension.plugins.pagination.Page<>(1, 10, 0);
+        when(practiceService.getUserPracticeRecords(eq(1L), org.mockito.ArgumentMatchers.any(), eq("SINGLE_CHOICE"), eq(2L), eq(1), eq("链表")))
+                .thenReturn(page);
+
+        mockMvc.perform(get("/api/practice/records").with(mockUser(1L))
+                        .param("questionType", "SINGLE_CHOICE").param("courseId", "2").param("isCorrect", "1")
+                        .param("keyword", " 链表 "))
+                .andExpect(status().isOk());
+
+        verify(practiceService).getUserPracticeRecords(eq(1L), org.mockito.ArgumentMatchers.any(), eq("SINGLE_CHOICE"), eq(2L), eq(1), eq("链表"));
+    }
+
     // ======================== 提交答案 ========================
 
     @Test
