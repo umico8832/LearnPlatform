@@ -3,6 +3,7 @@ package com.learnplatform.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.result.R;
 import com.learnplatform.dto.UserCourseVO;
+import com.learnplatform.dto.UserCoursePageVO;
 import com.learnplatform.dto.CourseOverviewVO;
 import com.learnplatform.dto.CourseKnowledgePointFactVO;
 import com.learnplatform.dto.CourseStageAssessmentCreateRequest;
@@ -57,6 +58,19 @@ public class CourseLibraryController {
     public R<List<UserCourseVO>> getMyCourses(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         return R.ok(courseLibraryService.getMyCourses(userDetails.getUserId()));
+    }
+
+    @GetMapping("/page")
+    public R<Page<UserCoursePageVO>> getMyCoursesPage(
+            @RequestParam(defaultValue = "1") int pageNum,
+            @RequestParam(defaultValue = "10") int pageSize,
+            @RequestParam(required = false) Long courseId,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String learningStatus,
+            @RequestParam(required = false) String sortBy,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return R.ok(courseLibraryService.getMyCoursesPage(
+                userDetails.getUserId(), pageNum, pageSize, courseId, keyword, learningStatus, sortBy));
     }
 
     @Operation(summary = "查询课程学习总览")

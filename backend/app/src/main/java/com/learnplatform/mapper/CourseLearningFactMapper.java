@@ -28,4 +28,55 @@ public interface CourseLearningFactMapper {
 
     List<CourseOverviewVO.TutorProgressVO> selectTutorProgress(
             @Param("userId") Long userId, @Param("courseId") Long courseId);
+
+    List<CourseOverviewVO> selectTotalsByCourses(
+            @Param("userId") Long userId,
+            @Param("courseIds") List<Long> courseIds,
+            @Param("today") LocalDate today);
+
+    List<CourseQuestion> selectFirstDueQuestions(
+            @Param("userId") Long userId,
+            @Param("courseIds") List<Long> courseIds,
+            @Param("today") LocalDate today);
+
+    List<CourseQuestion> selectFirstWrongQuestions(
+            @Param("userId") Long userId,
+            @Param("courseIds") List<Long> courseIds);
+
+    List<CourseTutorProgress> selectTutorProgressByCourses(
+            @Param("userId") Long userId,
+            @Param("courseIds") List<Long> courseIds);
+
+    class CourseQuestion {
+        private Long courseId;
+        private Long questionId;
+
+        public Long getCourseId() {
+            return courseId;
+        }
+
+        public void setCourseId(Long value) {
+            courseId = value;
+        }
+
+        public Long getQuestionId() {
+            return questionId;
+        }
+
+        public void setQuestionId(Long value) {
+            questionId = value;
+        }
+    }
+
+    class CourseTutorProgress extends CourseOverviewVO.TutorProgressVO {
+        private Long courseId;
+
+        public Long getCourseId() {
+            return courseId;
+        }
+
+        public void setCourseId(Long value) {
+            courseId = value;
+        }
+    }
 }

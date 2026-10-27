@@ -188,4 +188,73 @@
         GROUP BY k.id, tree.path, t.id, t.knowledge_point_id, t.title
         ORDER BY tree.path, t.id
     </select>
+
+    <sql id="batchLibrary">
+        SELECT course_id, create_time FROM user_course WHERE user_id=#{userId} AND course_id IN
+        <foreach collection="courseIds" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </sql>
+
+    <sql id="batchFacts">
+        SELECT l.course_id, p.id, p.is_correct, p.create_time occurred_time
+        FROM practice_record p JOIN question q ON q.id=p.question_id
+        JOIN library l ON l.course_id=q.course_id
+        WHERE p.user_id=#{userId} AND p.create_time>=l.create_time AND p.is_correct IN (0,1)
+          AND q.deleted=0 AND (q.visibility='PUBLIC' OR (q.visibility='PRIVATE' AND q.owner_user_id=#{userId}))
+          AND REGEXP_LIKE(p.user_answer, '[^[:space:]]')
+        UNION ALL
+        SELECT l.course_id, a.id, a.is_correct, a.create_time
+        FROM exam_learning_session s JOIN exam_learning_answer a ON a.session_id=s.id
+        JOIN question q ON q.id=a.question_id JOIN library l ON l.course_id=q.course_id
+        WHERE s.user_id=#{userId} AND a.create_time>=l.create_time AND a.is_correct IN (0,1)
+          AND q.deleted=0 AND (q.visibility='PUBLIC' OR (q.visibility='PRIVATE' AND q.owner_user_id=#{userId}))
+          AND REGEXP_LIKE(a.user_answer, '[^[:space:]]')
+        UNION ALL
+        SELECT l.course_id, a.id, a.is_correct, COALESCE(a.reviewed_at,a.create_time)
+        FROM exam_record r JOIN exam_answer a ON a.exam_record_id=r.id
+        JOIN question q ON q.id=a.question_id JOIN library l ON l.course_id=q.course_id
+        WHERE r.user_id=#{userId} AND r.status!=0 AND a.create_time>=l.create_time
+          AND a.grading_status IN ('AUTO_GRADED','REVIEWED') AND a.is_correct IN (0,1)
+          AND q.deleted=0 AND (q.visibility='PUBLIC' OR (q.visibility='PRIVATE' AND q.owner_user_id=#{userId}))
+          AND REGEXP_LIKE(a.user_answer, '[^[:space:]]')
+        UNION ALL
+        SELECT l.course_id, s.id, s.check_correct, s.check_answered_at
+        FROM tutor_session s JOIN library l ON l.course_id=s.course_id
+        WHERE s.user_id=#{userId} AND s.check_answered_at>=l.create_time AND s.check_correct IN (0,1)
+          AND REGEXP_LIKE(s.check_answer, '[^[:space:]]')
+        UNION ALL
+        SELECT l.course_id, t.id, t.is_correct, t.answered_time
+        FROM ai_variant_training t JOIN question q ON q.id=t.question_id
+        JOIN library l ON l.course_id=q.course_id
+        WHERE t.user_id=#{userId} AND t.status='COMPLETED' AND t.answered_time>=l.create_time
+          AND t.is_correct IN (0,1) AND q.deleted=0
+          AND (q.visibility='PUBLIC' OR (q.visibility='PRIVATE' AND q.owner_user_id=#{userId}))
+          AND REGEXP_LIKE(t.user_answer, '[^[:space:]]')
+        UNION ALL
+        SELECT l.course_id, q.id, q.is_correct, q.answered_time
+        FROM course_stage_assessment a JOIN course_stage_assessment_question q ON q.assessment_id=a.id
+        JOIN library l ON l.course_id=a.course_id
+        WHERE a.user_id=#{userId} AND a.status='COMPLETED' AND q.answered_time>=l.create_time
+          AND q.is_correct IN (0,1) AND REGEXP_LIKE(q.user_answer, '[^[:space:]]')
+    </sql>
+
+    <select id="selectTotalsByCourses" resultType="com.learnplatform.dto.CourseOverviewVO">
+        <bind name="automaticallyGradableQuestionIds" value="@com.learnplatform.service.question.AutomaticGradingPolicy@eligibleQuestionIdsSql()"/>
+        WITH library AS (<include refid="batchLibrary"/>), facts AS (<include refid="batchFacts"/>),
+        fact_stats AS (SELECT course_id, COUNT(*) answered_count, COALESCE(SUM(is_correct=1),0) correct_count FROM facts GROUP BY course_id), activity AS (
+          SELECT course_id, occurred_time FROM facts UNION ALL SELECT l.course_id, e.occurred_time FROM course_learning_event e JOIN library l ON l.course_id=e.course_id WHERE e.user_id=#{userId} AND e.occurred_time>=l.create_time
+        ), wrong AS (SELECT q.course_id, COUNT(*) count_value FROM wrong_question w JOIN question q ON q.id=w.question_id JOIN library l ON l.course_id=q.course_id WHERE w.user_id=#{userId} AND w.deleted=0 AND w.mastery_level!=2 AND q.deleted=0 AND (q.visibility='PUBLIC' OR (q.visibility='PRIVATE' AND q.owner_user_id=#{userId})) GROUP BY q.course_id), due AS (SELECT q.course_id, COUNT(*) count_value FROM question_review_schedule s JOIN question q ON q.id=s.question_id JOIN library l ON l.course_id=q.course_id WHERE s.user_id=#{userId} AND s.deleted=0 AND s.next_review_date&lt;=#{today} AND q.deleted=0 AND (q.visibility='PUBLIC' OR (q.visibility='PRIVATE' AND q.owner_user_id=#{userId})) AND q.id IN (${automaticallyGradableQuestionIds}) GROUP BY q.course_id), activity_stats AS (SELECT course_id, MAX(occurred_time) last_learning_time FROM activity GROUP BY course_id)
+        SELECT l.course_id, COALESCE(f.answered_count,0) answered_count, COALESCE(f.correct_count,0) correct_count, COALESCE(d.count_value,0) due_review_count, COALESCE(w.count_value,0) unresolved_wrong_count, a.last_learning_time FROM library l LEFT JOIN fact_stats f ON f.course_id=l.course_id LEFT JOIN activity_stats a ON a.course_id=l.course_id LEFT JOIN wrong w ON w.course_id=l.course_id LEFT JOIN due d ON d.course_id=l.course_id
+    </select>
+
+    <select id="selectFirstDueQuestions" resultType="com.learnplatform.mapper.CourseLearningFactMapper$CourseQuestion">
+        <bind name="automaticallyGradableQuestionIds" value="@com.learnplatform.service.question.AutomaticGradingPolicy@eligibleQuestionIdsSql()"/>
+        WITH ranked AS (SELECT q.course_id, s.question_id, ROW_NUMBER() OVER(PARTITION BY q.course_id ORDER BY s.next_review_date,s.id) rank_no FROM question_review_schedule s JOIN question q ON q.id=s.question_id JOIN (<include refid="batchLibrary"/>) l ON l.course_id=q.course_id WHERE s.user_id=#{userId} AND s.deleted=0 AND s.next_review_date&lt;=#{today} AND q.deleted=0 AND (q.visibility='PUBLIC' OR (q.visibility='PRIVATE' AND q.owner_user_id=#{userId})) AND q.id IN (${automaticallyGradableQuestionIds})) SELECT course_id, question_id FROM ranked WHERE rank_no=1
+    </select>
+    <select id="selectFirstWrongQuestions" resultType="com.learnplatform.mapper.CourseLearningFactMapper$CourseQuestion">
+        WITH ranked AS (SELECT q.course_id, w.question_id, ROW_NUMBER() OVER(PARTITION BY q.course_id ORDER BY w.wrong_count DESC,w.id) rank_no FROM wrong_question w JOIN question q ON q.id=w.question_id JOIN (<include refid="batchLibrary"/>) l ON l.course_id=q.course_id WHERE w.user_id=#{userId} AND w.deleted=0 AND w.mastery_level!=2 AND q.deleted=0 AND (q.visibility='PUBLIC' OR (q.visibility='PRIVATE' AND q.owner_user_id=#{userId}))) SELECT course_id, question_id FROM ranked WHERE rank_no=1
+    </select>
+    <select id="selectTutorProgressByCourses" resultType="com.learnplatform.mapper.CourseLearningFactMapper$CourseTutorProgress">
+        WITH RECURSIVE siblings AS (SELECT k.id,k.course_id,k.parent_id,ROW_NUMBER() OVER(PARTITION BY k.course_id,k.parent_id ORDER BY k.sort_order,k.id) position FROM knowledge_point k WHERE k.deleted=0 AND k.course_id IN <foreach collection="courseIds" item="id" open="(" separator="," close=")">#{id}</foreach>), tree AS (SELECT id,course_id,CAST(LPAD(position,10,'0') AS CHAR(1024)) path FROM siblings WHERE parent_id=0 UNION ALL SELECT child.id,child.course_id,CONCAT(parent.path,'.',LPAD(child.position,10,'0')) FROM siblings child JOIN tree parent ON child.parent_id=parent.id AND child.course_id=parent.course_id)
+        SELECT tree.course_id, t.knowledge_point_id,t.title,CASE WHEN MAX(s.check_correct)=1 THEN 'COMPLETED' WHEN COUNT(s.id)>0 THEN 'IN_PROGRESS' ELSE 'NOT_STARTED' END status,MAX(s.create_time) last_session_time FROM tree JOIN knowledge_point k ON k.id=tree.id JOIN tutor_content t ON t.knowledge_point_id=k.id AND t.review_status='REVIEWED' LEFT JOIN tutor_session s ON s.tutor_content_id=t.id AND s.user_id=#{userId} AND s.course_id=tree.course_id WHERE k.content_review_status='REVIEWED' GROUP BY tree.course_id,k.id,tree.path,t.id,t.knowledge_point_id,t.title ORDER BY tree.course_id,tree.path,t.id
+    </select>
 </mapper>

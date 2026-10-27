@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.learnplatform.mapper.CourseLibraryQueryMapper">
+    <select id="selectPage" resultType="com.learnplatform.dto.UserCourseVO">
+        <bind name="automaticallyGradableQuestionIds" value="@com.learnplatform.service.question.AutomaticGradingPolicy@eligibleQuestionIdsSql()"/>
+        WITH library AS (
+          SELECT uc.id, uc.course_id, uc.create_time, c.name, c.description, c.cover_image, c.content_key, c.content_source
+          FROM user_course uc JOIN course c ON c.id=uc.course_id
+          WHERE uc.user_id=#{userId} AND c.status=1 AND c.deleted=0
+          <if test="courseId != null">AND uc.course_id=#{courseId}</if>
+          <if test="keyword != null">AND (c.name LIKE #{keyword} ESCAPE '!' OR c.description LIKE #{keyword} ESCAPE '!')</if>
+        ), facts AS (
+          <include refid="com.learnplatform.mapper.CourseLearningFactMapper.batchFacts"/>
+        ), activity AS (
+          SELECT course_id, occurred_time FROM facts
+          UNION ALL
+          SELECT l.course_id, e.occurred_time FROM course_learning_event e JOIN library l ON l.course_id=e.course_id
+          WHERE e.user_id=#{userId} AND e.occurred_time >= l.create_time
+        ), due AS (
+          SELECT q.course_id, COUNT(*) count_value FROM question_review_schedule s JOIN question q ON q.id=s.question_id JOIN library l ON l.course_id=q.course_id
+          WHERE s.user_id=#{userId} AND s.deleted=0 AND s.next_review_date &lt;= #{today} AND q.deleted=0 AND (q.visibility='PUBLIC' OR (q.visibility='PRIVATE' AND q.owner_user_id=#{userId})) AND q.id IN (${automaticallyGradableQuestionIds}) GROUP BY q.course_id
+        ), stats AS (SELECT course_id, MAX(occurred_time) last_learning_time FROM activity GROUP BY course_id)
+        SELECT l.id, l.course_id, l.name AS course_name, l.description, l.cover_image, l.content_key, l.content_source, l.create_time AS added_at
+        FROM library l LEFT JOIN stats s ON s.course_id=l.course_id LEFT JOIN due d ON d.course_id=l.course_id
+        WHERE (#{learningStatus} IS NULL OR #{learningStatus}='' OR (#{learningStatus}='STARTED' AND s.last_learning_time IS NOT NULL)
+          OR (#{learningStatus}='NOT_STARTED' AND s.last_learning_time IS NULL) OR (#{learningStatus}='DUE_REVIEW' AND COALESCE(d.count_value,0)&gt;0))
+        <choose>
+            <when test="sortBy == 'LAST_LEARNING_TIME'">
+                ORDER BY s.last_learning_time DESC, l.create_time DESC, l.id DESC
+            </when>
+            <otherwise>ORDER BY l.create_time DESC, l.id DESC</otherwise>
+        </choose>
+    </select>
+</mapper>

@@ -31,5 +31,17 @@ public interface KnowledgePointMapper extends BaseMapper<KnowledgePoint> {
             """)
     List<Long> selectQuestionIdsByKnowledgePointId(@Param("knowledgePointId") Long knowledgePointId);
 
-
+    @Select("""
+            <script>
+            SELECT k.* FROM knowledge_point k JOIN (
+              SELECT course_id,
+                     MIN(CONCAT(LPAD(sort_order, 10, '0'), ':', LPAD(id, 20, '0'))) first_key
+              FROM knowledge_point WHERE deleted=0 AND parent_id=0 AND course_id IN
+              <foreach collection='courseIds' item='id' open='(' separator=',' close=')'>#{id}</foreach>
+              GROUP BY course_id
+            ) roots ON roots.course_id=k.course_id
+              AND CONCAT(LPAD(k.sort_order, 10, '0'), ':', LPAD(k.id, 20, '0'))=roots.first_key
+            </script>
+            """)
+    List<KnowledgePoint> selectFirstRoots(@Param("courseIds") List<Long> courseIds);
 }

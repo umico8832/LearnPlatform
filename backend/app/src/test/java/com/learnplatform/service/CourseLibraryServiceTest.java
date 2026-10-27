@@ -34,7 +34,8 @@ class CourseLibraryServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new CourseLibraryService(userCourseMapper, courseMapper, referenceLocks);
+        service = new CourseLibraryService(userCourseMapper, courseMapper, referenceLocks,
+                mock(com.learnplatform.mapper.CourseLibraryQueryMapper.class), mock(CourseOverviewBatchService.class));
         org.mockito.Mockito.lenient().when(referenceLocks.lockForReference(any(), any())).thenAnswer(invocation -> {
             Long id = ((java.util.Collection<Long>) invocation.getArgument(0)).iterator().next();
             Course course = courseMapper.selectById(id);

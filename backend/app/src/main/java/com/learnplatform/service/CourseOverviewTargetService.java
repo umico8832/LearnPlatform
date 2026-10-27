@@ -26,6 +26,14 @@ public class CourseOverviewTargetService {
     TargetSnapshot build(Long userId, Long courseId, CourseOverviewVO overview,
                          Long dueQuestionId, Long wrongQuestionId) {
         List<CourseOverviewVO.TutorProgressVO> progress = factMapper.selectTutorProgress(userId, courseId);
+        KnowledgePoint firstRoot = knowledgePointMapper.selectOne(new LambdaQueryWrapper<KnowledgePoint>()
+                .eq(KnowledgePoint::getCourseId, courseId).eq(KnowledgePoint::getParentId, 0L)
+                .orderByAsc(KnowledgePoint::getSortOrder).last("LIMIT 1"));
+        return assemble(overview, progress, dueQuestionId, wrongQuestionId, firstRoot);
+    }
+
+    TargetSnapshot assemble(CourseOverviewVO overview, List<CourseOverviewVO.TutorProgressVO> progress,
+                            Long dueQuestionId, Long wrongQuestionId, KnowledgePoint firstRoot) {
         List<CourseOverviewVO.LearningTargetVO> targets = new ArrayList<>();
         CourseOverviewVO.TutorProgressVO latestSession = progress.stream()
                 .filter(item -> item.getLastSessionTime() != null)
@@ -52,17 +60,14 @@ public class CourseOverviewTargetService {
                     + " 道题已到复习时间", dueQuestionId));
         }
         if (wrongQuestionId != null) {
-            targets.add(questionTarget("WRONG_QUESTION", "处理未掌握错题", "有 " + overview.getUnresolvedWrongCount()
+            targets.add(questionTarget("WRONG_QUESTION", "处理未掌握错题", "有 "
+                    + overview.getUnresolvedWrongCount()
                     + " 道错题仍待巩固", wrongQuestionId));
         }
-        KnowledgePoint firstRoot = knowledgePointMapper.selectOne(new LambdaQueryWrapper<KnowledgePoint>()
-                .eq(KnowledgePoint::getCourseId, courseId)
-                .eq(KnowledgePoint::getParentId, 0L)
-                .orderByAsc(KnowledgePoint::getSortOrder)
-                .last("LIMIT 1"));
         CourseOverviewVO.LearningTargetVO defaultTarget = new CourseOverviewVO.LearningTargetVO();
         defaultTarget.setType("COURSE_SEQUENCE");
-        defaultTarget.setTitle(firstRoot == null ? "从课程题目开始" : "从“" + firstRoot.getName() + "”开始");
+        defaultTarget.setTitle(firstRoot == null ? "从课程题目开始"
+                : "从“" + firstRoot.getName() + "”开始");
         defaultTarget.setReason("按课程目录建立学习起点");
         defaultTarget.setKnowledgePointId(firstRoot == null ? null : firstRoot.getId());
         targets.add(defaultTarget);

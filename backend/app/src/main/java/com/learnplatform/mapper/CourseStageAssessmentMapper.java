@@ -64,6 +64,22 @@ public interface CourseStageAssessmentMapper extends BaseMapper<CourseStageAsses
     CourseStageAssessment selectLatestCompleted(@Param("userId") Long userId,
                                                  @Param("courseId") Long courseId);
 
+    @Select("""
+            <script>
+            SELECT a.* FROM course_stage_assessment a JOIN (
+              SELECT course_id,
+                     MAX(CONCAT(DATE_FORMAT(complete_time, '%Y%m%d%H%i%s'), ':', LPAD(id, 20, '0'))) latest_key
+              FROM course_stage_assessment WHERE user_id=#{userId} AND status='COMPLETED' AND course_id IN
+              <foreach collection='courseIds' item='id' open='(' separator=',' close=')'>#{id}</foreach>
+              GROUP BY course_id
+            ) latest ON latest.course_id=a.course_id
+              AND CONCAT(DATE_FORMAT(a.complete_time, '%Y%m%d%H%i%s'), ':', LPAD(a.id, 20, '0'))=latest.latest_key
+              WHERE a.user_id=#{userId} AND a.status='COMPLETED'
+            </script>
+            """)
+    List<CourseStageAssessment> selectLatestCompletedByCourses(@Param("userId") Long userId,
+                                                                 @Param("courseIds") List<Long> courseIds);
+
     @Update("""
             UPDATE course_stage_assessment
             SET status = 'COMPLETED', correct_count = #{correctCount},

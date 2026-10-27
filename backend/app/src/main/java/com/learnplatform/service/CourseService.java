@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
+import com.learnplatform.common.query.ListQuery;
 import com.learnplatform.dto.CourseVO;
 import com.learnplatform.entity.Course;
 import com.learnplatform.mapper.CourseMapper;
@@ -36,12 +37,15 @@ public class CourseService {
     }
 
     private Page<CourseVO> getCoursePage(int pageNum, int pageSize, String keyword, boolean enabledOnly) {
-        Page<Course> page = new Page<>(pageNum, pageSize);
+        Page<Course> page = enabledOnly ? ListQuery.page(pageNum, pageSize) : new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<Course> wrapper = new LambdaQueryWrapper<>();
         if (enabledOnly) {
             wrapper.eq(Course::getStatus, 1);
         }
-        if (keyword != null && !keyword.isEmpty()) {
+        if (enabledOnly) {
+            String pattern = ListQuery.likePattern(keyword);
+            if (pattern != null) { wrapper.apply("name LIKE {0} ESCAPE '!'", pattern); }
+        } else if (keyword != null && !keyword.isEmpty()) {
             wrapper.like(Course::getName, keyword);
         }
         wrapper.orderByAsc(Course::getSortOrder).orderByDesc(Course::getCreateTime);

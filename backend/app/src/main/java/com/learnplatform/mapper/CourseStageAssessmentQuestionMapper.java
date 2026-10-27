@@ -34,4 +34,13 @@ public interface CourseStageAssessmentQuestionMapper extends BaseMapper<CourseSt
             """)
     List<CourseStageAssessmentQuestion> selectSourcesByAssessmentIds(
             @Param("assessmentIds") List<Long> assessmentIds);
+
+    @Select("""
+            <script>
+            SELECT * FROM course_stage_assessment_question WHERE assessment_id IN
+            <foreach collection="assessmentIds" item="id" open="(" separator="," close=")">#{id}</foreach>
+            ORDER BY assessment_id, sort_order
+            </script>
+            """)
+    List<CourseStageAssessmentQuestion> selectByAssessmentIds(@Param("assessmentIds") List<Long> assessmentIds);
 }
